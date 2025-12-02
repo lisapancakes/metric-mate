@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Metric Mate – Mid-Project Review</title>
+
+  <!-- Inter -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link
+    href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap"
+    rel="stylesheet"
+  />
+
+  <!-- Font Awesome -->
+  <link
+    rel="stylesheet"
+    href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css"
+    crossorigin="anonymous"
+    referrerpolicy="no-referrer"
+  />
+
+  <!-- Re-use your existing styles -->
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <main id="app">
+    <header class="app-header">
+      <h1>Metric Mate</h1>
+
+      <!-- Pill under heading -->
+      <div class="metric-pill">
+        <i class="fa-solid fa-bolt"></i>
+        <span>Mid-Project Review</span>
+      </div>
+
+      <p class="subtitle">Quick check-in to realign scope, goals, and next steps.</p>
+
+      <div class="progress">
+        <div class="progress-bar" id="progressBar"></div>
+      </div>
+    </header>
+
+    <form id="surveyForm">
+      <!-- Steps will be rendered by midterm.js -->
+    </form>
+
+    <div class="navigation">
+      <button id="prevBtn" class="btn btn-secondary" disabled>Previous</button>
+      <button id="nextBtn" class="btn btn-primary">Next</button>
+    </div>
+  </main>
+
+  <script src="midterm.js"></script>
+</body>
+</html>
