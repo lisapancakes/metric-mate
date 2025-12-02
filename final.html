@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Metric Mate – Final Review</title>
+
+  <!-- Inter font -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link
+    href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap"
+    rel="stylesheet"
+  />
+
+  <!-- Font Awesome -->
+  <link
+    rel="stylesheet"
+    href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css"
+    integrity="sha512-S+ckYh7Bf7d4U8F1q0H6Q4QSl5gZC+ONsOQGvJwQxZxXv1qR5x8Qq1g1uP6R0kC8rB5j7Sfyx+2YkdE+5CF8wg=="
+    crossorigin="anonymous"
+    referrerpolicy="no-referrer"
+  />
+
+  <link rel="stylesheet" href="styles.css" />
+</head>
+
+<body>
+  <main id="app">
+    <header class="app-header">
+      <h1>Metric Mate</h1>
+
+      <div class="survey-pill">
+        <i class="fa-solid fa-flag-checkered"></i>
+        <span>Final Review</span>
+      </div>
+
+      <p class="subtitle">Reflect, close the loop, and capture outcomes.</p>
+
+      <div class="progress">
+        <div class="progress-bar" id="progressBar"></div>
+      </div>
+    </header>
+
+    <form id="surveyForm">
+      <!-- Steps are rendered by final.js -->
+    </form>
+
+    <div class="navigation">
+      <button id="prevBtn" class="btn btn-secondary" disabled>Previous</button>
+      <button id="nextBtn" class="btn btn-primary">Next</button>
+    </div>
+  </main>
+
+  <script src="final.js"></script>
+</body>
+</html>
