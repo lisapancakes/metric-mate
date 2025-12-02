@@ -20,31 +20,29 @@ const midterm = {
   nextSteps: ""
 };
 
-// DOM refs (elements exist because script is loaded at bottom of body)
-const form = document.getElementById("surveyForm");
-const prevBtn = document.getElementById("prevBtn");
-const nextBtn = document.getElementById("nextBtn");
-const progressBar = document.getElementById("progressBar");
+// These will be set in init() once the DOM is ready
+let form;
+let prevBtn;
+let nextBtn;
+let progressBar;
 
 // Get kickoff data from URL or localStorage
 function getKickoffDataFromUrl() {
   try {
-    // 1) Try URL ?data=...
     const params = new URLSearchParams(window.location.search);
-    const raw = params.get('data');
+    const raw = params.get("data");
     if (raw) {
       return JSON.parse(decodeURIComponent(raw));
     }
 
-    // 2) Fallback: localStorage (saved by the kickoff survey)
-    const stored = localStorage.getItem('metricMateKickoff');
+    const stored = localStorage.getItem("metricMateKickoff");
     if (stored) {
       return JSON.parse(stored);
     }
 
     return null;
   } catch (err) {
-    console.error('Failed to load kickoff data', err);
+    console.error("Failed to load kickoff data", err);
     return null;
   }
 }
@@ -97,43 +95,49 @@ function showStatus(message) {
 // INIT
 // ============================================================================
 function init() {
+  // Grab DOM refs now that DOM is ready
+  form = document.getElementById("surveyForm");
+  prevBtn = document.getElementById("prevBtn");
+  nextBtn = document.getElementById("nextBtn");
+  progressBar = document.getElementById("progressBar");
+
   // 0) Try to hydrate from kickoff data (URL or localStorage)
   const kickoffData = getKickoffDataFromUrl();
 
   if (kickoffData && kickoffData.info) {
     const info = kickoffData.info;
-    const dir  = kickoffData.directory || {};
+    const dir = kickoffData.directory || {};
 
     // Project name
     midterm.info.projectName =
       info.projectName || info.name || midterm.info.projectName;
 
     // Client
-    if (typeof info.clientId === 'number' && Array.isArray(dir.clients)) {
-      midterm.info.client = dir.clients[info.clientId] || '';
+    if (typeof info.clientId === "number" && Array.isArray(dir.clients)) {
+      midterm.info.client = dir.clients[info.clientId] || "";
     } else {
       midterm.info.client =
         info.client || info.clientName || midterm.info.client;
     }
 
     // PM
-    if (typeof info.pmId === 'number' && Array.isArray(dir.pms)) {
-      midterm.info.pm = dir.pms[info.pmId] || '';
+    if (typeof info.pmId === "number" && Array.isArray(dir.pms)) {
+      midterm.info.pm = dir.pms[info.pmId] || "";
     } else {
       midterm.info.pm = info.pm || info.pmName || midterm.info.pm;
     }
 
     // Designer
-    if (typeof info.designerId === 'number' && Array.isArray(dir.designers)) {
-      midterm.info.designer = dir.designers[info.designerId] || '';
+    if (typeof info.designerId === "number" && Array.isArray(dir.designers)) {
+      midterm.info.designer = dir.designers[info.designerId] || "";
     } else {
       midterm.info.designer =
         info.designer || info.designerName || midterm.info.designer;
     }
 
     // Dev
-    if (typeof info.devId === 'number' && Array.isArray(dir.devs)) {
-      midterm.info.dev = dir.devs[info.devId] || '';
+    if (typeof info.devId === "number" && Array.isArray(dir.devs)) {
+      midterm.info.dev = dir.devs[info.devId] || "";
     } else {
       midterm.info.dev = info.dev || info.devName || midterm.info.dev;
     }
@@ -143,7 +147,7 @@ function init() {
   if (prevBtn) prevBtn.addEventListener("click", goToPreviousStep);
   if (nextBtn) nextBtn.addEventListener("click", goToNextStep);
 
-  // 2) Form events (use the handlers that actually exist in this file)
+  // 2) Form events
   if (form) {
     form.addEventListener("submit", (e) => {
       e.preventDefault();
@@ -213,7 +217,7 @@ function renderStep(step) {
 
   form.innerHTML = "";
 
-  let stepEl = document.createElement("section");
+  const stepEl = document.createElement("section");
   stepEl.className = "step active";
   stepEl.id = `step-${step}`;
 
@@ -341,17 +345,16 @@ function renderStep2() {
 
 // STEP 3 – Summaries
 function renderStep3(internalSummary, clientSummary) {
-  // Build the calendar URL once, based on current midterm state.
-  // If anything goes wrong, fall back to a bare Google Calendar template.
-  let calendarUrl = '';
+  let calendarUrl = "";
   try {
     calendarUrl = buildFinalReviewCalendarUrl();
   } catch (e) {
-    console.warn('Failed to build final review calendar URL, using fallback', e);
+    console.warn("Failed to build final review calendar URL, using fallback", e);
   }
 
   if (!calendarUrl) {
-    calendarUrl = 'https://calendar.google.com/calendar/render?action=TEMPLATE';
+    calendarUrl =
+      "https://calendar.google.com/calendar/render?action=TEMPLATE";
   }
 
   return `
@@ -405,7 +408,7 @@ function renderStep3(internalSummary, clientSummary) {
 
 function buildFinalReviewCalendarUrl() {
   const projectName = midterm.info.projectName || "Project";
-  const clientName  = midterm.info.client || "Client";
+  const clientName = midterm.info.client || "Client";
 
   // 21 days from today, 10–11am
   const start = new Date();
@@ -415,23 +418,23 @@ function buildFinalReviewCalendarUrl() {
   end.setHours(11);
 
   const formatDate = (d) => {
-    const year  = d.getFullYear();
+    const year = d.getFullYear();
     const month = String(d.getMonth() + 1).padStart(2, "0");
-    const day   = String(d.getDate()).padStart(2, "0");
+    const day = String(d.getDate()).padStart(2, "0");
     const hours = String(d.getHours()).padStart(2, "0");
-    const mins  = String(d.getMinutes()).padStart(2, "0");
-    const secs  = String(d.getSeconds()).padStart(2, "0");
+    const mins = String(d.getMinutes()).padStart(2, "0");
+    const secs = String(d.getSeconds()).padStart(2, "0");
     return `${year}${month}${day}T${hours}${mins}${secs}`;
   };
 
   const startStr = formatDate(start);
-  const endStr   = formatDate(end);
+  const endStr = formatDate(end);
 
   const base = "https://calendar.google.com/calendar/render?action=TEMPLATE";
   const params = new URLSearchParams({
     text: `Final review: ${projectName} (${clientName})`,
     details: buildInternalSummary(),
-    dates: `${startStr}/${endStr}`,
+    dates: `${startStr}/${endStr}`
   });
 
   return `${base}&${params.toString()}`;
@@ -443,7 +446,7 @@ function buildFinalReviewCalendarUrl() {
 function buildInternalSummary() {
   const i = midterm.info;
 
-  let lines = [];
+  const lines = [];
   lines.push("MID-PROJECT REVIEW — INTERNAL");
   lines.push("--------------------------------");
   lines.push(`Project: ${i.projectName || "Untitled project"}`);
@@ -487,7 +490,7 @@ function buildClientSummary() {
   const i = midterm.info;
   const nameForGreeting = i.client || "there";
 
-  let lines = [];
+  const lines = [];
   lines.push(`Hi ${nameForGreeting},`);
   lines.push("");
   lines.push(
@@ -532,7 +535,6 @@ function buildClientSummary() {
 function setupSummaryActions(internalSummary, clientSummary) {
   const internalBtn = document.getElementById("copyInternalSummary");
   const clientBtn = document.getElementById("copyClientSummary");
-  // The calendar link is a plain <a>, so it doesn't need JS wiring anymore.
 
   if (internalBtn) {
     internalBtn.addEventListener("click", () => {
@@ -555,10 +557,8 @@ function setupSummaryActions(internalSummary, clientSummary) {
 function handleChange(e) {
   const t = e.target;
 
-  // healthScore radio
   if (t.name === "healthScore" && t.type === "radio") {
     midterm.healthScore = parseInt(t.value, 10);
-    return;
   }
 }
 
@@ -585,7 +585,6 @@ function handleInput(e) {
     case "date":
       midterm.info.date = val;
       break;
-
     case "progressGood":
       midterm.progressGood = val;
       break;
@@ -668,4 +667,4 @@ function showThankYouPage() {
 // ============================================================================
 // BOOTSTRAP
 // ============================================================================
-document.addEventListener('DOMContentLoaded', init);
+document.addEventListener("DOMContentLoaded", init);
