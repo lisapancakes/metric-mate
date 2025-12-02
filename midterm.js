@@ -520,9 +520,14 @@ function buildFinalReviewCalendarUrl() {
   };
 
   const base = "https://calendar.google.com/calendar/render?action=TEMPLATE";
+
+  const details =
+    buildInternalSummary() +
+    "\n\nFinal review form:\nhttps://lisapancakes.github.io/metric-mate/final.html";
+
   const params = new URLSearchParams({
     text: `Final review: ${projectName} (${clientName})`,
-    details: buildInternalSummary(),
+    details,
     dates: `${formatDate(start)}/${formatDate(end)}`
   });
 
