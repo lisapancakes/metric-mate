@@ -493,7 +493,9 @@ function setupSummaryActions(internalSummary, clientSummary) {
   if (calendarBtn) {
     calendarBtn.addEventListener("click", () => {
       const url = buildFinalReviewCalendarUrl();
-      window.open(url, "_blank");
+      console.log("Opening final review calendar (step 3):", url);
+      // Use same-tab navigation to avoid popup blockers
+      window.location.href = url;
     });
   }
 }
@@ -632,7 +634,9 @@ function showThankYouPage() {
   if (btn) {
     btn.addEventListener("click", () => {
       const url = buildFinalReviewCalendarUrl();
-      window.open(url, "_blank");
+      console.log("Opening final review calendar (thank you):", url);
+      // Same-tab navigation here as well
+      window.location.href = url;
     });
   }
 }
