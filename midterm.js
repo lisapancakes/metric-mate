@@ -336,8 +336,18 @@ function renderStep2() {
 
 // STEP 3 – Summaries
 function renderStep3(internalSummary, clientSummary) {
-  // Build the calendar URL once, based on current midterm state
-  const calendarUrl = buildFinalReviewCalendarUrl();
+  // Build the calendar URL once, based on current midterm state.
+  // Fallback to a base Google Calendar template if something goes wrong.
+  let calendarUrl = "";
+  try {
+    calendarUrl = buildFinalReviewCalendarUrl();
+  } catch (e) {
+    console.warn("Failed to build final review calendar URL, using fallback", e);
+  }
+
+  if (!calendarUrl) {
+    calendarUrl = "https://calendar.google.com/calendar/render?action=TEMPLATE";
+  }
 
   return `
     <h2>Review & Share</h2>
@@ -373,10 +383,11 @@ function renderStep3(internalSummary, clientSummary) {
         Create a calendar event for your end-of-project / retrospective conversation.
       </p>
       <div class="form-actions">
-        <a 
-          href="${calendarUrl}" 
-          target="_blank" 
-          rel="noopener" 
+        <a
+          id="finalReviewCalendarLink"
+          href="${calendarUrl}"
+          target="_blank"
+          rel="noopener"
           class="btn btn-primary"
         >
           <i class="fa-solid fa-calendar"></i>
@@ -386,6 +397,7 @@ function renderStep3(internalSummary, clientSummary) {
     </section>
   `;
 }
+
 // ============================================================================
 // SUMMARY BUILDERS
 // ============================================================================
@@ -565,8 +577,16 @@ function showThankYouPage() {
   const app = document.getElementById("app");
   if (!app) return;
 
-  // Build calendar URL based on current midterm state
-  const calendarUrl = buildFinalReviewCalendarUrl();
+  let calendarUrl = "";
+  try {
+    calendarUrl = buildFinalReviewCalendarUrl();
+  } catch (e) {
+    console.warn("Failed to build final review calendar URL on thank-you page, using fallback", e);
+  }
+
+  if (!calendarUrl) {
+    calendarUrl = "https://calendar.google.com/calendar/render?action=TEMPLATE";
+  }
 
   const thankYou = document.createElement("section");
   thankYou.className = "step thank-you active";
@@ -582,10 +602,10 @@ function showThankYouPage() {
       <strong>final review calendar event</strong> so this reflection doesn’t get lost:
     </p>
     <div class="form-actions" style="margin-top: 1.5rem;">
-      <a 
-        href="${calendarUrl}" 
-        target="_blank" 
-        rel="noopener" 
+      <a
+        href="${calendarUrl}"
+        target="_blank"
+        rel="noopener"
         class="btn btn-primary"
       >
         <i class="fa-solid fa-calendar"></i>
@@ -601,6 +621,7 @@ function showThankYouPage() {
     app.appendChild(thankYou);
   }
 }
+
 // ============================================================================
 // BOOTSTRAP
 // ============================================================================
