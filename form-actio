@@ -211,25 +211,30 @@ function validateCurrentStep() {
 function renderStep(step) {
   if (!form) return;
 
-  // Clear previous
   form.innerHTML = "";
 
   let stepEl = document.createElement("section");
   stepEl.className = "step active";
   stepEl.id = `step-${step}`;
 
+  let internalSummary = "";
+  let clientSummary = "";
+
   if (step === 1) {
     stepEl.innerHTML = renderStep1();
   } else if (step === 2) {
     stepEl.innerHTML = renderStep2();
   } else if (step === 3) {
-    const internalSummary = buildInternalSummary();
-    const clientSummary = buildClientSummary();
+    internalSummary = buildInternalSummary();
+    clientSummary = buildClientSummary();
     stepEl.innerHTML = renderStep3(internalSummary, clientSummary);
-    setupSummaryActions(internalSummary, clientSummary);
   }
 
   form.appendChild(stepEl);
+
+  if (step === 3) {
+    setupSummaryActions(internalSummary, clientSummary);
+  }
 
   if (prevBtn) prevBtn.disabled = step === 1;
   if (nextBtn)
@@ -337,16 +342,16 @@ function renderStep2() {
 // STEP 3 – Summaries
 function renderStep3(internalSummary, clientSummary) {
   // Build the calendar URL once, based on current midterm state.
-  // Fallback to a base Google Calendar template if something goes wrong.
-  let calendarUrl = "";
+  // If anything goes wrong, fall back to a bare Google Calendar template.
+  let calendarUrl = '';
   try {
     calendarUrl = buildFinalReviewCalendarUrl();
   } catch (e) {
-    console.warn("Failed to build final review calendar URL, using fallback", e);
+    console.warn('Failed to build final review calendar URL, using fallback', e);
   }
 
   if (!calendarUrl) {
-    calendarUrl = "https://calendar.google.com/calendar/render?action=TEMPLATE";
+    calendarUrl = 'https://calendar.google.com/calendar/render?action=TEMPLATE';
   }
 
   return `
@@ -396,6 +401,40 @@ function renderStep3(internalSummary, clientSummary) {
       </div>
     </section>
   `;
+}
+
+function buildFinalReviewCalendarUrl() {
+  const projectName = midterm.info.projectName || "Project";
+  const clientName  = midterm.info.client || "Client";
+
+  // 21 days from today, 10–11am
+  const start = new Date();
+  start.setDate(start.getDate() + 21);
+  start.setHours(10, 0, 0, 0);
+  const end = new Date(start.getTime());
+  end.setHours(11);
+
+  const formatDate = (d) => {
+    const year  = d.getFullYear();
+    const month = String(d.getMonth() + 1).padStart(2, "0");
+    const day   = String(d.getDate()).padStart(2, "0");
+    const hours = String(d.getHours()).padStart(2, "0");
+    const mins  = String(d.getMinutes()).padStart(2, "0");
+    const secs  = String(d.getSeconds()).padStart(2, "0");
+    return `${year}${month}${day}T${hours}${mins}${secs}`;
+  };
+
+  const startStr = formatDate(start);
+  const endStr   = formatDate(end);
+
+  const base = "https://calendar.google.com/calendar/render?action=TEMPLATE";
+  const params = new URLSearchParams({
+    text: `Final review: ${projectName} (${clientName})`,
+    details: buildInternalSummary(),
+    dates: `${startStr}/${endStr}`,
+  });
+
+  return `${base}&${params.toString()}`;
 }
 
 // ============================================================================
@@ -488,11 +527,12 @@ function buildClientSummary() {
 }
 
 // ============================================================================
-// SUMMARY ACTIONS + CALENDAR
+// SUMMARY ACTIONS
 // ============================================================================
 function setupSummaryActions(internalSummary, clientSummary) {
   const internalBtn = document.getElementById("copyInternalSummary");
   const clientBtn = document.getElementById("copyClientSummary");
+  // The calendar link is a plain <a>, so it doesn't need JS wiring anymore.
 
   if (internalBtn) {
     internalBtn.addEventListener("click", () => {
@@ -507,8 +547,6 @@ function setupSummaryActions(internalSummary, clientSummary) {
       showStatus("✅ Client summary copied to clipboard");
     });
   }
-
-  // No JS needed for the calendar link — it's a normal <a href="..."> now
 }
 
 // ============================================================================
@@ -581,11 +619,15 @@ function showThankYouPage() {
   try {
     calendarUrl = buildFinalReviewCalendarUrl();
   } catch (e) {
-    console.warn("Failed to build final review calendar URL on thank-you page, using fallback", e);
+    console.warn(
+      "Failed to build final review calendar URL on thank-you page, using fallback",
+      e
+    );
   }
 
   if (!calendarUrl) {
-    calendarUrl = "https://calendar.google.com/calendar/render?action=TEMPLATE";
+    calendarUrl =
+      "https://calendar.google.com/calendar/render?action=TEMPLATE";
   }
 
   const thankYou = document.createElement("section");
@@ -603,10 +645,11 @@ function showThankYouPage() {
     </p>
     <div class="form-actions" style="margin-top: 1.5rem;">
       <a
-        href="${calendarUrl}"
+        id="finalReviewCalendarLinkThankYou"
+        class="btn btn-primary"
         target="_blank"
         rel="noopener"
-        class="btn btn-primary"
+        href="${calendarUrl}"
       >
         <i class="fa-solid fa-calendar"></i>
         Save Final Review to Google Calendar
