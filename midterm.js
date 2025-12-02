@@ -336,6 +336,9 @@ function renderStep2() {
 
 // STEP 3 – Summaries
 function renderStep3(internalSummary, clientSummary) {
+  // Build the calendar URL once, based on current midterm state
+  const calendarUrl = buildFinalReviewCalendarUrl();
+
   return `
     <h2>Review & Share</h2>
     <p class="help-text">
@@ -370,15 +373,19 @@ function renderStep3(internalSummary, clientSummary) {
         Create a calendar event for your end-of-project / retrospective conversation.
       </p>
       <div class="form-actions">
-        <button type="button" id="createCalendarEventBtn" class="btn btn-primary">
-        <i class="fa-solid fa-calendar"></i>
+        <a 
+          href="${calendarUrl}" 
+          target="_blank" 
+          rel="noopener" 
+          class="btn btn-primary"
+        >
+          <i class="fa-solid fa-calendar"></i>
           Add Final Review to Google Calendar
-        </button>
+        </a>
       </div>
     </section>
   `;
 }
-
 // ============================================================================
 // SUMMARY BUILDERS
 // ============================================================================
@@ -474,7 +481,6 @@ function buildClientSummary() {
 function setupSummaryActions(internalSummary, clientSummary) {
   const internalBtn = document.getElementById("copyInternalSummary");
   const clientBtn = document.getElementById("copyClientSummary");
-  const calendarBtn = document.getElementById("createCalendarEventBtn");
 
   if (internalBtn) {
     internalBtn.addEventListener("click", () => {
@@ -490,50 +496,7 @@ function setupSummaryActions(internalSummary, clientSummary) {
     });
   }
 
-  if (calendarBtn) {
-    calendarBtn.addEventListener("click", () => {
-      const url = buildFinalReviewCalendarUrl();
-      console.log("Opening final review calendar (step 3):", url);
-      // Use same-tab navigation to avoid popup blockers
-      window.location.href = url;
-    });
-  }
-}
-
-function buildFinalReviewCalendarUrl() {
-  const projectName = midterm.info.projectName || "Project";
-  const clientName = midterm.info.client || "Client";
-
-  // 21 days from today, 10–11am
-  const start = new Date();
-  start.setDate(start.getDate() + 21);
-  start.setHours(10, 0, 0, 0);
-  const end = new Date(start.getTime());
-  end.setHours(11);
-
-  const formatDate = (d) => {
-    const year = d.getFullYear();
-    const month = String(d.getMonth() + 1).padStart(2, "0");
-    const day = String(d.getDate()).padStart(2, "0");
-    const hours = String(d.getHours()).padStart(2, "0");
-    const mins = String(d.getMinutes()).padStart(2, "0");
-    const secs = String(d.getSeconds()).padStart(2, "0");
-    return `${year}${month}${day}T${hours}${mins}${secs}`;
-  };
-
-  const base = "https://calendar.google.com/calendar/render?action=TEMPLATE";
-
-  const details =
-    buildInternalSummary() +
-    "\n\nFinal review form:\nhttps://lisapancakes.github.io/metric-mate/final.html";
-
-  const params = new URLSearchParams({
-    text: `Final review: ${projectName} (${clientName})`,
-    details,
-    dates: `${formatDate(start)}/${formatDate(end)}`
-  });
-
-  return `${base}&${params.toString()}`;
+  // No JS needed for the calendar link — it's a normal <a href="..."> now
 }
 
 // ============================================================================
@@ -602,6 +565,9 @@ function showThankYouPage() {
   const app = document.getElementById("app");
   if (!app) return;
 
+  // Build calendar URL based on current midterm state
+  const calendarUrl = buildFinalReviewCalendarUrl();
+
   const thankYou = document.createElement("section");
   thankYou.className = "step thank-you active";
   thankYou.innerHTML = `
@@ -616,10 +582,15 @@ function showThankYouPage() {
       <strong>final review calendar event</strong> so this reflection doesn’t get lost:
     </p>
     <div class="form-actions" style="margin-top: 1.5rem;">
-      <button type="button" id="createCalendarEventBtnThankYou" class="btn btn-primary">
+      <a 
+        href="${calendarUrl}" 
+        target="_blank" 
+        rel="noopener" 
+        class="btn btn-primary"
+      >
         <i class="fa-solid fa-calendar"></i>
         Save Final Review to Google Calendar
-      </button>
+      </a>
     </div>
   `;
 
@@ -629,18 +600,7 @@ function showThankYouPage() {
   } else {
     app.appendChild(thankYou);
   }
-
-  const btn = document.getElementById("createCalendarEventBtnThankYou");
-  if (btn) {
-    btn.addEventListener("click", () => {
-      const url = buildFinalReviewCalendarUrl();
-      console.log("Opening final review calendar (thank you):", url);
-      // Same-tab navigation here as well
-      window.location.href = url;
-    });
-  }
 }
-
 // ============================================================================
 // BOOTSTRAP
 // ============================================================================
