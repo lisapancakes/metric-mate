@@ -430,10 +430,20 @@ function buildFinalReviewCalendarUrl() {
   const startStr = formatDate(start);
   const endStr = formatDate(end);
 
+  // 👇 Append the final survey link into the event details
+  const internalSummary = buildInternalSummary();
+  const finalSurveyLink =
+    "https://lisapancakes.github.io/metric-mate/final.html";
+
+  const details = `${internalSummary}
+
+Final review survey:
+${finalSurveyLink}`;
+
   const base = "https://calendar.google.com/calendar/render?action=TEMPLATE";
   const params = new URLSearchParams({
     text: `Final review: ${projectName} (${clientName})`,
-    details: buildInternalSummary(),
+    details,
     dates: `${startStr}/${endStr}`
   });
 
