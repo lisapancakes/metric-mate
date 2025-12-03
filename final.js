@@ -147,25 +147,6 @@ function initFinal() {
     });
   }
 
-  // 6) Create "Open Dashboard" button next to the copy button (if possible)
-  if (copyBtn && !$("openDashboardBtn")) {
-    const container = copyBtn.parentElement || copyBtn.closest(".form-actions") || copyBtn.parentNode;
-    if (container) {
-      const dashBtn = document.createElement("button");
-      dashBtn.type = "button";
-      dashBtn.id = "openDashboardBtn";
-      dashBtn.className = "btn btn-secondary";
-      dashBtn.style.marginLeft = "0.5rem";
-      dashBtn.textContent = "Open Final Dashboard";
-      container.appendChild(dashBtn);
-
-      dashBtn.addEventListener("click", () => {
-        openDashboard(kickoffData);
-      });
-    }
-  }
-}
-
 function openDashboard(kickoffData) {
   const midtermData = getMidtermDataFromStorage() || null;
 
