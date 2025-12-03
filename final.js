@@ -20,11 +20,93 @@ function $(id) {
   return document.getElementById(id);
 }
 
+// Get kickoff data from URL or localStorage
+function getKickoffDataFromUrl() {
+  try {
+    // 1) Try URL ?data=...
+    const params = new URLSearchParams(window.location.search);
+    const raw = params.get("data");
+    if (raw) {
+      return JSON.parse(decodeURIComponent(raw));
+    }
+
+    // 2) Fallback: localStorage (saved by the kickoff survey)
+    const stored = localStorage.getItem("metricMateKickoff");
+    if (stored) {
+      return JSON.parse(stored);
+    }
+
+    return null;
+  } catch (err) {
+    console.error("Failed to load kickoff data", err);
+    return null;
+  }
+}
+
 function initFinal() {
+  // 0) Hydrate from kickoff data (URL or localStorage)
+  const kickoffData = getKickoffDataFromUrl();
+
+  if (kickoffData && kickoffData.info) {
+    const info = kickoffData.info;
+    const dir  = kickoffData.directory || {};
+
+    // Project name
+    finalState.projectName =
+      info.projectName || info.name || finalState.projectName;
+
+    // Client
+    if (typeof info.clientId === "number" && Array.isArray(dir.clients)) {
+      finalState.client = dir.clients[info.clientId] || "";
+    } else {
+      finalState.client =
+        info.client || info.clientName || finalState.client;
+    }
+
+    // PM
+    if (typeof info.pmId === "number" && Array.isArray(dir.pms)) {
+      finalState.pm = dir.pms[info.pmId] || "";
+    } else {
+      finalState.pm = info.pm || info.pmName || finalState.pm;
+    }
+
+    // Designer
+    if (typeof info.designerId === "number" && Array.isArray(dir.designers)) {
+      finalState.designer = dir.designers[info.designerId] || "";
+    } else {
+      finalState.designer =
+        info.designer || info.designerName || finalState.designer;
+    }
+
+    // Dev
+    if (typeof info.devId === "number" && Array.isArray(dir.devs)) {
+      finalState.dev = dir.devs[info.devId] || "";
+    } else {
+      finalState.dev = info.dev || info.devName || finalState.dev;
+    }
+  }
+
   const form = $("finalForm");
   const copyBtn = $("copyFinalSummaryBtn");
 
   if (!form) return;
+
+  // Prefill visible inputs from hydrated state
+  const fieldMap = {
+    projectName: "projectName",
+    client: "client",
+    pm: "pm",
+    designer: "designer",
+    dev: "dev",
+    date: "date"
+  };
+
+  Object.entries(fieldMap).forEach(([id, stateKey]) => {
+    const input = $(id);
+    if (input && finalState[stateKey]) {
+      input.value = finalState[stateKey];
+    }
+  });
 
   form.addEventListener("input", handleInput);
   updateSummary();
