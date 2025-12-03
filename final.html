@@ -3,181 +3,55 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Metric Mate – Final Project Review</title>
+  <title>Metric Mate – Final Review</title>
 
-  <!-- Inter -->
-  <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <!-- Inter font -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link
     href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap"
     rel="stylesheet"
   />
 
-  <!-- Font Awesome (same as midterm) -->
+  <!-- Font Awesome -->
   <link
     rel="stylesheet"
     href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css"
+    integrity="sha512-S+ckYh7Bf7d4U8F1q0H6Q4QSl5gZC+ONsOQGvJwQxZxXv1qR5x8Qq1g1uP6R0kC8rB5j7Sfyx+2YkdE+5CF8wg=="
     crossorigin="anonymous"
     referrerpolicy="no-referrer"
   />
 
-  <!-- Re-use your existing styles -->
   <link rel="stylesheet" href="styles.css" />
 </head>
+
 <body>
-  <div class="app" id="app">
+  <main id="app">
     <header class="app-header">
-      <h1>Final project review</h1>
-      <p class="app-subtitle">
-        Wrap up the project with a clear, honest summary you can reuse in emails,
-        retros, and case studies.
-      </p>
+      <h1>Metric Mate</h1>
+
+      <div class="survey-pill">
+        <i class="fa-solid fa-flag-checkered"></i>
+        <span>Final Review</span>
+      </div>
+
+      <p class="subtitle">Reflect, close the loop, and capture outcomes.</p>
+
+      <div class="progress">
+        <div class="progress-bar" id="progressBar"></div>
+      </div>
     </header>
 
-    <main class="app-main">
-      <form id="finalForm" class="form">
-        <!-- 1. Project snapshot (NO .step class) -->
-        <section id="final-step-1">
-          <h2>1. Project snapshot</h2>
+    <form id="surveyForm">
+      <!-- Steps are rendered by final.js -->
+    </form>
 
-          <div class="form-group">
-            <label for="projectName">Project name</label>
-            <input type="text" id="projectName" />
-          </div>
-
-          <div class="form-group">
-            <label for="client">Client</label>
-            <input type="text" id="client" />
-          </div>
-
-          <div class="form-group">
-            <label for="pm">Project Manager</label>
-            <input type="text" id="pm" />
-          </div>
-
-          <div class="form-group">
-            <label for="designer">Product Designer</label>
-            <input type="text" id="designer" />
-          </div>
-
-          <div class="form-group">
-            <label for="dev">Lead Developer</label>
-            <input type="text" id="dev" />
-          </div>
-
-          <div class="form-group">
-            <label for="date">Final review date</label>
-            <input
-              type="text"
-              id="date"
-              placeholder="e.g. Mar 15, 2026"
-            />
-          </div>
-        </section>
-
-        <!-- 2. Outcomes & learnings (NO .step class) -->
-        <section id="final-step-2">
-          <h2>2. Outcomes & learnings</h2>
-
-          <div class="form-group">
-            <label for="outcomes">What did we ship?</label>
-            <textarea
-              id="outcomes"
-              rows="3"
-              placeholder="Major releases, features, or milestones..."
-            ></textarea>
-          </div>
-
-          <div class="form-group">
-            <label for="results">Results / impact</label>
-            <textarea
-              id="results"
-              rows="3"
-              placeholder="Early metrics, client feedback, internal impact..."
-            ></textarea>
-          </div>
-
-          <div class="form-group">
-            <label for="wins">Biggest wins</label>
-            <textarea
-              id="wins"
-              rows="3"
-              placeholder="Where did we really deliver value?"
-            ></textarea>
-          </div>
-
-          <div class="form-group">
-            <label for="challenges">Challenges or misses</label>
-            <textarea
-              id="challenges"
-              rows="3"
-              placeholder="What was hard? What didn’t land as planned?"
-            ></textarea>
-          </div>
-
-          <div class="form-group">
-            <label for="learnings">Key learnings</label>
-            <textarea
-              id="learnings"
-              rows="3"
-              placeholder="What should we remember for future projects?"
-            ></textarea>
-          </div>
-
-          <div class="form-group">
-            <label for="nextSteps">Next steps or follow-ups</label>
-            <textarea
-              id="nextSteps"
-              rows="3"
-              placeholder="Phase 2 ideas, optimizations, or handoff notes..."
-            ></textarea>
-          </div>
-        </section>
-
-        <!-- 3. Final summary -->
-        <section class="summary-section">
-  <h2>3. Final summary</h2>
-  <p class="help-text">
-    This is generated as you type. Paste it into your retro doc, Asana,
-    or a client wrap-up email.
-  </p>
-
-  <textarea id="finalSummary" rows="14" readonly></textarea>
-
-  <div class="form-actions" style="margin-top: 1.25rem; display: flex; gap: 0.75rem;">
-  <button
-    type="button"
-    id="copyFinalSummaryBtn"
-    class="btn btn-secondary"
-  >
-    <i class="fa-regular fa-copy"></i>
-    Copy Summary
-  </button>
-
-  <a
-    href="dashboard.html"
-    target="_blank"
-    class="btn btn-primary"
-    id="dashboardLink"
-  >
-    <i class="fa-solid fa-chart-line"></i>
-    View Dashboard
-  </a>
-</div>
-</section>
-      </form>
-    </main>
-  </div>
+    <div class="navigation">
+      <button id="prevBtn" class="btn btn-secondary" disabled>Previous</button>
+      <button id="nextBtn" class="btn btn-primary">Next</button>
+    </div>
+  </main>
 
   <script src="final.js"></script>
 </body>
 </html>
-
-
-
-
-
-
-
-
-
