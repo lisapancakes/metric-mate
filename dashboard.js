@@ -1,5 +1,6 @@
 // Metric Mate - Dashboard
 // Renders a visual overview + a Google Doc–ready export.
+// dashboard.js - Metric Mate Project Dashboard
 
 function $(id) {
   return document.getElementById(id);
@@ -20,9 +21,11 @@ function safeGet(obj, path, fallback = "") {
 }
 
 function parsePayloadFromUrl() {
-  try {
-    const params = new URLSearchParams(window.location.search);
-    const raw = params.get("data");
+function loadDashboardData() {
+  // 1) Try URL ?data=...
+try {
+const params = new URLSearchParams(window.location.search);
+const raw = params.get("data");
     if (!raw) return null;
     return JSON.parse(decodeURIComponent(raw));
   } catch (err) {
@@ -198,9 +201,13 @@ function buildDocExport(payload) {
           typeof g.currentScore === "number" ? ` (${g.currentScore}/5)` : "";
         lines.push(`  - ${g.label || "Goal"}${score}`);
       });
-    }
+    if (raw) {
+      return JSON.parse(decodeURIComponent(raw));
+}
     lines.push("");
-  }
+  } catch (e) {
+    console.warn("Failed to parse dashboard data from URL", e);
+}
 
   if (healthScore) {
     lines.push(`Mid-project health (self-rated): ${healthScore}/5`);
@@ -264,7 +271,15 @@ function buildDocExport(payload) {
   if ((final.nextSteps || "").trim()) {
     lines.push("Next steps / follow-ups:");
     lines.push(final.nextSteps.trim());
-  }
+  // 2) Fallback: localStorage
+  try {
+    const stored = localStorage.getItem("metricMateDashboard");
+    if (stored) {
+      return JSON.parse(stored);
+    }
+  } catch (e) {
+    console.warn("Failed to load dashboard data from localStorage", e);
+}
 
   return lines.join("\n");
 }
@@ -275,6 +290,7 @@ function copyToClipboard(text) {
   } else {
     fallbackCopy(text);
   }
+  return null;
 }
 
 function fallbackCopy(text) {
@@ -292,6 +308,10 @@ function fallbackCopy(text) {
   }
   document.body.removeChild(textarea);
 }
+function renderDashboard(data) {
+  const emptyEl = document.getElementById("dashboardEmpty");
+  const contentEl = document.getElementById("dashboardContent");
+  if (!emptyEl || !contentEl) return;
 
 function initDashboard() {
   const payload = parsePayloadFromUrl();
@@ -299,16 +319,24 @@ function initDashboard() {
     renderError(
       "No project data found. Open this dashboard from the Final Review page so it can pass in all context."
     );
-    return;
-  }
+  if (!data || !data.project) {
+    emptyEl.style.display = "block";
+    contentEl.style.display = "none";
+return;
+}
 
   const kickoff = payload.kickoff || {};
   const midterm = payload.midterm || {};
   const final = payload.final || {};
+  emptyEl.style.display = "none";
+  contentEl.style.display = "grid";
 
   // --- Header meta ---
   const info = kickoff.info || {};
   const dir = kickoff.directory || {};
+  const project = data.project;
+  const final = data.final || {};
+  const summaryText = data.finalSummary || "";
 
   const projectName =
     final.projectName || info.projectName || info.name || "Untitled project";
@@ -354,7 +382,12 @@ function initDashboard() {
     if (roles.length) {
       metaEl.innerHTML += `<br><span class="subdued">${roles.join(" · ")}</span>`;
     }
-  }
+  // Header pill
+  const titleEl = document.getElementById("dashboardProjectTitle");
+  const metaEl = document.getElementById("dashboardProjectMeta");
+  if (titleEl) {
+    titleEl.textContent = project.name || "Untitled project";
+}
 
   const status = getHealthStatus(midterm, final);
   const chipsEl = $("statusChips");
@@ -367,7 +400,14 @@ function initDashboard() {
         Kickoff → Midterm → Final captured
       </span>
     `;
-  }
+  if (metaEl) {
+    const bits = [];
+    if (project.client) bits.push(project.client);
+    if (project.pm) bits.push(`PM: ${project.pm}`);
+    if (project.designer) bits.push(`Designer: ${project.designer}`);
+    if (project.dev) bits.push(`Dev: ${project.dev}`);
+    metaEl.textContent = bits.join(" • ");
+}
 
   // --- Main dashboard layout ---
   const root = $("app");
@@ -512,6 +552,35 @@ function initDashboard() {
       copyToClipboard(txt);
     });
   }
+  // Dates
+  const datesEl = document.getElementById("dashboardDates");
+  if (datesEl) {
+    const parts = [];
+    if (project.kickoffDate) parts.push(`Kickoff: ${project.kickoffDate}`);
+    if (project.finalReviewDate) parts.push(`Final review: ${project.finalReviewDate}`);
+    datesEl.textContent = parts.join("  •  ");
+  }
+
+  // Cards
+  const outcomesEl = document.getElementById("dashOutcomes");
+  const resultsEl = document.getElementById("dashResults");
+  const winsEl = document.getElementById("dashWins");
+  const challengesEl = document.getElementById("dashChallenges");
+  const learningsEl = document.getElementById("dashLearnings");
+  const nextStepsEl = document.getElementById("dashNextSteps");
+  const summaryEl = document.getElementById("dashSummaryText");
+
+  if (outcomesEl) outcomesEl.textContent = final.outcomes || "—";
+  if (resultsEl) resultsEl.textContent = final.results || "—";
+  if (winsEl) winsEl.textContent = final.wins || "—";
+  if (challengesEl) challengesEl.textContent = final.challenges || "—";
+  if (learningsEl) learningsEl.textContent = final.learnings || "—";
+  if (nextStepsEl) nextStepsEl.textContent = final.nextSteps || "—";
+  if (summaryEl) summaryEl.textContent = summaryText || "—";
 }
 
 document.addEventListener("DOMContentLoaded", initDashboard);
+document.addEventListener("DOMContentLoaded", () => {
+  const data = loadDashboardData();
+  renderDashboard(data);
+});
