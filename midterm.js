@@ -31,20 +31,20 @@ function getKickoffDataFromUrl() {
   try {
     // 1) Try URL ?data=...
     const params = new URLSearchParams(window.location.search);
-    const raw = params.get("data");
+    const raw = params.get('data');
     if (raw) {
       return JSON.parse(decodeURIComponent(raw));
     }
 
     // 2) Fallback: localStorage (saved by the kickoff survey)
-    const stored = localStorage.getItem("metricMateKickoff");
+    const stored = localStorage.getItem('metricMateKickoff');
     if (stored) {
       return JSON.parse(stored);
     }
 
     return null;
   } catch (err) {
-    console.error("Failed to load kickoff data", err);
+    console.error('Failed to load kickoff data', err);
     return null;
   }
 }
@@ -93,26 +93,6 @@ function showStatus(message) {
   }, 2500);
 }
 
-// Save a snapshot of the midterm review so the Final + Dashboard can use it
-function saveMidtermSnapshot(internalSummary) {
-  try {
-    const snapshot = {
-      info: { ...midterm.info },
-      healthScore: midterm.healthScore,
-      progressGood: midterm.progressGood,
-      progressOff: midterm.progressOff,
-      risks: midterm.risks,
-      decisions: midterm.decisions,
-      nextSteps: midterm.nextSteps,
-      internalSummary: internalSummary || buildInternalSummary()
-    };
-
-    localStorage.setItem("metricMateMidterm", JSON.stringify(snapshot));
-  } catch (e) {
-    console.warn("Failed to save midterm snapshot", e);
-  }
-}
-
 // ============================================================================
 // INIT
 // ============================================================================
@@ -122,38 +102,38 @@ function init() {
 
   if (kickoffData && kickoffData.info) {
     const info = kickoffData.info;
-    const dir = kickoffData.directory || {};
+    const dir  = kickoffData.directory || {};
 
     // Project name
     midterm.info.projectName =
       info.projectName || info.name || midterm.info.projectName;
 
     // Client
-    if (typeof info.clientId === "number" && Array.isArray(dir.clients)) {
-      midterm.info.client = dir.clients[info.clientId] || "";
+    if (typeof info.clientId === 'number' && Array.isArray(dir.clients)) {
+      midterm.info.client = dir.clients[info.clientId] || '';
     } else {
       midterm.info.client =
         info.client || info.clientName || midterm.info.client;
     }
 
     // PM
-    if (typeof info.pmId === "number" && Array.isArray(dir.pms)) {
-      midterm.info.pm = dir.pms[info.pmId] || "";
+    if (typeof info.pmId === 'number' && Array.isArray(dir.pms)) {
+      midterm.info.pm = dir.pms[info.pmId] || '';
     } else {
       midterm.info.pm = info.pm || info.pmName || midterm.info.pm;
     }
 
     // Designer
-    if (typeof info.designerId === "number" && Array.isArray(dir.designers)) {
-      midterm.info.designer = dir.designers[info.designerId] || "";
+    if (typeof info.designerId === 'number' && Array.isArray(dir.designers)) {
+      midterm.info.designer = dir.designers[info.designerId] || '';
     } else {
       midterm.info.designer =
         info.designer || info.designerName || midterm.info.designer;
     }
 
     // Dev
-    if (typeof info.devId === "number" && Array.isArray(dir.devs)) {
-      midterm.info.dev = dir.devs[info.devId] || "";
+    if (typeof info.devId === 'number' && Array.isArray(dir.devs)) {
+      midterm.info.dev = dir.devs[info.devId] || '';
     } else {
       midterm.info.dev = info.dev || info.devName || midterm.info.dev;
     }
@@ -163,7 +143,7 @@ function init() {
   if (prevBtn) prevBtn.addEventListener("click", goToPreviousStep);
   if (nextBtn) nextBtn.addEventListener("click", goToNextStep);
 
-  // 2) Form events
+  // 2) Form events (use the handlers that actually exist in this file)
   if (form) {
     form.addEventListener("submit", (e) => {
       e.preventDefault();
@@ -192,8 +172,6 @@ function goToNextStep() {
     updateProgressBar();
     window.scrollTo(0, 0);
   } else {
-    // Last step → ensure snapshot is saved, then show thank you
-    saveMidtermSnapshot();
     showThankYouPage();
   }
 }
@@ -233,6 +211,7 @@ function validateCurrentStep() {
 function renderStep(step) {
   if (!form) return;
 
+  // Clear previous
   form.innerHTML = "";
 
   let stepEl = document.createElement("section");
@@ -247,20 +226,21 @@ function renderStep(step) {
   } else if (step === 2) {
     stepEl.innerHTML = renderStep2();
   } else if (step === 3) {
+    // Build summaries first
     internalSummary = buildInternalSummary();
     clientSummary = buildClientSummary();
     stepEl.innerHTML = renderStep3(internalSummary, clientSummary);
-
-    // Save midterm snapshot once we have a full internal summary
-    saveMidtermSnapshot(internalSummary);
   }
 
+  // 👉 Append the step to the DOM BEFORE wiring event listeners
   form.appendChild(stepEl);
 
+  // 👉 NOW, after DOM insertion, attach button click listener
   if (step === 3) {
     setupSummaryActions(internalSummary, clientSummary);
   }
 
+  // Update nav button states
   if (prevBtn) prevBtn.disabled = step === 1;
   if (nextBtn)
     nextBtn.textContent = step === midterm.totalSteps ? "Finish" : "Next";
@@ -366,18 +346,6 @@ function renderStep2() {
 
 // STEP 3 – Summaries
 function renderStep3(internalSummary, clientSummary) {
-  // Build the calendar URL once, based on current midterm state.
-  let calendarUrl = "";
-  try {
-    calendarUrl = buildFinalReviewCalendarUrl();
-  } catch (e) {
-    console.warn("Failed to build final review calendar URL, using fallback", e);
-  }
-
-  if (!calendarUrl) {
-    calendarUrl = "https://calendar.google.com/calendar/render?action=TEMPLATE";
-  }
-
   return `
     <h2>Review & Share</h2>
     <p class="help-text">
@@ -412,53 +380,13 @@ function renderStep3(internalSummary, clientSummary) {
         Create a calendar event for your end-of-project / retrospective conversation.
       </p>
       <div class="form-actions">
-        <a
-          id="finalReviewCalendarLink"
-          href="${calendarUrl}"
-          target="_blank"
-          rel="noopener"
-          class="btn btn-primary"
-        >
-          <i class="fa-solid fa-calendar"></i>
+        <button type="button" id="createCalendarEventBtn" class="btn btn-primary">
+        <i class="fa-solid fa-calendar"></i>
           Add Final Review to Google Calendar
-        </a>
+        </button>
       </div>
     </section>
   `;
-}
-
-function buildFinalReviewCalendarUrl() {
-  const projectName = midterm.info.projectName || "Project";
-  const clientName = midterm.info.client || "Client";
-
-  // 21 days from today, 10–11am
-  const start = new Date();
-  start.setDate(start.getDate() + 21);
-  start.setHours(10, 0, 0, 0);
-  const end = new Date(start.getTime());
-  end.setHours(11);
-
-  const formatDate = (d) => {
-    const year = d.getFullYear();
-    const month = String(d.getMonth() + 1).padStart(2, "0");
-    const day = String(d.getDate()).padStart(2, "0");
-    const hours = String(d.getHours()).padStart(2, "0");
-    const mins = String(d.getMinutes()).padStart(2, "0");
-    const secs = String(d.getSeconds()).padStart(2, "0");
-    return `${year}${month}${day}T${hours}${mins}${secs}`;
-  };
-
-  const startStr = formatDate(start);
-  const endStr = formatDate(end);
-
-  const base = "https://calendar.google.com/calendar/render?action=TEMPLATE";
-  const params = new URLSearchParams({
-    text: `Final review: ${projectName} (${clientName})`,
-    details: buildInternalSummary(),
-    dates: `${startStr}/${endStr}`
-  });
-
-  return `${base}&${params.toString()}`;
 }
 
 // ============================================================================
@@ -551,11 +479,15 @@ function buildClientSummary() {
 }
 
 // ============================================================================
-// SUMMARY ACTIONS
+// SUMMARY ACTIONS + CALENDAR
+// ============================================================================
+// ============================================================================
+// SUMMARY ACTIONS + CALENDAR
 // ============================================================================
 function setupSummaryActions(internalSummary, clientSummary) {
   const internalBtn = document.getElementById("copyInternalSummary");
   const clientBtn = document.getElementById("copyClientSummary");
+  const calendarBtn = document.getElementById("createCalendarEventBtn");
 
   if (internalBtn) {
     internalBtn.addEventListener("click", () => {
@@ -570,6 +502,52 @@ function setupSummaryActions(internalSummary, clientSummary) {
       showStatus("✅ Client summary copied to clipboard");
     });
   }
+
+  if (calendarBtn) {
+    calendarBtn.addEventListener("click", () => {
+      // Small confirmation so we know the click is firing
+      showStatus("📅 Opening Google Calendar...");
+
+      const url = buildFinalReviewCalendarUrl();
+
+      // Use same-tab navigation to avoid popup blockers
+      window.location.href = url;
+    });
+  }
+}
+
+function buildFinalReviewCalendarUrl() {
+  const projectName = midterm.info.projectName || "Project";
+  const clientName = midterm.info.client || "Client";
+
+  // 21 days from today, 10–11am
+  const start = new Date();
+  start.setDate(start.getDate() + 21);
+  start.setHours(10, 0, 0, 0);
+  const end = new Date(start.getTime());
+  end.setHours(11);
+
+  const formatDate = (d) => {
+    const year = d.getFullYear();
+    const month = String(d.getMonth() + 1).padStart(2, "0");
+    const day = String(d.getDate()).padStart(2, "0");
+    const hours = String(d.getHours()).padStart(2, "0");
+    const mins = String(d.getMinutes()).padStart(2, "0");
+    const secs = String(d.getSeconds()).padStart(2, "0");
+    return `${year}${month}${day}T${hours}${mins}${secs}`;
+  };
+
+  const base = "https://calendar.google.com/calendar/render?action=TEMPLATE";
+  const params = new URLSearchParams({
+    text: `Final review: ${projectName} (${clientName})`,
+    details: `${buildInternalSummary()}
+
+Final review form:
+https://lisapancakes.github.io/metric-mate/final.html`,
+    dates: `${formatDate(start)}/${formatDate(end)}`
+  });
+
+  return `${base}&${params.toString()}`;
 }
 
 // ============================================================================
@@ -627,34 +605,36 @@ function handleInput(e) {
   }
 }
 
+function saveMidtermForDashboard() {
+  try {
+    const exportObj = {
+      info: { ...midterm.info },
+      healthScore: midterm.healthScore,
+      progressGood: midterm.progressGood,
+      progressOff: midterm.progressOff,
+      risks: midterm.risks,
+      decisions: midterm.decisions,
+      nextSteps: midterm.nextSteps
+    };
+    localStorage.setItem("metricMateMidterm", JSON.stringify(exportObj));
+  } catch (e) {
+    console.warn("Failed to save midterm data for dashboard", e);
+  }
+}
+
 // ============================================================================
 // THANK YOU PAGE
 // ============================================================================
 function showThankYouPage() {
+  // Save state so the Final + Dashboard can read it
+  saveMidtermForDashboard();
+
   if (form) form.style.display = "none";
   if (prevBtn) prevBtn.style.display = "none";
   if (nextBtn) nextBtn.style.display = "none";
 
   const app = document.getElementById("app");
   if (!app) return;
-
-  // Ensure snapshot exists
-  saveMidtermSnapshot();
-
-  let calendarUrl = "";
-  try {
-    calendarUrl = buildFinalReviewCalendarUrl();
-  } catch (e) {
-    console.warn(
-      "Failed to build final review calendar URL on thank-you page, using fallback",
-      e
-    );
-  }
-
-  if (!calendarUrl) {
-    calendarUrl =
-      "https://calendar.google.com/calendar/render?action=TEMPLATE";
-  }
 
   const thankYou = document.createElement("section");
   thankYou.className = "step thank-you active";
@@ -670,16 +650,10 @@ function showThankYouPage() {
       <strong>final review calendar event</strong> so this reflection doesn’t get lost:
     </p>
     <div class="form-actions" style="margin-top: 1.5rem;">
-      <a
-        id="finalReviewCalendarLinkThankYou"
-        class="btn btn-primary"
-        target="_blank"
-        rel="noopener"
-        href="${calendarUrl}"
-      >
+      <button type="button" id="createCalendarEventBtnThankYou" class="btn btn-primary">
         <i class="fa-solid fa-calendar"></i>
         Save Final Review to Google Calendar
-      </a>
+      </button>
     </div>
   `;
 
@@ -689,9 +663,17 @@ function showThankYouPage() {
   } else {
     app.appendChild(thankYou);
   }
+
+  const btn = document.getElementById("createCalendarEventBtnThankYou");
+  if (btn) {
+    btn.addEventListener("click", () => {
+      const url = buildFinalReviewCalendarUrl();
+      window.open(url, "_blank");
+    });
+  }
 }
 
 // ============================================================================
 // BOOTSTRAP
 // ============================================================================
-document.addEventListener("DOMContentLoaded", init);
+document.addEventListener('DOMContentLoaded', init);
