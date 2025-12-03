@@ -4,72 +4,80 @@
   <meta charset="UTF-8" />
   <title>Metric Mate – Project Dashboard</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <!-- Re-use Metric Mate styles + Inter + buttons etc. -->
   <link rel="stylesheet" href="styles.css" />
 </head>
-
 <body class="mm-dashboard">
   <div class="dashboard-page">
     <header class="dashboard-header">
       <h1>Project Dashboard</h1>
 
-      <!-- TITLE -->
-      <div id="dashboardProjectTitle" class="dashboard-title-pill"></div>
-
-      <!-- META -->
-      <div id="dashboardProjectMeta" class="dashboard-meta"></div>
-
-      <!-- DATES -->
-      <div id="dashboardDates" class="dashboard-dates"></div>
+      <!-- Project pill -->
+      <div class="dashboard-pill">
+        <div id="dashboardProjectTitle" class="dashboard-project-title">
+          <!-- filled by JS -->
+        </div>
+        <div id="dashboardProjectMeta" class="dashboard-project-meta">
+          <!-- filled by JS -->
+        </div>
+        <div id="dashboardDates" class="dashboard-project-dates">
+          <!-- filled by JS -->
+        </div>
+      </div>
     </header>
 
-    <!-- EMPTY STATE -->
-    <section id="dashboardEmpty" class="empty-state" style="display:none;">
-      <p>No project data found.<br><br>
-      Please open the dashboard from the Final Review page so all context is passed in.</p>
-    </section>
+    <main class="dashboard-main">
+      <!-- Empty state -->
+      <section id="dashboardEmpty" class="dashboard-empty">
+        <p class="dashboard-empty-title">No project data found.</p>
+        <p class="dashboard-empty-body">
+          Open this dashboard from the Final Project Review page so it can pass in all context.
+        </p>
+      </section>
 
-    <!-- DASHBOARD CONTENT (hidden until data loads) -->
-    <main id="dashboardContent" class="dashboard-grid" style="display:none;">
-      
-      <div class="dash-card">
-        <h3>What we shipped</h3>
-        <p id="dashOutcomes" class="dash-text"></p>
-      </div>
+      <!-- Main dashboard content -->
+      <section
+        id="dashboardContent"
+        class="dashboard-grid"
+        style="display:none;"
+      >
+        <article class="dashboard-card">
+          <h2>What we shipped</h2>
+          <p id="dashOutcomes"></p>
+        </article>
 
-      <div class="dash-card">
-        <h3>Results & Impact</h3>
-        <p id="dashResults" class="dash-text"></p>
-      </div>
+        <article class="dashboard-card">
+          <h2>Results &amp; Impact</h2>
+          <p id="dashResults"></p>
+        </article>
 
-      <div class="dash-card">
-        <h3>Biggest Wins</h3>
-        <p id="dashWins" class="dash-text"></p>
-      </div>
+        <article class="dashboard-card">
+          <h2>Biggest Wins</h2>
+          <p id="dashWins"></p>
+        </article>
 
-      <div class="dash-card">
-        <h3>Challenges</h3>
-        <p id="dashChallenges" class="dash-text"></p>
-      </div>
+        <article class="dashboard-card">
+          <h2>Challenges</h2>
+          <p id="dashChallenges"></p>
+        </article>
 
-      <div class="dash-card">
-        <h3>Key Learnings</h3>
-        <p id="dashLearnings" class="dash-text"></p>
-      </div>
+        <article class="dashboard-card">
+          <h2>Key Learnings</h2>
+          <p id="dashLearnings"></p>
+        </article>
 
-      <div class="dash-card">
-        <h3>Next Steps</h3>
-        <p id="dashNextSteps" class="dash-text"></p>
-      </div>
+        <article class="dashboard-card">
+          <h2>Next Steps</h2>
+          <p id="dashNextSteps"></p>
+        </article>
 
-      <div class="dash-card dash-summary-full">
-        <h3>Full Final Summary</h3>
-        <pre id="dashSummaryText" class="dash-summary"></pre>
-      </div>
-
+        <article class="dashboard-card dashboard-card-full">
+          <h2>Full Final Summary</h2>
+          <pre id="dashSummaryText" class="dashboard-summary-text"></pre>
+        </article>
+      </section>
     </main>
-
-    <section id="errorPanel" class="error-box" style="display:none;"></section>
-
   </div>
 
   <script src="dashboard.js"></script>
