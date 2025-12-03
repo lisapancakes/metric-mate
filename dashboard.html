@@ -6,17 +6,70 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <link rel="stylesheet" href="styles.css" />
 </head>
+
 <body class="mm-dashboard">
   <div class="dashboard-page">
     <header class="dashboard-header">
       <h1>Project Dashboard</h1>
-      <div class="meta" id="projectMeta"></div>
-      <div class="chip-row" id="statusChips"></div>
+
+      <!-- TITLE -->
+      <div id="dashboardProjectTitle" class="dashboard-title-pill"></div>
+
+      <!-- META -->
+      <div id="dashboardProjectMeta" class="dashboard-meta"></div>
+
+      <!-- DATES -->
+      <div id="dashboardDates" class="dashboard-dates"></div>
     </header>
 
-    <main id="app"></main>
+    <!-- EMPTY STATE -->
+    <section id="dashboardEmpty" class="empty-state" style="display:none;">
+      <p>No project data found.<br><br>
+      Please open the dashboard from the Final Review page so all context is passed in.</p>
+    </section>
+
+    <!-- DASHBOARD CONTENT (hidden until data loads) -->
+    <main id="dashboardContent" class="dashboard-grid" style="display:none;">
+      
+      <div class="dash-card">
+        <h3>What we shipped</h3>
+        <p id="dashOutcomes" class="dash-text"></p>
+      </div>
+
+      <div class="dash-card">
+        <h3>Results & Impact</h3>
+        <p id="dashResults" class="dash-text"></p>
+      </div>
+
+      <div class="dash-card">
+        <h3>Biggest Wins</h3>
+        <p id="dashWins" class="dash-text"></p>
+      </div>
+
+      <div class="dash-card">
+        <h3>Challenges</h3>
+        <p id="dashChallenges" class="dash-text"></p>
+      </div>
+
+      <div class="dash-card">
+        <h3>Key Learnings</h3>
+        <p id="dashLearnings" class="dash-text"></p>
+      </div>
+
+      <div class="dash-card">
+        <h3>Next Steps</h3>
+        <p id="dashNextSteps" class="dash-text"></p>
+      </div>
+
+      <div class="dash-card dash-summary-full">
+        <h3>Full Final Summary</h3>
+        <pre id="dashSummaryText" class="dash-summary"></pre>
+      </div>
+
+    </main>
 
     <section id="errorPanel" class="error-box" style="display:none;"></section>
+
   </div>
 
   <script src="dashboard.js"></script>
