@@ -16,6 +16,8 @@ const finalState = {
   nextSteps: ""
 };
 
+let hydratedFromKickoff = false;
+
 function $(id) {
   return document.getElementById(id);
 }
@@ -44,72 +46,12 @@ function getKickoffDataFromUrl() {
 }
 
 function initFinal() {
-  // 0) Hydrate from kickoff data (URL or localStorage)
-  const kickoffData = getKickoffDataFromUrl();
-
-  if (kickoffData && kickoffData.info) {
-    const info = kickoffData.info;
-    const dir  = kickoffData.directory || {};
-
-    // Project name
-    finalState.projectName =
-      info.projectName || info.name || finalState.projectName;
-
-    // Client
-    if (typeof info.clientId === "number" && Array.isArray(dir.clients)) {
-      finalState.client = dir.clients[info.clientId] || "";
-    } else {
-      finalState.client =
-        info.client || info.clientName || finalState.client;
-    }
-
-    // PM
-    if (typeof info.pmId === "number" && Array.isArray(dir.pms)) {
-      finalState.pm = dir.pms[info.pmId] || "";
-    } else {
-      finalState.pm = info.pm || info.pmName || finalState.pm;
-    }
-
-    // Designer
-    if (typeof info.designerId === "number" && Array.isArray(dir.designers)) {
-      finalState.designer = dir.designers[info.designerId] || "";
-    } else {
-      finalState.designer =
-        info.designer || info.designerName || finalState.designer;
-    }
-
-    // Dev
-    if (typeof info.devId === "number" && Array.isArray(dir.devs)) {
-      finalState.dev = dir.devs[info.devId] || "";
-    } else {
-      finalState.dev = info.dev || info.devName || finalState.dev;
-    }
-  }
-
   const form = $("finalForm");
   const copyBtn = $("copyFinalSummaryBtn");
 
   if (!form) return;
 
-  // Prefill visible inputs from hydrated state
-  const fieldMap = {
-    projectName: "projectName",
-    client: "client",
-    pm: "pm",
-    designer: "designer",
-    dev: "dev",
-    date: "date"
-  };
-
-  Object.entries(fieldMap).forEach(([id, stateKey]) => {
-    const input = $(id);
-    if (input && finalState[stateKey]) {
-      input.value = finalState[stateKey];
-    }
-  });
-
   form.addEventListener("input", handleInput);
-  updateSummary();
 
   if (copyBtn) {
     copyBtn.addEventListener("click", () => {
@@ -118,6 +60,69 @@ function initFinal() {
       showStatus("✅ Final summary copied to clipboard");
     });
   }
+
+  // First render (this will also hydrate from kickoff + prefill inputs)
+  updateSummary();
+}
+
+function hydrateFromKickoffOnce() {
+  if (hydratedFromKickoff) return;
+
+  const kickoffData = getKickoffDataFromUrl();
+  if (!kickoffData || !kickoffData.info) {
+    hydratedFromKickoff = true;
+    return;
+  }
+
+  const info = kickoffData.info;
+  const dir  = kickoffData.directory || {};
+
+  // Project name
+  finalState.projectName =
+    info.projectName || info.name || finalState.projectName;
+
+  // Client
+  if (typeof info.clientId === "number" && Array.isArray(dir.clients)) {
+    finalState.client = dir.clients[info.clientId] || "";
+  } else {
+    finalState.client =
+      info.client || info.clientName || finalState.client;
+  }
+
+  // PM
+  if (typeof info.pmId === "number" && Array.isArray(dir.pms)) {
+    finalState.pm = dir.pms[info.pmId] || "";
+  } else {
+    finalState.pm = info.pm || info.pmName || finalState.pm;
+  }
+
+  // Designer
+  if (typeof info.designerId === "number" && Array.isArray(dir.designers)) {
+    finalState.designer = dir.designers[info.designerId] || "";
+  } else {
+    finalState.designer =
+      info.designer || info.designerName || finalState.designer;
+  }
+
+  // Dev
+  if (typeof info.devId === "number" && Array.isArray(dir.devs)) {
+    finalState.dev = dir.devs[info.devId] || "";
+  } else {
+    finalState.dev = info.dev || info.devName || finalState.dev;
+  }
+
+  hydratedFromKickoff = true;
+
+  // Prefill visible inputs, but don't overwrite anything the user already typed
+  const fieldIds = ["projectName", "client", "pm", "designer", "dev", "date"];
+
+  fieldIds.forEach((id) => {
+    const input = $(id);
+    const key = id; // keys in finalState match these IDs
+    if (input && !input.value && finalState[key]) {
+      input.value = finalState[key];
+    }
+  });
 }
 
 function handleInput(e) {
@@ -169,6 +174,9 @@ function handleInput(e) {
 function updateSummary() {
   const summaryEl = $("finalSummary");
   if (!summaryEl) return;
+
+  // Make sure we’ve pulled in kickoff data and prefilled inputs once
+  hydrateFromKickoffOnce();
 
   const s = finalState;
   let lines = [];
