@@ -408,7 +408,7 @@ function renderStep3(internalSummary, clientSummary) {
 
 function buildFinalReviewCalendarUrl() {
   const projectName = midterm.info.projectName || "Project";
-  const clientName = midterm.info.client || "Client";
+  const clientName  = midterm.info.client || "Client";
 
   // 21 days from today, 10–11am
   const start = new Date();
@@ -418,22 +418,20 @@ function buildFinalReviewCalendarUrl() {
   end.setHours(11);
 
   const formatDate = (d) => {
-    const year = d.getFullYear();
+    const year  = d.getFullYear();
     const month = String(d.getMonth() + 1).padStart(2, "0");
-    const day = String(d.getDate()).padStart(2, "0");
+    const day   = String(d.getDate()).padStart(2, "0");
     const hours = String(d.getHours()).padStart(2, "0");
-    const mins = String(d.getMinutes()).padStart(2, "0");
-    const secs = String(d.getSeconds()).padStart(2, "0");
+    const mins  = String(d.getMinutes()).padStart(2, "0");
+    const secs  = String(d.getSeconds()).padStart(2, "0");
     return `${year}${month}${day}T${hours}${mins}${secs}`;
   };
 
   const startStr = formatDate(start);
-  const endStr = formatDate(end);
+  const endStr   = formatDate(end);
 
-  // 👇 Append the final survey link into the event details
   const internalSummary = buildInternalSummary();
-  const finalSurveyLink =
-    "https://lisapancakes.github.io/metric-mate/final.html";
+  const finalSurveyLink = "https://lisapancakes.github.io/metric-mate/final.html";
 
   const details = `${internalSummary}
 
@@ -444,7 +442,7 @@ ${finalSurveyLink}`;
   const params = new URLSearchParams({
     text: `Final review: ${projectName} (${clientName})`,
     details,
-    dates: `${startStr}/${endStr}`
+    dates: `${startStr}/${endStr}`,
   });
 
   return `${base}&${params.toString()}`;
