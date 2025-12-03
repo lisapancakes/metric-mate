@@ -1,237 +1,396 @@
-// ===============================
-// Metric Mate – Final Review
-// CLEAN + WORKING VERSION
-// ===============================
+// Metric Mate - Final Review
+// Generates a reusable final summary as the user types
+// and passes data to the dashboard.
 
-// -------------------------------
+// ---------------------------------------------------------------------------
 // STATE
-// -------------------------------
+// ---------------------------------------------------------------------------
 const finalState = {
-  projectName: "",
-  client: "",
-  pm: "",
-  designer: "",
-  dev: "",
-  date: "",
-  outcomes: "",
-  results: "",
-  wins: "",
-  challenges: "",
-  learnings: "",
-  nextSteps: ""
+projectName: "",
+client: "",
+pm: "",
+designer: "",
+dev: "",
+date: "",
+outcomes: "",
+results: "",
+wins: "",
+challenges: "",
+learnings: "",
+nextSteps: ""
 };
 
+let kickoffCache = null;
+
 function $(id) {
-  return document.getElementById(id);
+return document.getElementById(id);
 }
 
-// -------------------------------
-// LOAD KICKOFF + MIDTERM
-// -------------------------------
-function loadKickoffData() {
-  try {
-    const stored = localStorage.getItem("metricMateKickoff");
-    if (stored) return JSON.parse(stored);
-  } catch (e) {}
-  return null;
+// ---------------------------------------------------------------------------
+// KICKOFF DATA HELPERS
+// ---------------------------------------------------------------------------
+function getKickoffDataFromUrl() {
+try {
+const params = new URLSearchParams(window.location.search);
+const raw = params.get("data");
+if (raw) {
+return JSON.parse(decodeURIComponent(raw));
 }
 
-function loadMidtermData() {
-  try {
-    const stored = localStorage.getItem("metricMateMidterm");
-    if (stored) return JSON.parse(stored);
-  } catch (e) {}
-  return null;
+const stored = localStorage.getItem("metricMateKickoff");
+if (stored) {
+return JSON.parse(stored);
 }
 
-// -------------------------------
+return null;
+} catch (err) {
+console.error("Failed to load kickoff data", err);
+return null;
+}
+}
+
+function getKickoffContext() {
+if (kickoffCache !== null) return kickoffCache;
+kickoffCache = getKickoffDataFromUrl() || {};
+return kickoffCache;
+}
+
+// Prefill finalState + inputs from kickoff if available
+function hydrateFromKickoff() {
+const kickoff = getKickoffContext();
+if (!kickoff || !kickoff.info) return;
+
+const info = kickoff.info;
+const dir = kickoff.directory || {};
+
+const mapPerson = (idProp, listKey, fallbackProp) => {
+if (typeof info[idProp] === "number" && Array.isArray(dir[listKey])) {
+return dir[listKey][info[idProp]] || "";
+}
+return info[fallbackProp] || "";
+};
+
+// Only fill if finalState is still empty
+if (!finalState.projectName) {
+finalState.projectName = info.projectName || info.name || "";
+}
+if (!finalState.client) {
+finalState.client =
+mapPerson("clientId", "clients", "client") ||
+info.clientName ||
+"";
+}
+if (!finalState.pm) {
+finalState.pm =
+mapPerson("pmId", "pms", "pm") ||
+info.pmName ||
+"";
+}
+if (!finalState.designer) {
+finalState.designer =
+mapPerson("designerId", "designers", "designer") ||
+info.designerName ||
+"";
+}
+if (!finalState.dev) {
+finalState.dev =
+mapPerson("devId", "devs", "dev") ||
+info.devName ||
+"";
+}
+
+// Push into inputs if they exist
+const projectNameEl = $("projectName");
+const clientEl = $("client");
+const pmEl = $("pm");
+const designerEl = $("designer");
+const devEl = $("dev");
+
+if (projectNameEl && !projectNameEl.value) projectNameEl.value = finalState.projectName;
+if (clientEl && !clientEl.value) clientEl.value = finalState.client;
+if (pmEl && !pmEl.value) pmEl.value = finalState.pm;
+if (designerEl && !designerEl.value) designerEl.value = finalState.designer;
+if (devEl && !devEl.value) devEl.value = finalState.dev;
+}
+
+// ---------------------------------------------------------------------------
 // INIT
-// -------------------------------
+// ---------------------------------------------------------------------------
 function initFinal() {
-  const form = $("finalForm");
-  const copyBtn = $("copyFinalSummaryBtn");
+const form = $("finalForm");
+const copyBtn = $("copyFinalSummaryBtn");
 
-  hydrateForm();
+hydrateFromKickoff();
 
-  if (form) form.addEventListener("input", handleInput);
-
-  updateSummary();
-
-  if (copyBtn) {
-    copyBtn.addEventListener("click", () => {
-      copyToClipboard($("finalSummary").value);
-      showStatus("✅ Final summary copied");
-    });
-  }
+if (form) {
+form.addEventListener("input", handleInput);
 }
 
-// -------------------------------
-// HYDRATE FROM KICKOFF + MIDTERM
-// -------------------------------
-function hydrateFormFromKickoffMidterm() {
-  const kickoff = loadKickoffData();
-  const midterm = loadMidtermData();
+// Initial summary + dashboard link
+updateSummary();
 
-  // Kickoff data (simple text fields)
-  if (kickoff && kickoff.info) {
-    finalState.projectName = kickoff.info.name || "";
-    finalState.client      = kickoff.info.client || "";
-    finalState.pm          = kickoff.info.pm || "";
-    finalState.designer    = kickoff.info.designer || "";
-    finalState.dev         = kickoff.info.dev || "";
-  }
-
-  // Midterm fallback for review date
-  if (midterm && midterm.info) {
-    finalState.date = midterm.info.date || "";
-  }
-
-  // Fill UI
-  $("projectName").value = finalState.projectName;
-  $("client").value      = finalState.client;
-  $("pm").value          = finalState.pm;
-  $("designer").value    = finalState.designer;
-  $("dev").value         = finalState.dev;
-  $("date").value        = finalState.date;
+if (copyBtn) {
+copyBtn.addEventListener("click", () => {
+const summary = $("finalSummary").value;
+copyToClipboard(summary);
+showStatus("✅ Final summary copied to clipboard");
+});
+}
 }
 
-// -------------------------------
-// INPUT HANDLER
-// -------------------------------
+// ---------------------------------------------------------------------------
+// INPUT + SUMMARY
+// ---------------------------------------------------------------------------
 function handleInput(e) {
-  const id = e.target.id;
-  if (finalState.hasOwnProperty(id)) {
-    finalState[id] = e.target.value;
-  }
-  updateSummary();
+const t = e.target;
+const val = t.value;
+
+switch (t.id) {
+case "projectName":
+finalState.projectName = val;
+break;
+case "client":
+finalState.client = val;
+break;
+case "pm":
+finalState.pm = val;
+break;
+case "designer":
+finalState.designer = val;
+break;
+case "dev":
+finalState.dev = val;
+break;
+case "date":
+finalState.date = val;
+break;
+case "outcomes":
+finalState.outcomes = val;
+break;
+case "results":
+finalState.results = val;
+break;
+case "wins":
+finalState.wins = val;
+break;
+case "challenges":
+finalState.challenges = val;
+break;
+case "learnings":
+finalState.learnings = val;
+break;
+case "nextSteps":
+finalState.nextSteps = val;
+break;
 }
 
-// -------------------------------
-// SUMMARY + DASHBOARD LINK
-// -------------------------------
-function updateSummary() {
-  const summaryEl = $("finalSummary");
-  if (!summaryEl) return;
-
-  const summary = buildFinalSummary();
-  summaryEl.value = summary;
-
-  saveFinalToStorage(summary);
-  updateDashboardLink(summary);
+updateSummary();
 }
 
 function buildFinalSummary() {
-  const s = finalState;
-  let out = [];
+const s = finalState;
+let lines = [];
 
-  out.push("FINAL PROJECT REVIEW — INTERNAL");
-  out.push("--------------------------------");
-  out.push(`Project: ${s.projectName || "Untitled project"}`);
-  if (s.client) out.push(`Client: ${s.client}`);
-  if (s.pm) out.push(`PM: ${s.pm}`);
-  if (s.designer) out.push(`Product Designer: ${s.designer}`);
-  if (s.dev) out.push(`Lead Developer: ${s.dev}`);
-  if (s.date) out.push(`Final review date: ${s.date}`);
-  out.push("");
+lines.push("FINAL PROJECT REVIEW — INTERNAL");
+lines.push("--------------------------------");
+lines.push(`Project: ${s.projectName || "Untitled project"}`);
+if (s.client) lines.push(`Client: ${s.client}`);
+if (s.pm) lines.push(`PM: ${s.pm}`);
+if (s.designer) lines.push(`Product Designer: ${s.designer}`);
+if (s.dev) lines.push(`Lead Developer: ${s.dev}`);
+if (s.date) lines.push(`Final review date: ${s.date}`);
+lines.push("");
 
-  if (s.outcomes.trim()) {
-    out.push("What we shipped:"); 
-    out.push(s.outcomes.trim(), "");
-  }
-  if (s.results.trim()) {
-    out.push("Results / impact:");
-    out.push(s.results.trim(), "");
-  }
-  if (s.wins.trim()) {
-    out.push("Biggest wins:");
-    out.push(s.wins.trim(), "");
-  }
-  if (s.challenges.trim()) {
-    out.push("Challenges / misses:");
-    out.push(s.challenges.trim(), "");
-  }
-  if (s.learnings.trim()) {
-    out.push("Key learnings:");
-    out.push(s.learnings.trim(), "");
-  }
-  if (s.nextSteps.trim()) {
-    out.push("Next steps / follow-ups:");
-    out.push(s.nextSteps.trim());
-  }
-
-  return out.join("\n");
+if (s.outcomes.trim()) {
+lines.push("What we shipped:");
+lines.push(s.outcomes.trim());
+lines.push("");
 }
 
-// -------------------------------
-// DASHBOARD LINK + STORAGE
-// -------------------------------
-function saveFinalToStorage(summaryText) {
-  const kickoff = loadKickoffData();
+if (s.results.trim()) {
+lines.push("Results / impact:");
+lines.push(s.results.trim());
+lines.push("");
+}
 
-  const payload = {
+if (s.wins.trim()) {
+lines.push("Biggest wins:");
+lines.push(s.wins.trim());
+lines.push("");
+}
+
+if (s.challenges.trim()) {
+lines.push("Challenges / misses:");
+lines.push(s.challenges.trim());
+lines.push("");
+}
+
+if (s.learnings.trim()) {
+lines.push("Key learnings:");
+lines.push(s.learnings.trim());
+lines.push("");
+}
+
+if (s.nextSteps.trim()) {
+lines.push("Next steps / follow-ups:");
+lines.push(s.nextSteps.trim());
+}
+
+return lines.join("\n");
+}
+
+function buildDashboardPayload() {
+  return {
     project: {
       name: finalState.projectName,
       client: finalState.client,
       pm: finalState.pm,
       designer: finalState.designer,
       dev: finalState.dev,
-      kickoffDate: kickoff?.info?.date || "",
-      finalReviewDate: finalState.date
+      kickoffDate: finalState.kickoffDate || "", 
+      finalReviewDate: finalState.date || ""
     },
-    final: { ...finalState },
-    finalSummary: summaryText
+    final: {
+      outcomes: finalState.outcomes,
+      results: finalState.results,
+      wins: finalState.wins,
+      challenges: finalState.challenges,
+      learnings: finalState.learnings,
+      nextSteps: finalState.nextSteps
+    },
+    finalSummary: $("finalSummary").value
   };
+}
 
-  localStorage.setItem("metricMateFinal", JSON.stringify(payload));
-  localStorage.setItem("metricMateDashboard", JSON.stringify(payload));
+function updateSummary() {
+const summaryEl = $("finalSummary");
+if (!summaryEl) return;
+
+  // Build summary text
+const summaryText = buildFinalSummary();
+summaryEl.value = summaryText;
+
+  // Persist + update dashboard link
+  updateDashboardLink(summaryText);
+  // ---- Dashboard Linking Logic ----
+  const dashBtn = document.getElementById("viewDashboardBtn");
+  if (dashBtn) {
+    // Build dashboard payload
+    const payload = {
+      project: {
+        name: finalState.projectName || "",
+        client: finalState.client || "",
+        pm: finalState.pm || "",
+        designer: finalState.designer || "",
+        dev: finalState.dev || "",
+        kickoffDate: finalState.kickoffDate || "",     // will be empty if not stored
+        finalReviewDate: finalState.date || ""
+      },
+      final: {
+        outcomes: finalState.outcomes || "",
+        results: finalState.results || "",
+        wins: finalState.wins || "",
+        challenges: finalState.challenges || "",
+        learnings: finalState.learnings || "",
+        nextSteps: finalState.nextSteps || ""
+      },
+      finalSummary: summaryText
+    };
+
+    // Encode for URL
+    const encoded = encodeURIComponent(JSON.stringify(payload));
+
+    // Update dashboard link
+    dashBtn.href = `dashboard.html?data=${encoded}`;
+
+    // Also persist for fallback
+    localStorage.setItem("metricMateDashboard", JSON.stringify(payload));
+  }
+}
+
+// ---------------------------------------------------------------------------
+// DASHBOARD PAYLOAD + LINK
+// ---------------------------------------------------------------------------
+function buildDashboardPayload(summaryText) {
+const kickoff = getKickoffContext();
+const info = kickoff.info || {};
+
+const project = {
+name: finalState.projectName || info.projectName || info.name || "",
+client: finalState.client || info.client || info.clientName || "",
+pm: finalState.pm || info.pm || info.pmName || "",
+designer: finalState.designer || info.designer || info.designerName || "",
+dev: finalState.dev || info.dev || info.devName || "",
+kickoffDate: info.date || info.kickoffDate || "",
+finalReviewDate: finalState.date || ""
+};
+
+return {
+project,
+kickoff,
+final: { ...finalState },
+finalSummary: summaryText || ""
+};
 }
 
 function updateDashboardLink(summaryText) {
-  const link = $("openDashboardBtn");
-  if (!link) return;
+const link = $("dashboardLink");
+if (!link) return;
 
-  const kickoff = loadKickoffData();
-  const midterm = loadMidtermData();
-  const final = JSON.parse(localStorage.getItem("metricMateFinal") || "{}");
+try {
+const payload = buildDashboardPayload(summaryText);
+const encoded = encodeURIComponent(JSON.stringify(payload));
+link.href = `dashboard.html?data=${encoded}`;
 
-  const payload = {
-    kickoff,
-    midterm,
-    final,
-    project: final.project,
-    finalSummary: summaryText
-  };
-
-  const encoded = encodeURIComponent(JSON.stringify(payload));
-  link.href = `dashboard.html?data=${encoded}`;
+// Also drop into localStorage as a backup
+localStorage.setItem("metricMateDashboard", JSON.stringify(payload));
+} catch (err) {
+console.error("Failed to update dashboard link", err);
+}
 }
 
-// -------------------------------
-// HELPERS
-// -------------------------------
+// ---------------------------------------------------------------------------
+// SHARED HELPERS
+// ---------------------------------------------------------------------------
 function copyToClipboard(text) {
-  navigator.clipboard?.writeText(text).catch(() => {
-    const ta = document.createElement("textarea");
-    ta.value = text;
-    document.body.appendChild(ta);
-    ta.select();
-    document.execCommand("copy");
-    ta.remove();
-  });
+if (navigator.clipboard && window.isSecureContext) {
+navigator.clipboard.writeText(text).catch(() => fallbackCopy(text));
+} else {
+fallbackCopy(text);
+}
 }
 
-function showStatus(msg) {
-  let el = $("copyStatus");
-  if (!el) {
-    el = document.createElement("div");
-    el.id = "copyStatus";
-    el.className = "status-message";
-    document.body.appendChild(el);
-  }
-  el.textContent = msg;
-  el.style.display = "block";
-  setTimeout(() => (el.style.display = "none"), 2200);
+function fallbackCopy(text) {
+const textarea = document.createElement("textarea");
+textarea.value = text;
+textarea.style.position = "fixed";
+textarea.style.top = "-9999px";
+document.body.appendChild(textarea);
+textarea.focus();
+textarea.select();
+try {
+document.execCommand("copy");
+} catch (err) {
+console.error("Copy failed", err);
+}
+document.body.removeChild(textarea);
 }
 
-// -------------------------------
+function showStatus(message) {
+let statusEl = document.getElementById("copyStatus");
+if (!statusEl) {
+statusEl = document.createElement("div");
+statusEl.id = "copyStatus";
+statusEl.className = "status-message";
+statusEl.style.display = "none";
+document.body.appendChild(statusEl);
+}
+
+statusEl.textContent = message;
+statusEl.style.display = "block";
+setTimeout(() => {
+statusEl.style.display = "none";
+}, 2500);
+}
+
 document.addEventListener("DOMContentLoaded", initFinal);
