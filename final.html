@@ -26,7 +26,8 @@
 
     <main class="app-main">
       <form id="finalForm" class="form">
-        <section class="step" id="final-step-1">
+        <!-- Make this section visible -->
+        <section class="step active" id="final-step-1">
           <h2>1. Project snapshot</h2>
 
           <div class="form-group">
@@ -64,7 +65,8 @@
           </div>
         </section>
 
-        <section class="step" id="final-step-2">
+        <!-- Also visible -->
+        <section class="step active" id="final-step-2">
           <h2>2. Outcomes & learnings</h2>
 
           <div class="form-group">
@@ -131,26 +133,29 @@
 
           <textarea id="finalSummary" rows="14" readonly></textarea>
 
-          <div class="form-actions" style="margin-top: 1.25rem; display: flex; gap: 0.75rem;">
-  <button
-    type="button"
-    id="copyFinalSummaryBtn"
-    class="btn btn-secondary"
-  >
-    <i class="fa-regular fa-copy"></i>
-    Copy Summary
-  </button>
+          <div
+            class="form-actions"
+            style="margin-top: 1.25rem; display: flex; gap: 0.75rem;"
+          >
+            <button
+              type="button"
+              id="copyFinalSummaryBtn"
+              class="btn btn-secondary"
+            >
+              <i class="fa-regular fa-copy"></i>
+              Copy Summary
+            </button>
 
-  <a
-    href="dashboard.html"
-    target="_blank"
-    class="btn btn-primary"
-    style="text-decoration: none;"
-  >
-    <i class="fa-solid fa-chart-line"></i>
-    View Dashboard
-  </a>
-</div>
+            <a
+              href="dashboard.html"
+              target="_blank"
+              class="btn btn-primary"
+              style="text-decoration: none;"
+            >
+              <i class="fa-solid fa-chart-line"></i>
+              View Dashboard
+            </a>
+          </div>
         </section>
       </form>
     </main>
@@ -159,6 +164,3 @@
   <script src="final.js"></script>
 </body>
 </html>
-
-
-
