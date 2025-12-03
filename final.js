@@ -239,15 +239,71 @@ function buildFinalSummary() {
   return lines.join("\n");
 }
 
+function buildDashboardPayload() {
+  return {
+    project: {
+      name: finalState.projectName,
+      client: finalState.client,
+      pm: finalState.pm,
+      designer: finalState.designer,
+      dev: finalState.dev,
+      kickoffDate: finalState.kickoffDate || "", 
+      finalReviewDate: finalState.date || ""
+    },
+    final: {
+      outcomes: finalState.outcomes,
+      results: finalState.results,
+      wins: finalState.wins,
+      challenges: finalState.challenges,
+      learnings: finalState.learnings,
+      nextSteps: finalState.nextSteps
+    },
+    finalSummary: $("finalSummary").value
+  };
+}
+
 function updateSummary() {
   const summaryEl = $("finalSummary");
   if (!summaryEl) return;
 
+  // Build summary text
   const summaryText = buildFinalSummary();
   summaryEl.value = summaryText;
 
-  // Persist + update dashboard link
-  updateDashboardLink(summaryText);
+  // ---- Dashboard Linking Logic ----
+  const dashBtn = document.getElementById("viewDashboardBtn");
+  if (dashBtn) {
+    // Build dashboard payload
+    const payload = {
+      project: {
+        name: finalState.projectName || "",
+        client: finalState.client || "",
+        pm: finalState.pm || "",
+        designer: finalState.designer || "",
+        dev: finalState.dev || "",
+        kickoffDate: finalState.kickoffDate || "",     // will be empty if not stored
+        finalReviewDate: finalState.date || ""
+      },
+      final: {
+        outcomes: finalState.outcomes || "",
+        results: finalState.results || "",
+        wins: finalState.wins || "",
+        challenges: finalState.challenges || "",
+        learnings: finalState.learnings || "",
+        nextSteps: finalState.nextSteps || ""
+      },
+      finalSummary: summaryText
+    };
+
+    // Encode for URL
+    const encoded = encodeURIComponent(JSON.stringify(payload));
+
+    // Update dashboard link
+    dashBtn.href = `dashboard.html?data=${encoded}`;
+
+    // Also persist for fallback
+    localStorage.setItem("metricMateDashboard", JSON.stringify(payload));
+  }
 }
 
 // ---------------------------------------------------------------------------
