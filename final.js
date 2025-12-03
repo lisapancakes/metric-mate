@@ -1,6 +1,10 @@
 // Metric Mate - Final Review
-// Generates a reusable final summary as the user types.
+// Generates a reusable final summary as the user types
+// and passes data to the dashboard.
 
+// ---------------------------------------------------------------------------
+// STATE
+// ---------------------------------------------------------------------------
 const finalState = {
   projectName: "",
   client: "",
@@ -16,23 +20,23 @@ const finalState = {
   nextSteps: ""
 };
 
-let hydratedFromKickoff = false;
+let kickoffCache = null;
 
 function $(id) {
   return document.getElementById(id);
 }
 
-// Get kickoff data from URL or localStorage
+// ---------------------------------------------------------------------------
+// KICKOFF DATA HELPERS
+// ---------------------------------------------------------------------------
 function getKickoffDataFromUrl() {
   try {
-    // 1) Try URL ?data=...
     const params = new URLSearchParams(window.location.search);
     const raw = params.get("data");
     if (raw) {
       return JSON.parse(decodeURIComponent(raw));
     }
 
-    // 2) Fallback: localStorage (saved by the kickoff survey)
     const stored = localStorage.getItem("metricMateKickoff");
     if (stored) {
       return JSON.parse(stored);
@@ -45,13 +49,85 @@ function getKickoffDataFromUrl() {
   }
 }
 
+function getKickoffContext() {
+  if (kickoffCache !== null) return kickoffCache;
+  kickoffCache = getKickoffDataFromUrl() || {};
+  return kickoffCache;
+}
+
+// Prefill finalState + inputs from kickoff if available
+function hydrateFromKickoff() {
+  const kickoff = getKickoffContext();
+  if (!kickoff || !kickoff.info) return;
+
+  const info = kickoff.info;
+  const dir = kickoff.directory || {};
+
+  const mapPerson = (idProp, listKey, fallbackProp) => {
+    if (typeof info[idProp] === "number" && Array.isArray(dir[listKey])) {
+      return dir[listKey][info[idProp]] || "";
+    }
+    return info[fallbackProp] || "";
+  };
+
+  // Only fill if finalState is still empty
+  if (!finalState.projectName) {
+    finalState.projectName = info.projectName || info.name || "";
+  }
+  if (!finalState.client) {
+    finalState.client =
+      mapPerson("clientId", "clients", "client") ||
+      info.clientName ||
+      "";
+  }
+  if (!finalState.pm) {
+    finalState.pm =
+      mapPerson("pmId", "pms", "pm") ||
+      info.pmName ||
+      "";
+  }
+  if (!finalState.designer) {
+    finalState.designer =
+      mapPerson("designerId", "designers", "designer") ||
+      info.designerName ||
+      "";
+  }
+  if (!finalState.dev) {
+    finalState.dev =
+      mapPerson("devId", "devs", "dev") ||
+      info.devName ||
+      "";
+  }
+
+  // Push into inputs if they exist
+  const projectNameEl = $("projectName");
+  const clientEl = $("client");
+  const pmEl = $("pm");
+  const designerEl = $("designer");
+  const devEl = $("dev");
+
+  if (projectNameEl && !projectNameEl.value) projectNameEl.value = finalState.projectName;
+  if (clientEl && !clientEl.value) clientEl.value = finalState.client;
+  if (pmEl && !pmEl.value) pmEl.value = finalState.pm;
+  if (designerEl && !designerEl.value) designerEl.value = finalState.designer;
+  if (devEl && !devEl.value) devEl.value = finalState.dev;
+}
+
+// ---------------------------------------------------------------------------
+// INIT
+// ---------------------------------------------------------------------------
 function initFinal() {
   const form = $("finalForm");
   const copyBtn = $("copyFinalSummaryBtn");
 
-  if (!form) return;
+  hydrateFromKickoff();
 
-  form.addEventListener("input", handleInput);
+  if (form) {
+    form.addEventListener("input", handleInput);
+  }
+
+  // Initial summary + dashboard link
+  updateSummary();
 
   if (copyBtn) {
     copyBtn.addEventListener("click", () => {
@@ -60,71 +136,11 @@ function initFinal() {
       showStatus("✅ Final summary copied to clipboard");
     });
   }
-
-  // First render (this will also hydrate from kickoff + prefill inputs)
-  updateSummary();
 }
 
-function hydrateFromKickoffOnce() {
-  if (hydratedFromKickoff) return;
-
-  const kickoffData = getKickoffDataFromUrl();
-  if (!kickoffData || !kickoffData.info) {
-    hydratedFromKickoff = true;
-    return;
-  }
-
-  const info = kickoffData.info;
-  const dir  = kickoffData.directory || {};
-
-  // Project name
-  finalState.projectName =
-    info.projectName || info.name || finalState.projectName;
-
-  // Client
-  if (typeof info.clientId === "number" && Array.isArray(dir.clients)) {
-    finalState.client = dir.clients[info.clientId] || "";
-  } else {
-    finalState.client =
-      info.client || info.clientName || finalState.client;
-  }
-
-  // PM
-  if (typeof info.pmId === "number" && Array.isArray(dir.pms)) {
-    finalState.pm = dir.pms[info.pmId] || "";
-  } else {
-    finalState.pm = info.pm || info.pmName || finalState.pm;
-  }
-
-  // Designer
-  if (typeof info.designerId === "number" && Array.isArray(dir.designers)) {
-    finalState.designer = dir.designers[info.designerId] || "";
-  } else {
-    finalState.designer =
-      info.designer || info.designerName || finalState.designer;
-  }
-
-  // Dev
-  if (typeof info.devId === "number" && Array.isArray(dir.devs)) {
-    finalState.dev = dir.devs[info.devId] || "";
-  } else {
-    finalState.dev = info.dev || info.devName || finalState.dev;
-  }
-
-  hydratedFromKickoff = true;
-
-  // Prefill visible inputs, but don't overwrite anything the user already typed
-  const fieldIds = ["projectName", "client", "pm", "designer", "dev", "date"];
-
-  fieldIds.forEach((id) => {
-    const input = $(id);
-    const key = id; // keys in finalState match these IDs
-    if (input && !input.value && finalState[key]) {
-      input.value = finalState[key];
-    }
-  });
-}
-
+// ---------------------------------------------------------------------------
+// INPUT + SUMMARY
+// ---------------------------------------------------------------------------
 function handleInput(e) {
   const t = e.target;
   const val = t.value;
@@ -171,13 +187,7 @@ function handleInput(e) {
   updateSummary();
 }
 
-function updateSummary() {
-  const summaryEl = $("finalSummary");
-  if (!summaryEl) return;
-
-  // Make sure we’ve pulled in kickoff data and prefilled inputs once
-  hydrateFromKickoffOnce();
-
+function buildFinalSummary() {
   const s = finalState;
   let lines = [];
 
@@ -226,10 +236,64 @@ function updateSummary() {
     lines.push(s.nextSteps.trim());
   }
 
-  summaryEl.value = lines.join("\n");
+  return lines.join("\n");
 }
 
-// --- Shared helpers copied from other pages (safe to duplicate here) ---
+function updateSummary() {
+  const summaryEl = $("finalSummary");
+  if (!summaryEl) return;
+
+  const summaryText = buildFinalSummary();
+  summaryEl.value = summaryText;
+
+  // Persist + update dashboard link
+  updateDashboardLink(summaryText);
+}
+
+// ---------------------------------------------------------------------------
+// DASHBOARD PAYLOAD + LINK
+// ---------------------------------------------------------------------------
+function buildDashboardPayload(summaryText) {
+  const kickoff = getKickoffContext();
+  const info = kickoff.info || {};
+
+  const project = {
+    name: finalState.projectName || info.projectName || info.name || "",
+    client: finalState.client || info.client || info.clientName || "",
+    pm: finalState.pm || info.pm || info.pmName || "",
+    designer: finalState.designer || info.designer || info.designerName || "",
+    dev: finalState.dev || info.dev || info.devName || "",
+    kickoffDate: info.date || info.kickoffDate || "",
+    finalReviewDate: finalState.date || ""
+  };
+
+  return {
+    project,
+    kickoff,
+    final: { ...finalState },
+    finalSummary: summaryText || ""
+  };
+}
+
+function updateDashboardLink(summaryText) {
+  const link = $("dashboardLink");
+  if (!link) return;
+
+  try {
+    const payload = buildDashboardPayload(summaryText);
+    const encoded = encodeURIComponent(JSON.stringify(payload));
+    link.href = `dashboard.html?data=${encoded}`;
+
+    // Also drop into localStorage as a backup
+    localStorage.setItem("metricMateDashboard", JSON.stringify(payload));
+  } catch (err) {
+    console.error("Failed to update dashboard link", err);
+  }
+}
+
+// ---------------------------------------------------------------------------
+// SHARED HELPERS
+// ---------------------------------------------------------------------------
 function copyToClipboard(text) {
   if (navigator.clipboard && window.isSecureContext) {
     navigator.clipboard.writeText(text).catch(() => fallbackCopy(text));
