@@ -20,21 +20,23 @@ const midterm = {
   nextSteps: ""
 };
 
-// These will be set in init() once the DOM is ready
-let form;
-let prevBtn;
-let nextBtn;
-let progressBar;
+// DOM refs (elements exist because script is loaded at bottom of body)
+const form = document.getElementById("surveyForm");
+const prevBtn = document.getElementById("prevBtn");
+const nextBtn = document.getElementById("nextBtn");
+const progressBar = document.getElementById("progressBar");
 
 // Get kickoff data from URL or localStorage
 function getKickoffDataFromUrl() {
   try {
+    // 1) Try URL ?data=...
     const params = new URLSearchParams(window.location.search);
     const raw = params.get("data");
     if (raw) {
       return JSON.parse(decodeURIComponent(raw));
     }
 
+    // 2) Fallback: localStorage (saved by the kickoff survey)
     const stored = localStorage.getItem("metricMateKickoff");
     if (stored) {
       return JSON.parse(stored);
@@ -91,16 +93,30 @@ function showStatus(message) {
   }, 2500);
 }
 
+// Save a snapshot of the midterm review so the Final + Dashboard can use it
+function saveMidtermSnapshot(internalSummary) {
+  try {
+    const snapshot = {
+      info: { ...midterm.info },
+      healthScore: midterm.healthScore,
+      progressGood: midterm.progressGood,
+      progressOff: midterm.progressOff,
+      risks: midterm.risks,
+      decisions: midterm.decisions,
+      nextSteps: midterm.nextSteps,
+      internalSummary: internalSummary || buildInternalSummary()
+    };
+
+    localStorage.setItem("metricMateMidterm", JSON.stringify(snapshot));
+  } catch (e) {
+    console.warn("Failed to save midterm snapshot", e);
+  }
+}
+
 // ============================================================================
 // INIT
 // ============================================================================
 function init() {
-  // Grab DOM refs now that DOM is ready
-  form = document.getElementById("surveyForm");
-  prevBtn = document.getElementById("prevBtn");
-  nextBtn = document.getElementById("nextBtn");
-  progressBar = document.getElementById("progressBar");
-
   // 0) Try to hydrate from kickoff data (URL or localStorage)
   const kickoffData = getKickoffDataFromUrl();
 
@@ -176,6 +192,8 @@ function goToNextStep() {
     updateProgressBar();
     window.scrollTo(0, 0);
   } else {
+    // Last step → ensure snapshot is saved, then show thank you
+    saveMidtermSnapshot();
     showThankYouPage();
   }
 }
@@ -217,7 +235,7 @@ function renderStep(step) {
 
   form.innerHTML = "";
 
-  const stepEl = document.createElement("section");
+  let stepEl = document.createElement("section");
   stepEl.className = "step active";
   stepEl.id = `step-${step}`;
 
@@ -232,6 +250,9 @@ function renderStep(step) {
     internalSummary = buildInternalSummary();
     clientSummary = buildClientSummary();
     stepEl.innerHTML = renderStep3(internalSummary, clientSummary);
+
+    // Save midterm snapshot once we have a full internal summary
+    saveMidtermSnapshot(internalSummary);
   }
 
   form.appendChild(stepEl);
@@ -345,6 +366,7 @@ function renderStep2() {
 
 // STEP 3 – Summaries
 function renderStep3(internalSummary, clientSummary) {
+  // Build the calendar URL once, based on current midterm state.
   let calendarUrl = "";
   try {
     calendarUrl = buildFinalReviewCalendarUrl();
@@ -353,8 +375,7 @@ function renderStep3(internalSummary, clientSummary) {
   }
 
   if (!calendarUrl) {
-    calendarUrl =
-      "https://calendar.google.com/calendar/render?action=TEMPLATE";
+    calendarUrl = "https://calendar.google.com/calendar/render?action=TEMPLATE";
   }
 
   return `
@@ -369,8 +390,7 @@ function renderStep3(internalSummary, clientSummary) {
       <textarea id="internalSummary" rows="10" readonly>${internalSummary}</textarea>
       <div class="form-actions" style="margin-top: 0.75rem;">
         <button type="button" id="copyInternalSummary" class="btn btn-secondary">
-          <i class="fa-solid fa-copy"></i>
-          Copy Internal Summary
+          📋 Copy Internal Summary
         </button>
       </div>
     </section>
@@ -381,8 +401,7 @@ function renderStep3(internalSummary, clientSummary) {
       <textarea id="clientSummary" rows="10" readonly>${clientSummary}</textarea>
       <div class="form-actions" style="margin-top: 0.75rem;">
         <button type="button" id="copyClientSummary" class="btn btn-secondary">
-          <i class="fa-solid fa-copy"></i>
-          Copy Client Summary
+          📋 Copy Client Summary
         </button>
       </div>
     </section>
@@ -410,7 +429,7 @@ function renderStep3(internalSummary, clientSummary) {
 
 function buildFinalReviewCalendarUrl() {
   const projectName = midterm.info.projectName || "Project";
-  const clientName  = midterm.info.client || "Client";
+  const clientName = midterm.info.client || "Client";
 
   // 21 days from today, 10–11am
   const start = new Date();
@@ -420,31 +439,23 @@ function buildFinalReviewCalendarUrl() {
   end.setHours(11);
 
   const formatDate = (d) => {
-    const year  = d.getFullYear();
+    const year = d.getFullYear();
     const month = String(d.getMonth() + 1).padStart(2, "0");
-    const day   = String(d.getDate()).padStart(2, "0");
+    const day = String(d.getDate()).padStart(2, "0");
     const hours = String(d.getHours()).padStart(2, "0");
-    const mins  = String(d.getMinutes()).padStart(2, "0");
-    const secs  = String(d.getSeconds()).padStart(2, "0");
+    const mins = String(d.getMinutes()).padStart(2, "0");
+    const secs = String(d.getSeconds()).padStart(2, "0");
     return `${year}${month}${day}T${hours}${mins}${secs}`;
   };
 
   const startStr = formatDate(start);
-  const endStr   = formatDate(end);
-
-  const internalSummary = buildInternalSummary();
-  const finalSurveyLink = "https://lisapancakes.github.io/metric-mate/final.html";
-
-  const details = `${internalSummary}
-
-Final review survey:
-${finalSurveyLink}`;
+  const endStr = formatDate(end);
 
   const base = "https://calendar.google.com/calendar/render?action=TEMPLATE";
   const params = new URLSearchParams({
     text: `Final review: ${projectName} (${clientName})`,
-    details,
-    dates: `${startStr}/${endStr}`,
+    details: buildInternalSummary(),
+    dates: `${startStr}/${endStr}`
   });
 
   return `${base}&${params.toString()}`;
@@ -456,7 +467,7 @@ ${finalSurveyLink}`;
 function buildInternalSummary() {
   const i = midterm.info;
 
-  const lines = [];
+  let lines = [];
   lines.push("MID-PROJECT REVIEW — INTERNAL");
   lines.push("--------------------------------");
   lines.push(`Project: ${i.projectName || "Untitled project"}`);
@@ -500,7 +511,7 @@ function buildClientSummary() {
   const i = midterm.info;
   const nameForGreeting = i.client || "there";
 
-  const lines = [];
+  let lines = [];
   lines.push(`Hi ${nameForGreeting},`);
   lines.push("");
   lines.push(
@@ -567,8 +578,10 @@ function setupSummaryActions(internalSummary, clientSummary) {
 function handleChange(e) {
   const t = e.target;
 
+  // healthScore radio
   if (t.name === "healthScore" && t.type === "radio") {
     midterm.healthScore = parseInt(t.value, 10);
+    return;
   }
 }
 
@@ -595,6 +608,7 @@ function handleInput(e) {
     case "date":
       midterm.info.date = val;
       break;
+
     case "progressGood":
       midterm.progressGood = val;
       break;
@@ -623,6 +637,9 @@ function showThankYouPage() {
 
   const app = document.getElementById("app");
   if (!app) return;
+
+  // Ensure snapshot exists
+  saveMidtermSnapshot();
 
   let calendarUrl = "";
   try {
