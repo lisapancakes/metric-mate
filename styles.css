@@ -560,6 +560,18 @@ textarea[readonly] {
   color: #31649E !important;
   fill: #31649E !important;
 }
+
+/* Make link-buttons look like buttons (no underline) */
+a.btn,
+a.btn-primary {
+  text-decoration: none;
+}
+
+a.btn:hover,
+a.btn-primary:hover {
+  text-decoration: none;
+}
+
 /* ============================================================================
    STATUS SNACKBAR (used by JS)
    ========================================================================== */
