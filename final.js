@@ -308,29 +308,29 @@ function buildFinalSummary() {
 // -------------------------------
 // DASHBOARD LINK + DATA
 // -------------------------------
-function updateDashboardLink(summaryText) {
-  const kickoff = loadKickoffData();
-  const linkEl = document.querySelector('a[href="dashboard.html"]');
-  if (!linkEl) return;
+function updateDashboardLink() {
+  const link = document.getElementById("openDashboardBtn") ||
+               document.querySelector(".btn-primary[href*='dashboard.html']");
+  if (!link) return;
 
-  const project = {
-    name: finalState.projectName,
-    client: finalState.client,
-    pm: finalState.pm,
-    designer: finalState.designer,
-    dev: finalState.dev,
-    kickoffDate: kickoff?.info?.date || "",
-    finalReviewDate: finalState.date || ""
-  };
+  const kickoff = loadFromStorage("kickoffData") || {};
+  const midterm = loadFromStorage("midtermData") || {};
+  const final = loadFromStorage("finalData") || {};
+  const finalSummary = loadFromStorage("finalSummary") || "";
 
   const payload = {
-    project,
-    final: { ...finalState },
-    finalSummary: summaryText
+    project: kickoff.project || {},
+    kickoff,
+    midterm,
+    final,
+    finalSummary
   };
 
   const encoded = encodeURIComponent(JSON.stringify(payload));
-  linkEl.href = `dashboard.html?data=${encoded}`;
+  link.href = `dashboard.html?data=${encoded}`;
+
+  // Also backup to localStorage
+  localStorage.setItem("metricMateDashboard", JSON.stringify(payload));
 }
 
 function saveDashboardData(summaryText) {
