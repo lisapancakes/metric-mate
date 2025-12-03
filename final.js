@@ -71,22 +71,33 @@ function initFinal() {
 function hydrateForm() {
   const kickoff = loadKickoffData();
   const midterm = loadMidtermData();
+
   const info = kickoff?.info || {};
+  const dir = kickoff?.directory || { clients: {}, team: {} };
 
-  finalState.projectName = info.projectName || "";
-  finalState.client = info.client || "";
-  finalState.pm = info.pm || "";
-  finalState.designer = info.designer || "";
-  finalState.dev = info.dev || "";
+  // Convert Kickoff IDs → readable names
+  const clientName   = dir.clients?.[info.clientId]   || "";
+  const pmName       = dir.team?.[info.pmId]          || "";
+  const designerName = dir.team?.[info.designerId]    || "";
+  const devName      = dir.team?.[info.devId]         || "";
 
+  // Correct field mapping
+  finalState.projectName = info.name || "";
+  finalState.client      = clientName;
+  finalState.pm          = pmName;
+  finalState.designer    = designerName;
+ 	finalState.dev         = devName;
+
+  // Midterm → suggested final review date
   finalState.date = midterm?.info?.date || "";
 
+  // Push values into UI
   $("projectName").value = finalState.projectName;
-  $("client").value = finalState.client;
-  $("pm").value = finalState.pm;
-  $("designer").value = finalState.designer;
-  $("dev").value = finalState.dev;
-  $("date").value = finalState.date;
+  $("client").value      = finalState.client;
+  $("pm").value          = finalState.pm;
+  $("designer").value    = finalState.designer;
+  $("dev").value         = finalState.dev;
+  $("date").value        = finalState.date;
 }
 
 // -------------------------------
