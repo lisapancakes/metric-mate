@@ -597,7 +597,8 @@ function renderSummaryStep() {
       <textarea id="internalSummary" rows="10" readonly>${internalSummary}</textarea>
       <div class="form-actions" style="margin-top: 0.75rem;">
         <button type="button" id="copyInternalSummary" class="btn btn-secondary">
-          📋 Copy Internal Summary
+          <i class="fa-solid fa-copy"></i>
+          Copy Internal Summary
         </button>
       </div>
     </section>
@@ -608,7 +609,8 @@ function renderSummaryStep() {
       <textarea id="clientSummary" rows="10" readonly>${clientSummary}</textarea>
       <div class="form-actions" style="margin-top: 0.75rem;">
         <button type="button" id="copyClientSummary" class="btn btn-secondary">
-          📋 Copy Client Summary
+          <i class="fa-solid fa-copy"></i>
+          Copy Client Summary
         </button>
       </div>
     </section>
@@ -621,10 +623,12 @@ function renderSummaryStep() {
       <textarea id="goalNarratives" rows="12" readonly>${goalNarratives}</textarea>
       <div class="form-actions" style="margin-top: 0.75rem;">
         <button type="button" id="copyGoalNarratives" class="btn btn-secondary">
-          📋 Copy Goal Narratives
+          <i class="fa-solid fa-copy"></i>
+          Copy Goal Narratives
         </button>
         <button type="button" id="copyChatGPTPromptBtn" class="btn btn-secondary btn-sm">
-          🤖 Refine with ChatGPT
+          <i class="fa-solid fa-robot"></i>
+          Refine with ChatGPT
         </button>
       </div>
     </section>
@@ -647,7 +651,8 @@ function renderSummaryStep() {
       <p class="help-text">For debugging or future automation, you can copy the full JSON.</p>
       <div class="form-actions">
         <button type="button" id="copyJsonBtn" class="btn btn-secondary">
-          📋 Copy Data as JSON
+          <i class="fa-solid fa-copy"></i>
+          Copy Data as JSON
         </button>
       </div>
       <div id="copyStatus" class="status-message" style="display: none; margin-top: 0.75rem;"></div>
