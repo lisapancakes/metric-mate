@@ -152,7 +152,6 @@ function goToNextStep() {
     updateProgressBar();
     window.scrollTo(0, 0);
   } else {
-    // Final page — hide next button
     if (nextBtn) nextBtn.style.display = "none";
   }
 }
@@ -192,7 +191,9 @@ function validateCurrentStep() {
 function renderStep(step) {
   if (!form) return;
 
+  // Clear previous content
   form.innerHTML = "";
+
   let stepEl = document.createElement("section");
   stepEl.className = "step active";
   stepEl.id = `step-${step}`;
@@ -202,26 +203,36 @@ function renderStep(step) {
 
   if (step === 1) {
     stepEl.innerHTML = renderStep1();
-  } else if (step === 2) {
+  } 
+  else if (step === 2) {
     stepEl.innerHTML = renderStep2();
-  } else if (step === 3) {
+  } 
+  else if (step === 3) {
     internalSummary = buildInternalSummary();
     clientSummary = buildClientSummary();
     stepEl.innerHTML = renderStep3(internalSummary, clientSummary);
   }
 
+  // Add the HTML to the form
   form.appendChild(stepEl);
 
-  if (step === 3) setupSummaryActions(internalSummary, clientSummary);
+  // Step 3 needs summary actions
+  if (step === 3) {
+    setupSummaryActions(internalSummary, clientSummary);
+  }
 
+  // Navigation buttons
   if (prevBtn) prevBtn.disabled = step === 1;
 
   if (nextBtn) {
-    nextBtn.textContent = "Next";
-    if (step === midterm.totalSteps) nextBtn.style.display = "none";
+    if (step === midterm.totalSteps) {
+      nextBtn.style.display = "none";   // hide Next button
+    } else {
+      nextBtn.style.display = "inline-block";
+      nextBtn.textContent = "Next";
+    }
   }
 }
-
 // ============================================================================
 // STEP MARKUP
 // ============================================================================
