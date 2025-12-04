@@ -25,11 +25,11 @@ function $(id) {
 }
 
 // -------------------------------
-// Load Kickoff + Midterm Data
+// Load Kickoff Data
 // -------------------------------
 function loadKickoffData() {
-  // 1) URL ?data=...
   try {
+    // 1) URL ?data=...
     const params = new URLSearchParams(window.location.search);
     const raw = params.get("data");
     if (raw) {
@@ -39,8 +39,8 @@ function loadKickoffData() {
     console.warn("Failed to parse kickoff data from URL", e);
   }
 
-  // 2) localStorage
   try {
+    // 2) localStorage (saved by kickoff)
     const stored = localStorage.getItem("metricMateKickoff");
     if (stored) {
       return JSON.parse(stored);
@@ -52,6 +52,9 @@ function loadKickoffData() {
   return null;
 }
 
+// -------------------------------
+// Load Midterm Data (optional)
+// -------------------------------
 function loadMidtermData() {
   try {
     const stored = localStorage.getItem("metricMateMidterm");
@@ -67,19 +70,18 @@ function loadMidtermData() {
 // -------------------------------
 // HYDRATE FROM KICKOFF + MIDTERM
 // -------------------------------
-function hydrateFromKickoff() {
+function hydrateForm() {
   const kickoff = loadKickoffData();
   const midterm = loadMidtermData();
 
-  // kickoff may be { info: {...}, directory: {...} } OR just {...}
-  const info = (kickoff && kickoff.info) ? kickoff.info : (kickoff || {});
+  const info = kickoff && kickoff.info ? kickoff.info : {};
   const dir  = kickoff && kickoff.directory ? kickoff.directory : {};
 
-  // Project name
+  // ---- Project name ----
   finalState.projectName =
     info.projectName || info.name || finalState.projectName;
 
-  // Client
+  // ---- Client ----
   if (typeof info.clientId === "number" && Array.isArray(dir.clients)) {
     finalState.client = dir.clients[info.clientId] || finalState.client;
   } else {
@@ -87,14 +89,14 @@ function hydrateFromKickoff() {
       info.client || info.clientName || finalState.client;
   }
 
-  // PM
+  // ---- PM ----
   if (typeof info.pmId === "number" && Array.isArray(dir.pms)) {
     finalState.pm = dir.pms[info.pmId] || finalState.pm;
   } else {
     finalState.pm = info.pm || info.pmName || finalState.pm;
   }
 
-  // Designer
+  // ---- Designer ----
   if (typeof info.designerId === "number" && Array.isArray(dir.designers)) {
     finalState.designer =
       dir.designers[info.designerId] || finalState.designer;
@@ -103,32 +105,36 @@ function hydrateFromKickoff() {
       info.designer || info.designerName || finalState.designer;
   }
 
-  // Dev
+  // ---- Dev ----
   if (typeof info.devId === "number" && Array.isArray(dir.devs)) {
     finalState.dev = dir.devs[info.devId] || finalState.dev;
   } else {
     finalState.dev = info.dev || info.devName || finalState.dev;
   }
 
-  // Final review date – use midterm's review date if present
-  if (midterm && midterm.info && midterm.info.date) {
+  // ---- Final review date from midterm (if saved) ----
+  if (midterm && midterm.info && midterm.info.date && !finalState.date) {
     finalState.date = midterm.info.date;
   }
 
   // Push values into the form fields (if they exist)
-  const projectInput  = $("projectName");
-  const clientInput   = $("client");
-  const pmInput       = $("pm");
-  const designerInput = $("designer");
-  const devInput      = $("dev");
-  const dateInput     = $("date");
+  const projectInput = $("projectName");
+  if (projectInput) projectInput.value = finalState.projectName;
 
-  if (projectInput)  projectInput.value  = finalState.projectName;
-  if (clientInput)   clientInput.value   = finalState.client;
-  if (pmInput)       pmInput.value       = finalState.pm;
+  const clientInput = $("client");
+  if (clientInput) clientInput.value = finalState.client;
+
+  const pmInput = $("pm");
+  if (pmInput) pmInput.value = finalState.pm;
+
+  const designerInput = $("designer");
   if (designerInput) designerInput.value = finalState.designer;
-  if (devInput)      devInput.value      = finalState.dev;
-  if (dateInput)     dateInput.value     = finalState.date;
+
+  const devInput = $("dev");
+  if (devInput) devInput.value = finalState.dev;
+
+  const dateInput = $("date");
+  if (dateInput) dateInput.value = finalState.date;
 }
 
 // -------------------------------
@@ -156,11 +162,11 @@ function buildFinalSummary() {
   out.push("FINAL PROJECT REVIEW — INTERNAL");
   out.push("--------------------------------");
   out.push(`Project: ${s.projectName || "Untitled project"}`);
-  if (s.client)   out.push(`Client: ${s.client}`);
-  if (s.pm)       out.push(`PM: ${s.pm}`);
+  if (s.client) out.push(`Client: ${s.client}`);
+  if (s.pm) out.push(`PM: ${s.pm}`);
   if (s.designer) out.push(`Product Designer: ${s.designer}`);
-  if (s.dev)      out.push(`Lead Developer: ${s.dev}`);
-  if (s.date)     out.push(`Final review date: ${s.date}`);
+  if (s.dev) out.push(`Lead Developer: ${s.dev}`);
+  if (s.date) out.push(`Final review date: ${s.date}`);
   out.push("");
 
   if (s.outcomes.trim()) {
@@ -206,7 +212,7 @@ function updateSummary() {
 // -------------------------------
 function updateDashboardPayload(summaryText) {
   const kickoff = loadKickoffData();
-  const info = (kickoff && kickoff.info) ? kickoff.info : (kickoff || {});
+  const info = kickoff && kickoff.info ? kickoff.info : {};
 
   const project = {
     name: finalState.projectName || info.projectName || info.name || "",
@@ -225,14 +231,14 @@ function updateDashboardPayload(summaryText) {
     finalSummary: summaryText || ""
   };
 
-  // 1) Save for fallback
+  // 1) Save for fallback (dashboard.html without ?data=)
   try {
     localStorage.setItem("metricMateDashboard", JSON.stringify(payload));
   } catch (e) {
     console.warn("Failed to save dashboard payload", e);
   }
 
-  // 2) Update the View Dashboard link
+  // 2) Update the "View Dashboard" link on the Final page
   const linkEl = $("openDashboardBtn");
   if (!linkEl) return;
 
@@ -285,12 +291,14 @@ function initFinal() {
   const form = $("finalForm");
   const copyBtn = $("copyFinalSummaryBtn");
 
-  hydrateFromKickoff();   // <-- now correctly wired
+  // ✅ Correct function name here
+  hydrateForm();
 
   if (form) {
     form.addEventListener("input", handleInput);
   }
 
+  // Initial summary + dashboard payload
   updateSummary();
 
   if (copyBtn) {
