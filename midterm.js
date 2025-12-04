@@ -508,10 +508,7 @@ function setupSummaryActions(internalSummary, clientSummary) {
   const internalBtn = document.getElementById("copyInternalSummary");
   const clientBtn = document.getElementById("copyClientSummary");
 
-  // Midterm Step 3 page button
   const calendarLink = document.getElementById("finalReviewCalendarLink");
-
-  // Thank-you page button (added later in DOM)
   const calendarLinkThankYou = document.getElementById("finalReviewCalendarLinkThankYou");
 
   if (internalBtn) {
@@ -528,7 +525,7 @@ function setupSummaryActions(internalSummary, clientSummary) {
     });
   }
 
-  // ----- MIDTERM STEP 3 CALENDAR BUTTON -----
+  // STEP 3 CALENDAR BUTTON
   if (calendarLink) {
     calendarLink.addEventListener("click", (e) => {
       e.preventDefault();
@@ -536,6 +533,16 @@ function setupSummaryActions(internalSummary, clientSummary) {
       window.open(url, "_blank");
     });
   }
+
+  // THANK YOU PAGE CALENDAR BUTTON
+  if (calendarLinkThankYou) {
+    calendarLinkThankYou.addEventListener("click", (e) => {
+      e.preventDefault();
+      const url = buildFinalReviewCalendarUrl();
+      window.open(url, "_blank");
+    });
+  }
+}
 
   // ----- THANK-YOU PAGE CALENDAR BUTTON -----
   if (calendarLinkThankYou) {
@@ -551,24 +558,19 @@ function buildFinalReviewCalendarUrl() {
   const projectName = midterm.info.projectName || "Project";
   const clientName = midterm.info.client || "Client";
 
-  // 21 days from today, 10–11am
   const start = new Date();
   start.setDate(start.getDate() + 21);
   start.setHours(10, 0, 0, 0);
+
   const end = new Date(start.getTime());
   end.setHours(11);
 
   const formatDate = (d) => {
-    const year = d.getFullYear();
-    const month = String(d.getMonth() + 1).padStart(2, "0");
-    const day = String(d.getDate()).padStart(2, "0");
-    const hours = String(d.getHours()).padStart(2, "0");
-    const mins = String(d.getMinutes()).padStart(2, "0");
-    const secs = String(d.getSeconds()).padStart(2, "0");
-    return `${year}${month}${day}T${hours}${mins}${secs}`;
+    return d.toISOString().replace(/[-:]/g, "").split(".")[0] + "Z";
   };
 
   const base = "https://calendar.google.com/calendar/render?action=TEMPLATE";
+
   const params = new URLSearchParams({
     text: `Final review: ${projectName} (${clientName})`,
     details: `${buildInternalSummary()}
@@ -674,11 +676,12 @@ function showThankYouPage() {
   <p>...</p>
   <div class="form-actions" style="margin-top: 1.5rem; display:flex; gap:0.75rem; flex-wrap:wrap;">
     <a
-      id="finalReviewCalendarLinkThankYou"
-      class="btn btn-primary"
-      target="_blank"
-      rel="noopener"
-href="${buildFinalReviewCalendarUrl()}"    >
+  id="finalReviewCalendarLink"
+  href="#"
+  target="_blank"
+  rel="noopener"
+  class="btn btn-primary"
+>
       <i class="fa-solid fa-calendar"></i>
       Save Final Review to Google Calendar
     </a>
