@@ -5,29 +5,51 @@
 // --------------------------------------
 // dashboard.js - Metric Mate Project Dashboard
 
+// dashboard.js - Metric Mate Project Dashboard
+
 function loadDashboardData() {
+  let parsedFromUrl = null;
+
   // 1) Try URL ?data=...
   try {
     const params = new URLSearchParams(window.location.search);
     const raw = params.get("data");
     if (raw) {
-      return JSON.parse(decodeURIComponent(raw));
+      parsedFromUrl = JSON.parse(decodeURIComponent(raw));
     }
   } catch (e) {
     console.warn("Failed to parse dashboard data from URL", e);
   }
 
-  // 2) Fallback: full dashboard payload (from Final / Midterm)
+  // If we got something from the URL, normalize it
+  if (parsedFromUrl) {
+    // Case A: it already has a project → use as-is
+    if (parsedFromUrl.project) {
+      return parsedFromUrl;
+    }
+
+    // Case B: kickoff-only payload → build a full dashboard payload from it
+    if (parsedFromUrl.kickoff) {
+      const fromKickoff = buildDashboardDataFromKickoff(parsedFromUrl.kickoff);
+      if (fromKickoff) return fromKickoff;
+    }
+
+    // Fallback: at least return what we have
+    return parsedFromUrl;
+  }
+
+  // 2) Fallback: full dashboard payload saved earlier (midterm/final)
   try {
     const stored = localStorage.getItem("metricMateDashboard");
     if (stored) {
-      return JSON.parse(stored);
+      const storedParsed = JSON.parse(stored);
+      if (storedParsed) return storedParsed;
     }
   } catch (e) {
     console.warn("Failed to load dashboard data from localStorage", e);
   }
 
-  // 3) LAST RESORT: build a minimal payload from kickoff only
+  // 3) LAST RESORT: build from metricMateKickoff directly
   try {
     const kickoffStored = localStorage.getItem("metricMateKickoff");
     if (kickoffStored) {
