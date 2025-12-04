@@ -176,21 +176,18 @@ function init() {
 function goToNextStep() {
   if (!validateCurrentStep()) return;
 
-  if (project.currentStep === 1) {
-    const projectName = document.getElementById('projectName');
-    const otherContributors = document.getElementById('otherContributors');
-    if (projectName) project.info.name = projectName.value;
-    if (otherContributors) project.info.otherContributors = otherContributors.value;
-  }
-
-  if (project.currentStep < project.totalSteps) {
-    project.currentStep++;
-    renderStep(project.currentStep);
+  if (kickoff.currentStep < kickoff.totalSteps) {
+    kickoff.currentStep++;
+    renderStep(kickoff.currentStep);
     updateProgressBar();
     window.scrollTo(0, 0);
   } else {
-    console.log('Form submitted:', project);
-    showThankYouPage();
+    // We're already on the last step (summary).
+    // Just hide/disable the Next button — no separate thank-you page.
+    if (nextBtn) {
+      nextBtn.disabled = true;
+      nextBtn.style.display = "none";
+    }
   }
 }
 
@@ -247,48 +244,60 @@ function validateCurrentStep() {
 // ============================================================================
 // RENDERING
 // ============================================================================
-function renderStep(stepNumber) {
+function renderStep(step) {
   if (!form) return;
 
-  // Hide all steps
-  document.querySelectorAll('.step').forEach(step => {
-    step.classList.remove('active');
-  });
+  // Clear previous contents
+  form.innerHTML = "";
 
-  // Find or create current step (ALWAYS inside the form)
-  let stepElement = document.getElementById(`step-${stepNumber}`);
+  const stepEl = document.createElement("section");
+  stepEl.className = "step active";
+  stepEl.id = `step-${step}`;
 
-  if (!stepElement) {
-    stepElement = createStepElement(stepNumber);
-    // 🔑 ensure the step is inside the form
-    form.appendChild(stepElement);
-  } else {
-    // Re-render content when switching back to a step
-    switch (stepNumber) {
-      case 1:
-        stepElement.innerHTML = renderProjectInfoStep();
-        break;
-      case 2:
-        stepElement.innerHTML = renderBusinessGoalsStep();
-        break;
-      case 3:
-        stepElement.innerHTML = renderProductGoalsStep();
-        break;
-      case 4:
-        stepElement.innerHTML = renderUserGoalsStep();
-        break;
-      case 5:
-        stepElement.innerHTML = renderSummaryStep();
-        break;
+  // Your existing step body rendering (step 1, 2, summary, etc.)
+  // e.g.:
+  // if (step === 1) { stepEl.innerHTML = renderStep1(); }
+  // else if (step === 2) { stepEl.innerHTML = renderStep2(); }
+  // else if (step === 3) { stepEl.innerHTML = renderSummaryStep(); }
+
+  form.appendChild(stepEl);
+
+  // ---- Navigation buttons ----
+  if (prevBtn) {
+    prevBtn.disabled = step === 1;
+    prevBtn.style.display = step === 1 ? "none" : "inline-flex";
+  }
+
+  if (nextBtn) {
+    if (step === kickoff.totalSteps) {
+      // On the summary step, we don’t need a “Finish” button
+      nextBtn.disabled = true;
+      nextBtn.style.display = "none";
+    } else {
+      nextBtn.disabled = false;
+      nextBtn.style.display = "inline-flex";
+      nextBtn.textContent = "Next";
     }
   }
+}
 
   stepElement.classList.add('active');
 
   // Update navigation buttons
-  if (prevBtn) prevBtn.disabled = stepNumber === 1;
-  if (nextBtn) nextBtn.textContent = stepNumber === project.totalSteps ? 'Finish' : 'Next';
+  // Update navigation buttons
+if (prevBtn) {
+  prevBtn.disabled = stepNumber === 1;
+}
 
+// Hide Next button completely on final step
+if (nextBtn) {
+  if (stepNumber === project.totalSteps) {
+    nextBtn.style.display = "none";   // No Finish button anymore
+  } else {
+    nextBtn.style.display = "inline-flex";
+    nextBtn.textContent = "Next";
+  }
+}
   // When we land on the summary step, wire up the buttons
   if (stepNumber === 5) {
     setupSummaryActions();
@@ -1281,83 +1290,6 @@ function addCustomUserItem(type) {
   }
 
   renderStep(project.currentStep);
-}
-
-function showThankYouPage() {
-  // Hide the form + navigation
-  if (form) form.style.display = 'none';
-  if (prevBtn) prevBtn.style.display = 'none';
-  if (nextBtn) nextBtn.style.display = 'none';
-
-  const app = document.getElementById('app');
-  if (!app) return;
-
-const thankYou = document.createElement('section');
-thankYou.className = 'step thank-you active';
-thankYou.innerHTML = `
-  <h2>Kickoff captured 🎉</h2>
-  <p>
-    You’ve just given yourself and your team a clear snapshot of this project’s 
-    <strong>business goals</strong>, <strong>product priorities</strong>, and 
-    <strong>user needs</strong>. This becomes your baseline to check against
-    when you review progress mid-project.
-  </p>
-  <p style="margin-top: 1rem;">
-    To make that review actually happen, set a 
-    <strong>mid-project review calendar event</strong> now:
-  </p>
-
-  <div class="form-actions" style="margin-top: 1.5rem; display: flex; gap: 0.75rem;">
-    <!-- Calendar Event Button -->
-    <button
-      type="button"
-      id="createCalendarEventBtnThankYou"
-      class="btn btn-primary"
-    >
-      <i class="fa-solid fa-calendar"></i>
-      Save Mid-Project Review to Google Calendar
-    </button>
-
-    <!-- Dashboard Button -->
-    <a
-      href="dashboard.html"
-      target="_blank"
-      id="openDashboardBtnKickoff"
-      class="btn btn-secondary"
-      style="text-decoration: none;"
-    >
-      <i class="fa-solid fa-chart-line"></i>
-      View Dashboard
-    </a>
-  </div>
-`;
-
-  // Insert before the navigation (if it exists) or at the end of #app
-  const nav = document.querySelector('.navigation');
-  if (nav && nav.parentNode === app) {
-    app.insertBefore(thankYou, nav);
-  } else {
-    app.appendChild(thankYou);
-  }
-}
-
-  // Wire up the calendar button (reusing the same URL builder)
-const btn = document.getElementById('createCalendarEventBtnThankYou');
-if (btn) {
-  btn.addEventListener('click', () => {
-    try {
-      const payload = {
-        info: project.info,
-        directory
-      };
-      localStorage.setItem('metricMateKickoff', JSON.stringify(payload));
-    } catch (e) {
-      console.warn('Could not save kickoff data to localStorage', e);
-    }
-
-    const url = buildCalendarUrl(project, directory);
-    window.open(url, '_blank');
-  });
 }
 
 // ============================================================================
