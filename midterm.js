@@ -386,6 +386,23 @@ function renderStep3(internalSummary, clientSummary) {
         </button>
       </div>
     </section>
+
+    <section class="summary-section">
+  <h3>4. Project Dashboard</h3>
+  <p class="help-text">
+    See the project’s kickoff and mid-project data side by side.
+  </p>
+  <div class="form-actions">
+    <button
+      type="button"
+      class="btn btn-primary"
+      onclick="openDashboardFromMidterm()"
+    >
+      <i class="fa-solid fa-chart-line"></i>
+      View Project Dashboard
+    </button>
+  </div>
+</section>
   `;
 }
 
@@ -639,23 +656,29 @@ function showThankYouPage() {
   const thankYou = document.createElement("section");
   thankYou.className = "step thank-you active";
   thankYou.innerHTML = `
-    <h2>Mid-project review captured 🎉</h2>
-    <p>
-      You’ve just documented how this project is really doing — what’s going well,
-      what’s at risk, and what needs to happen next. This makes it much easier
-      to course-correct before the final delivery.
-    </p>
-    <p style="margin-top: 1rem;">
-      If you haven’t already, you can also set a 
-      <strong>final review calendar event</strong> so this reflection doesn’t get lost:
-    </p>
-    <div class="form-actions" style="margin-top: 1.5rem;">
-      <button type="button" id="createCalendarEventBtnThankYou" class="btn btn-primary">
-        <i class="fa-solid fa-calendar"></i>
-        Save Final Review to Google Calendar
-      </button>
-    </div>
-  `;
+  <h2>Mid-project review captured 🎉</h2>
+  <p>...</p>
+  <div class="form-actions" style="margin-top: 1.5rem; display:flex; gap:0.75rem; flex-wrap:wrap;">
+    <a
+      id="finalReviewCalendarLinkThankYou"
+      class="btn btn-primary"
+      target="_blank"
+      rel="noopener"
+      href="${calendarUrl}"
+    >
+      <i class="fa-solid fa-calendar"></i>
+      Save Final Review to Google Calendar
+    </a>
+    <button
+      type="button"
+      class="btn btn-secondary"
+      onclick="openDashboardFromMidterm()"
+    >
+      <i class="fa-solid fa-chart-line"></i>
+      View Project Dashboard
+    </button>
+  </div>
+`;
 
   const nav = document.querySelector(".navigation");
   if (nav && nav.parentNode === app) {
