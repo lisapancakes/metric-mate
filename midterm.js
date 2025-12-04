@@ -533,8 +533,7 @@ function setupSummaryActions(internalSummary, clientSummary) {
 
       const url = buildFinalReviewCalendarUrl();
 
-      // Use same-tab navigation to avoid popup blockers
-      window.location.href = url;
+      window.open(calendarUrl, "_blank");
     });
   }
 }
