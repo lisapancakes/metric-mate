@@ -1,316 +1,244 @@
-// dashboard.js – Metric Mate Project Dashboard (matches current dashboard.html)
+// =====================================
+// Metric Mate – Project Dashboard
+// Works with:
+//  - kickoff-only payloads: { kickoff: { info, directory, ... } }
+//  - final payloads:        { project, final, finalSummary }
+//  - combined payloads:     { kickoff, project, midterm, final, finalSummary }
+// =====================================
 
-// --------------------------------------
-// Load data from URL ?data=... or localStorage
-// --------------------------------------
-// dashboard.js - Metric Mate Project Dashboard
-
-// dashboard.js - Metric Mate Project Dashboard
-
+// -------------------------------
+// Load dashboard data
+// -------------------------------
 function loadDashboardData() {
-  let parsedFromUrl = null;
+  let data = null;
 
-  // 1) Try URL ?data=...
+  // 1) URL ?data=... (preferred, always freshest)
   try {
     const params = new URLSearchParams(window.location.search);
     const raw = params.get("data");
     if (raw) {
-      parsedFromUrl = JSON.parse(decodeURIComponent(raw));
+      data = JSON.parse(decodeURIComponent(raw));
     }
   } catch (e) {
     console.warn("Failed to parse dashboard data from URL", e);
   }
 
-  // If we got something from the URL, normalize it
-  if (parsedFromUrl) {
-    // Case A: it already has a project → use as-is
-    if (parsedFromUrl.project) {
-      return parsedFromUrl;
+  // 2) Fallback: localStorage snapshot
+  if (!data) {
+    try {
+      const stored = localStorage.getItem("metricMateDashboard");
+      if (stored) {
+        data = JSON.parse(stored);
+      }
+    } catch (e) {
+      console.warn("Failed to load dashboard data from localStorage", e);
     }
-
-    // Case B: kickoff-only payload → build a full dashboard payload from it
-    if (parsedFromUrl.kickoff) {
-      const fromKickoff = buildDashboardDataFromKickoff(parsedFromUrl.kickoff);
-      if (fromKickoff) return fromKickoff;
-    }
-
-    // Fallback: at least return what we have
-    return parsedFromUrl;
   }
 
-  // 2) Fallback: full dashboard payload saved earlier (midterm/final)
-  try {
-    const stored = localStorage.getItem("metricMateDashboard");
-    if (stored) {
-      const storedParsed = JSON.parse(stored);
-      if (storedParsed) return storedParsed;
-    }
-  } catch (e) {
-    console.warn("Failed to load dashboard data from localStorage", e);
-  }
-
-  // 3) LAST RESORT: build from metricMateKickoff directly
-  try {
-    const kickoffStored = localStorage.getItem("metricMateKickoff");
-    if (kickoffStored) {
-      const kickoff = JSON.parse(kickoffStored);
-      const minimal = buildDashboardDataFromKickoff(kickoff);
-      if (minimal) return minimal;
-    }
-  } catch (e) {
-    console.warn("Failed to build dashboard data from metricMateKickoff", e);
-  }
-
-  return null;
+  return data;
 }
 
-function buildDashboardDataFromKickoff(kickoff) {
-  if (!kickoff || !kickoff.info) return null;
+// -------------------------------
+// Derive project meta from kickoff
+// (handles both id-based directory & direct strings)
+// -------------------------------
+function deriveProjectFromKickoff(kickoff) {
+  if (!kickoff || !kickoff.info) return {};
 
   const info = kickoff.info || {};
-  const dir  = kickoff.directory || {};
+  const dir = kickoff.directory || {};
 
-  // Resolve project name
-  const name = info.projectName || info.name || "Untitled project";
+  const project = {};
 
-  // Resolve client
-  let client = "";
+  // Name
+  project.name = info.projectName || info.name || "";
+
+  // Client
   if (typeof info.clientId === "number" && Array.isArray(dir.clients)) {
-    client = dir.clients[info.clientId] || "";
+    project.client = dir.clients[info.clientId] || "";
   } else {
-    client = info.client || info.clientName || "";
+    project.client = info.client || info.clientName || "";
   }
 
-  // Resolve PM
-  let pm = "";
+  // PM
   if (typeof info.pmId === "number" && Array.isArray(dir.pms)) {
-    pm = dir.pms[info.pmId] || "";
+    project.pm = dir.pms[info.pmId] || "";
   } else {
-    pm = info.pm || info.pmName || "";
+    project.pm = info.pm || info.pmName || "";
   }
 
-  // Resolve Designer
-  let designer = "";
-  if (typeof info.designerId === "number" && Array.isArray(dir.designers)) {
-    designer = dir.designers[info.designerId] || "";
+  // Designer
+  if (
+    typeof info.designerId === "number" &&
+    Array.isArray(dir.designers)
+  ) {
+    project.designer = dir.designers[info.designerId] || "";
   } else {
-    designer = info.designer || info.designerName || "";
+    project.designer = info.designer || info.designerName || "";
   }
 
-  // Resolve Dev
-  let dev = "";
+  // Dev
   if (typeof info.devId === "number" && Array.isArray(dir.devs)) {
-    dev = dir.devs[info.devId] || "";
+    project.dev = dir.devs[info.devId] || "";
   } else {
-    dev = info.dev || info.devName || "";
+    project.dev = info.dev || info.devName || "";
   }
 
-  const project = {
-    name,
-    client,
-    pm,
-    designer,
-    dev,
-    kickoffDate: info.date || "",
-    finalReviewDate: "" // not known yet at kickoff
-  };
+  // Dates
+  project.kickoffDate =
+    info.kickoffDate || info.date || info.startDate || "";
 
-  // The dashboard expects an object with at least { project, final, finalSummary }
-  return {
-    project,
-    kickoff,           // keep the raw kickoff for future use if we want it
-    final: {},         // no final data yet
-    finalSummary: ""   // nothing yet
-  };
+  return project;
 }
 
-// --------------------------------------
-// Normalize data shape (handles new + old formats)
-// --------------------------------------
+// -------------------------------
+// Normalise any payload shape into
+//   { project, kickoff, midterm, final, finalSummary }
+// -------------------------------
 function normalizeDashboardData(raw) {
-  if (!raw || typeof raw !== "object") {
-    return {
-      project: {},
-      final: {},
-      finalSummary: ""
-    };
-  }
+  if (!raw) return null;
 
-  // New-style payload (what final.js is currently writing):
-  // { project: {...}, final: {...}, finalSummary: "..." }
-  if (raw.project || raw.final || raw.finalSummary) {
-    return {
-      project: raw.project || {},
-      final: raw.final || {},
-      finalSummary: raw.finalSummary || ""
-    };
-  }
-
-  // Fallback: older / flat shape
-  const project = {
-    name: raw.projectName || raw.name || "",
-    client: raw.client || "",
-    pm: raw.pm || "",
-    designer: raw.designer || "",
-    dev: raw.dev || "",
-    kickoffDate: raw.kickoffDate || raw.kickoff_date || "",
-    finalReviewDate: raw.date || raw.finalReviewDate || ""
+  const data = {
+    kickoff: raw.kickoff || null,
+    midterm: raw.midterm || null,
+    final: raw.final || null,
+    finalSummary: raw.finalSummary || "",
+    project: raw.project ? { ...raw.project } : {}
   };
 
-  const final = {
-    outcomes: raw.outcomes || "",
-    results: raw.results || "",
-    wins: raw.wins || "",
-    challenges: raw.challenges || "",
-    learnings: raw.learnings || "",
-    nextSteps: raw.nextSteps || ""
-  };
+  // If we don't have a project.name, derive from kickoff.info
+  if (!data.project.name && data.kickoff) {
+    const fromKickoff = deriveProjectFromKickoff(data.kickoff);
+    data.project = { ...fromKickoff, ...data.project };
+  }
 
-  const finalSummary = raw.summary || raw.finalSummary || "";
-
-  return { project, final, finalSummary };
+  return data;
 }
 
-// --------------------------------------
-// Rendering helpers
-// --------------------------------------
-function escapeHtml(str) {
-  if (str == null) return "";
-  return String(str)
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;")
-    .replace(/'/g, "&#39;");
+// -------------------------------
+// Render helpers
+// -------------------------------
+function createEl(tag, className, text) {
+  const el = document.createElement(tag);
+  if (className) el.className = className;
+  if (typeof text === "string") el.textContent = text;
+  return el;
 }
 
-function nl2br(str) {
-  if (!str) return "";
-  return str.replace(/\n/g, "<br>");
-}
-
-// --------------------------------------
-// Render dashboard into #app
-// --------------------------------------
-function renderDashboard(data) {
+// -------------------------------
+// Render dashboard UI
+// -------------------------------
+function renderDashboard(rawData) {
   const app = document.getElementById("app");
   const errorPanel = document.getElementById("errorPanel");
-  const projectMetaEl = document.getElementById("projectMeta");
 
-  if (!app || !errorPanel) return;
+  if (!app) return;
 
-  const project = data.project || {};
-  const final = data.final || {};
-  const finalSummary = data.finalSummary || "";
+  const data = normalizeDashboardData(rawData);
 
-  const hasProjectBits =
-    project.name ||
-    project.client ||
-    project.pm ||
-    project.designer ||
-    project.dev;
-
-  const hasFinalBits = Object.values(final).some(
-    (v) => typeof v === "string" && v.trim() !== ""
-  );
-
-  const hasSummary = typeof finalSummary === "string" && finalSummary.trim() !== "";
-
-  // If there's really nothing, show the "open from Final Review" message
-  if (!hasProjectBits && !hasFinalBits && !hasSummary) {
+  if (!data || !data.project) {
+    if (errorPanel) {
+      errorPanel.style.display = "block";
+      errorPanel.textContent =
+        "No project data found. Open this dashboard from any survey page so it can pass in context.";
+    }
     app.innerHTML = "";
-    errorPanel.textContent =
-      "No project data found. Open this dashboard from the Final Review page so it can pass in all context.";
-    errorPanel.style.display = "block";
     return;
   }
 
-  errorPanel.style.display = "none";
-
-  // Header meta line under "Project Dashboard"
-  if (projectMetaEl) {
-    const bits = [];
-    if (project.client) bits.push(project.client);
-
-    const peopleBits = [];
-    if (project.pm) peopleBits.push(`PM: ${project.pm}`);
-    if (project.designer) peopleBits.push(`Designer: ${project.designer}`);
-    if (project.dev) peopleBits.push(`Dev: ${project.dev}`);
-
-    if (peopleBits.length) bits.push(peopleBits.join(" • "));
-    projectMetaEl.textContent = bits.join(" • ");
+  if (errorPanel) {
+    errorPanel.style.display = "none";
+    errorPanel.textContent = "";
   }
 
+  const project = data.project;
+  const final = data.final || {};
+  const summaryText = data.finalSummary || "";
+
+  app.innerHTML = ""; // clear previous content
+
   // Shell
-  const shell = document.createElement("div");
-  shell.className = "dash-shell";
+  const shell = createEl("div", "dash-shell");
 
-  // Project pill
-  const pill = document.createElement("div");
-  pill.className = "dash-pill";
-  const dates = [
-    project.kickoffDate ? `Kickoff: ${escapeHtml(project.kickoffDate)}` : "",
-    project.finalReviewDate
-      ? `Final review: ${escapeHtml(project.finalReviewDate)}`
-      : ""
-  ]
-    .filter(Boolean)
-    .join(" • ");
+  // Header pill
+  const headerCard = createEl("div", "dash-header-card");
+  const title = createEl(
+    "div",
+    "dash-project-name",
+    project.name || "Untitled project"
+  );
 
-  pill.innerHTML = `
-    <div class="dash-pill-title">${escapeHtml(
-      project.name || "Untitled project"
-    )}</div>
-    <div class="dash-pill-meta">${dates}</div>
-  `;
-  shell.appendChild(pill);
+  const metaBits = [];
+  if (project.client) metaBits.push(project.client);
+  if (project.pm) metaBits.push(`PM: ${project.pm}`);
+  if (project.designer) metaBits.push(`Designer: ${project.designer}`);
+  if (project.dev) metaBits.push(`Dev: ${project.dev}`);
 
-  // Grid of cards
-  const grid = document.createElement("div");
-  grid.className = "dash-grid";
+  const meta = createEl(
+    "div",
+    "dash-project-meta",
+    metaBits.join(" • ")
+  );
 
-  const sections = [
-    ["What we shipped", final.outcomes],
-    ["Results & impact", final.results],
-    ["Biggest wins", final.wins],
-    ["Challenges", final.challenges],
-    ["Key learnings", final.learnings],
-    ["Next steps", final.nextSteps]
-  ];
+  const dateBits = [];
+  if (project.kickoffDate)
+    dateBits.push(`Kickoff: ${project.kickoffDate}`);
+  if (project.finalReviewDate)
+    dateBits.push(`Final review: ${project.finalReviewDate}`);
 
-  sections.forEach(([title, value]) => {
-    const card = document.createElement("section");
-    card.className = "dash-card";
-    card.innerHTML = `
-      <h2 class="dash-card-title">${escapeHtml(title)}</h2>
-      <p class="dash-card-body">${
-        value && value.trim()
-          ? nl2br(escapeHtml(value.trim()))
-          : "—"
-      }</p>
-    `;
-    grid.appendChild(card);
-  });
+  const dates = createEl(
+    "div",
+    "dash-project-dates",
+    dateBits.join(" • ")
+  );
 
-  const summaryCard = document.createElement("section");
-  summaryCard.className = "dash-card dash-card-wide";
-  summaryCard.innerHTML = `
-    <h2 class="dash-card-title">Full Final Summary</h2>
-    <pre class="dash-summary-block">${
-      finalSummary && finalSummary.trim()
-        ? escapeHtml(finalSummary.trim())
-        : "—"
-    }</pre>
-  `;
-  grid.appendChild(summaryCard);
+  headerCard.appendChild(title);
+  if (metaBits.length) headerCard.appendChild(meta);
+  if (dateBits.length) headerCard.appendChild(dates);
 
-  shell.appendChild(grid);
+  // Content card
+  const contentCard = createEl("div", "dash-content-card");
 
-  app.innerHTML = "";
+  function addSection(label, value) {
+    const section = createEl("section", "dash-section");
+    const h = createEl("h3", "dash-section-title", label);
+    const p = createEl("p", "dash-section-body", value || "—");
+    section.appendChild(h);
+    section.appendChild(p);
+    contentCard.appendChild(section);
+  }
+
+  addSection("What we shipped", final.outcomes || "");
+  addSection("Results & impact", final.results || "");
+  addSection("Biggest wins", final.wins || "");
+  addSection("Challenges", final.challenges || "");
+  addSection("Key learnings", final.learnings || "");
+  addSection("Next steps", final.nextSteps || "");
+
+  // Full summary
+  const summarySection = createEl("section", "dash-section dash-summary");
+  const summaryTitle = createEl(
+    "h3",
+    "dash-section-title",
+    "Full Final Summary"
+  );
+  const summaryPre = createEl("pre", "dash-summary-pre");
+  summaryPre.textContent = summaryText || "—";
+
+  summarySection.appendChild(summaryTitle);
+  summarySection.appendChild(summaryPre);
+
+  contentCard.appendChild(summarySection);
+
+  // Assemble
+  shell.appendChild(headerCard);
+  shell.appendChild(contentCard);
   app.appendChild(shell);
 }
 
-// --------------------------------------
+// -------------------------------
+// Init
+// -------------------------------
 document.addEventListener("DOMContentLoaded", () => {
   const data = loadDashboardData();
   renderDashboard(data);
