@@ -25,7 +25,7 @@ function $(id) {
 }
 
 // -------------------------------
-// Load Kickoff Data
+// Load Kickoff + Midterm Data
 // -------------------------------
 function loadKickoffData() {
   try {
@@ -52,6 +52,18 @@ function loadKickoffData() {
   return null;
 }
 
+function loadMidtermData() {
+  try {
+    const stored = localStorage.getItem("metricMateMidterm");
+    if (stored) {
+      return JSON.parse(stored);
+    }
+  } catch (e) {
+    console.warn("Failed to load midterm data from localStorage", e);
+  }
+  return null;
+}
+
 // -------------------------------
 // INIT
 // -------------------------------
@@ -59,7 +71,8 @@ function initFinal() {
   const form = $("finalForm");
   const copyBtn = $("copyFinalSummaryBtn");
 
-  hydrateFromKickoff();
+  // ✅ actually hydrate the form
+  hydrateForm();
 
   if (form) {
     form.addEventListener("input", handleInput);
@@ -86,7 +99,7 @@ function hydrateForm() {
 
   if (kickoff && kickoff.info) {
     const info = kickoff.info;
-    const dir  = kickoff.directory || {};
+    const dir = kickoff.directory || {};
 
     // Project name
     finalState.projectName =
@@ -108,10 +121,7 @@ function hydrateForm() {
     }
 
     // Designer
-    if (
-      typeof info.designerId === "number" &&
-      Array.isArray(dir.designers)
-    ) {
+    if (typeof info.designerId === "number" && Array.isArray(dir.designers)) {
       finalState.designer =
         dir.designers[info.designerId] || finalState.designer;
     } else {
@@ -246,14 +256,14 @@ function updateDashboardPayload(summaryText) {
     finalSummary: summaryText || ""
   };
 
-  // 1) Save for fallback
+  // Save for fallback
   try {
     localStorage.setItem("metricMateDashboard", JSON.stringify(payload));
   } catch (e) {
     console.warn("Failed to save dashboard payload", e);
   }
 
-  // 2) Update the View Dashboard link
+  // Update the View Dashboard link
   const linkEl = $("openDashboardBtn");
   if (!linkEl) return;
 
