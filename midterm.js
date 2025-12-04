@@ -381,12 +381,16 @@ function renderStep3(internalSummary, clientSummary) {
       <p class="help-text">
         Create a calendar event for your end-of-project / retrospective conversation.
       </p>
-      <div class="form-actions">
-        <button type="button" id="createCalendarEventBtn" class="btn btn-primary">
-        <i class="fa-solid fa-calendar"></i>
-          Add Final Review to Google Calendar
-        </button>
-      </div>
+      <a
+  id="finalReviewCalendarLink"
+  href="https://calendar.google.com/calendar/render?action=TEMPLATE"
+  target="_blank"
+  rel="noopener"
+  class="btn btn-primary"
+>
+  <i class="fa-solid fa-calendar"></i>
+  Add Final Review to Google Calendar
+</a>
     </section>
 
     <section class="summary-section">
