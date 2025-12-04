@@ -3,33 +3,103 @@
 // --------------------------------------
 // Load data from URL ?data=... or localStorage
 // --------------------------------------
-function loadDashboardData() {
-  let rawPayload = null;
+// dashboard.js - Metric Mate Project Dashboard
 
-  // 1) Try ?data=... in the URL
+function loadDashboardData() {
+  // 1) Try URL ?data=...
   try {
     const params = new URLSearchParams(window.location.search);
     const raw = params.get("data");
     if (raw) {
-      rawPayload = JSON.parse(decodeURIComponent(raw));
+      return JSON.parse(decodeURIComponent(raw));
     }
   } catch (e) {
-    console.warn("Dashboard: failed to parse data from URL", e);
+    console.warn("Failed to parse dashboard data from URL", e);
   }
 
-  // 2) Fallback: localStorage
-  if (!rawPayload) {
-    try {
-      const stored = localStorage.getItem("metricMateDashboard");
-      if (stored) {
-        rawPayload = JSON.parse(stored);
-      }
-    } catch (e) {
-      console.warn("Dashboard: failed to parse metricMateDashboard from localStorage", e);
+  // 2) Fallback: full dashboard payload (from Final / Midterm)
+  try {
+    const stored = localStorage.getItem("metricMateDashboard");
+    if (stored) {
+      return JSON.parse(stored);
     }
+  } catch (e) {
+    console.warn("Failed to load dashboard data from localStorage", e);
   }
 
-  return normalizeDashboardData(rawPayload);
+  // 3) LAST RESORT: build a minimal payload from kickoff only
+  try {
+    const kickoffStored = localStorage.getItem("metricMateKickoff");
+    if (kickoffStored) {
+      const kickoff = JSON.parse(kickoffStored);
+      const minimal = buildDashboardDataFromKickoff(kickoff);
+      if (minimal) return minimal;
+    }
+  } catch (e) {
+    console.warn("Failed to build dashboard data from metricMateKickoff", e);
+  }
+
+  return null;
+}
+
+function buildDashboardDataFromKickoff(kickoff) {
+  if (!kickoff || !kickoff.info) return null;
+
+  const info = kickoff.info || {};
+  const dir  = kickoff.directory || {};
+
+  // Resolve project name
+  const name = info.projectName || info.name || "Untitled project";
+
+  // Resolve client
+  let client = "";
+  if (typeof info.clientId === "number" && Array.isArray(dir.clients)) {
+    client = dir.clients[info.clientId] || "";
+  } else {
+    client = info.client || info.clientName || "";
+  }
+
+  // Resolve PM
+  let pm = "";
+  if (typeof info.pmId === "number" && Array.isArray(dir.pms)) {
+    pm = dir.pms[info.pmId] || "";
+  } else {
+    pm = info.pm || info.pmName || "";
+  }
+
+  // Resolve Designer
+  let designer = "";
+  if (typeof info.designerId === "number" && Array.isArray(dir.designers)) {
+    designer = dir.designers[info.designerId] || "";
+  } else {
+    designer = info.designer || info.designerName || "";
+  }
+
+  // Resolve Dev
+  let dev = "";
+  if (typeof info.devId === "number" && Array.isArray(dir.devs)) {
+    dev = dir.devs[info.devId] || "";
+  } else {
+    dev = info.dev || info.devName || "";
+  }
+
+  const project = {
+    name,
+    client,
+    pm,
+    designer,
+    dev,
+    kickoffDate: info.date || "",
+    finalReviewDate: "" // not known yet at kickoff
+  };
+
+  // The dashboard expects an object with at least { project, final, finalSummary }
+  return {
+    project,
+    kickoff,           // keep the raw kickoff for future use if we want it
+    final: {},         // no final data yet
+    finalSummary: ""   // nothing yet
+  };
 }
 
 // --------------------------------------
