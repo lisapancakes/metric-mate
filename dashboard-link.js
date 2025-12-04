@@ -1,0 +1,50 @@
+// dashboard-link.js
+// Shared helpers to open the Metric Mate dashboard from any stage.
+
+// Safely parse JSON or return null
+function safeParse(json) {
+  if (!json) return null;
+  try {
+    return JSON.parse(json);
+  } catch (e) {
+    console.warn("Failed to parse JSON in dashboard-link.js", e);
+    return null;
+  }
+}
+
+// Kickoff-only or Kickoff + Midterm + Final (if present later)
+function buildDashboardPayload() {
+  const kickoff = safeParse(localStorage.getItem("metricMateKickoff"));
+  const midterm = safeParse(localStorage.getItem("metricMateMidterm"));
+  const final   = safeParse(localStorage.getItem("metricMateFinal")); // optional (future)
+
+  return { kickoff, midterm, final };
+}
+
+function openDashboardFromKickoff() {
+  const payload = buildDashboardPayload();
+
+  if (!payload.kickoff) {
+    alert("No kickoff data found yet. Please complete the kickoff survey first.");
+    return;
+  }
+
+  const encoded = encodeURIComponent(JSON.stringify(payload));
+  window.open(`dashboard.html?data=${encoded}`, "_blank", "noopener");
+}
+
+function openDashboardFromMidterm() {
+  const payload = buildDashboardPayload();
+
+  if (!payload.kickoff && !payload.midterm) {
+    alert("No mid-project data found yet. Please complete the mid-project review first.");
+    return;
+  }
+
+  const encoded = encodeURIComponent(JSON.stringify(payload));
+  window.open(`dashboard.html?data=${encoded}`, "_blank", "noopener");
+}
+
+// You already have an openDashboard() in final.js that passes kickoff + midterm + final.
+// If you ever want to unify naming, you can just have final.js call buildDashboardPayload()
+// and reuse this pattern, but we’ll leave final.js as-is for now.
