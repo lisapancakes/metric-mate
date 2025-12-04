@@ -78,30 +78,78 @@ function initFinal() {
 }
 
 // -------------------------------
-// HYDRATE FROM KICKOFF
+// HYDRATE FROM KICKOFF + MIDTERM
 // -------------------------------
-function hydrateFromKickoff() {
+function hydrateForm() {
   const kickoff = loadKickoffData();
-  if (!kickoff || !kickoff.info) return;
+  const midterm = loadMidtermData();
 
-  const info = kickoff.info;
+  if (kickoff && kickoff.info) {
+    const info = kickoff.info;
+    const dir  = kickoff.directory || {};
 
-  // Keep all the fallbacks we used in midterm
-  finalState.projectName =
-    info.projectName || info.name || finalState.projectName;
-  finalState.client =
-    info.client || info.clientName || finalState.client;
-  finalState.pm = info.pm || info.pmName || finalState.pm;
-  finalState.designer =
-    info.designer || info.designerName || finalState.designer;
-  finalState.dev = info.dev || info.devName || finalState.dev;
+    // Project name
+    finalState.projectName =
+      info.projectName || info.name || finalState.projectName;
 
-  // Push into DOM if the fields exist
-  const map = ["projectName", "client", "pm", "designer", "dev"];
-  map.forEach((id) => {
-    const el = $(id);
-    if (el) el.value = finalState[id] || "";
-  });
+    // Client
+    if (typeof info.clientId === "number" && Array.isArray(dir.clients)) {
+      finalState.client = dir.clients[info.clientId] || finalState.client;
+    } else {
+      finalState.client =
+        info.client || info.clientName || finalState.client;
+    }
+
+    // PM
+    if (typeof info.pmId === "number" && Array.isArray(dir.pms)) {
+      finalState.pm = dir.pms[info.pmId] || finalState.pm;
+    } else {
+      finalState.pm = info.pm || info.pmName || finalState.pm;
+    }
+
+    // Designer
+    if (
+      typeof info.designerId === "number" &&
+      Array.isArray(dir.designers)
+    ) {
+      finalState.designer =
+        dir.designers[info.designerId] || finalState.designer;
+    } else {
+      finalState.designer =
+        info.designer || info.designerName || finalState.designer;
+    }
+
+    // Dev
+    if (typeof info.devId === "number" && Array.isArray(dir.devs)) {
+      finalState.dev = dir.devs[info.devId] || finalState.dev;
+    } else {
+      finalState.dev = info.dev || info.devName || finalState.dev;
+    }
+  }
+
+  // Final review date – use midterm's review date if present
+  if (midterm && midterm.info && midterm.info.date) {
+    finalState.date = midterm.info.date;
+  }
+
+  // Push values into the form fields (if they exist)
+  const projectInput = $("projectName");
+  if (projectInput) projectInput.value = finalState.projectName;
+
+  const clientInput = $("client");
+  if (clientInput) clientInput.value = finalState.client;
+
+  const pmInput = $("pm");
+  if (pmInput) pmInput.value = finalState.pm;
+
+  const designerInput = $("designer");
+  if (designerInput) designerInput.value = finalState.designer;
+
+  const devInput = $("dev");
+  if (devInput) devInput.value = finalState.dev;
+
+  const dateInput = $("date");
+  if (dateInput) dateInput.value = finalState.date;
 }
 
 // -------------------------------
