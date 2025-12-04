@@ -504,13 +504,15 @@ function buildClientSummary() {
 // ============================================================================
 // SUMMARY ACTIONS + CALENDAR
 // ============================================================================
-// ============================================================================
-// SUMMARY ACTIONS + CALENDAR
-// ============================================================================
 function setupSummaryActions(internalSummary, clientSummary) {
   const internalBtn = document.getElementById("copyInternalSummary");
   const clientBtn = document.getElementById("copyClientSummary");
-  const calendarBtn = document.getElementById("createCalendarEventBtn");
+
+  // Midterm Step 3 page button
+  const calendarLink = document.getElementById("finalReviewCalendarLink");
+
+  // Thank-you page button (added later in DOM)
+  const calendarLinkThankYou = document.getElementById("finalReviewCalendarLinkThankYou");
 
   if (internalBtn) {
     internalBtn.addEventListener("click", () => {
@@ -526,14 +528,21 @@ function setupSummaryActions(internalSummary, clientSummary) {
     });
   }
 
-  if (calendarBtn) {
-    calendarBtn.addEventListener("click", () => {
-      // Small confirmation so we know the click is firing
-      showStatus("📅 Opening Google Calendar...");
-
+  // ----- MIDTERM STEP 3 CALENDAR BUTTON -----
+  if (calendarLink) {
+    calendarLink.addEventListener("click", (e) => {
+      e.preventDefault();
       const url = buildFinalReviewCalendarUrl();
+      window.open(url, "_blank");
+    });
+  }
 
-      window.open(calendarUrl, "_blank");
+  // ----- THANK-YOU PAGE CALENDAR BUTTON -----
+  if (calendarLinkThankYou) {
+    calendarLinkThankYou.addEventListener("click", (e) => {
+      e.preventDefault();
+      const url = buildFinalReviewCalendarUrl();
+      window.open(url, "_blank");
     });
   }
 }
@@ -669,8 +678,7 @@ function showThankYouPage() {
       class="btn btn-primary"
       target="_blank"
       rel="noopener"
-      href="${calendarUrl}"
-    >
+href="${buildFinalReviewCalendarUrl()}"    >
       <i class="fa-solid fa-calendar"></i>
       Save Final Review to Google Calendar
     </a>
