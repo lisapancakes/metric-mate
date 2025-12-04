@@ -176,14 +176,14 @@ function init() {
 function goToNextStep() {
   if (!validateCurrentStep()) return;
 
-  if (kickoff.currentStep < kickoff.totalSteps) {
-    kickoff.currentStep++;
-    renderStep(kickoff.currentStep);
+  if (project.currentStep < project.totalSteps) {
+    project.currentStep++;
+    renderStep(project.currentStep);
     updateProgressBar();
     window.scrollTo(0, 0);
   } else {
     // We're already on the last step (summary).
-    // Just hide/disable the Next button — no separate thank-you page.
+    // Just hide the Next button — no separate thank-you page.
     if (nextBtn) {
       nextBtn.disabled = true;
       nextBtn.style.display = "none";
@@ -244,62 +244,37 @@ function validateCurrentStep() {
 // ============================================================================
 // RENDERING
 // ============================================================================
-function renderStep(step) {
+function renderStep(stepNumber) {
   if (!form) return;
 
-  // Clear previous contents
-  form.innerHTML = "";
+  // Clear previous content
+  form.innerHTML = '';
 
-  const stepEl = document.createElement("section");
-  stepEl.className = "step active";
-  stepEl.id = `step-${step}`;
-
-  // Your existing step body rendering (step 1, 2, summary, etc.)
-  // e.g.:
-  // if (step === 1) { stepEl.innerHTML = renderStep1(); }
-  // else if (step === 2) { stepEl.innerHTML = renderStep2(); }
-  // else if (step === 3) { stepEl.innerHTML = renderSummaryStep(); }
-
-  form.appendChild(stepEl);
+  // Create and insert the step section
+  const stepElement = createStepElement(stepNumber);
+  stepElement.classList.add('active');
+  form.appendChild(stepElement);
 
   // ---- Navigation buttons ----
   if (prevBtn) {
-    prevBtn.disabled = step === 1;
-    prevBtn.style.display = step === 1 ? "none" : "inline-flex";
+    prevBtn.disabled = stepNumber === 1;
+    prevBtn.style.display = stepNumber === 1 ? 'none' : 'inline-flex';
   }
 
   if (nextBtn) {
-    if (step === kickoff.totalSteps) {
-      // On the summary step, we don’t need a “Finish” button
+    if (stepNumber === project.totalSteps) {
+      // On the summary step, we don’t show a Finish button.
+      nextBtn.style.display = 'none';
       nextBtn.disabled = true;
-      nextBtn.style.display = "none";
     } else {
+      nextBtn.style.display = 'inline-flex';
       nextBtn.disabled = false;
-      nextBtn.style.display = "inline-flex";
-      nextBtn.textContent = "Next";
+      nextBtn.textContent = 'Next';
     }
   }
-}
 
-  stepElement.classList.add('active');
-
-  // Update navigation buttons
-  // Update navigation buttons
-if (prevBtn) {
-  prevBtn.disabled = stepNumber === 1;
-}
-
-// Hide Next button completely on final step
-if (nextBtn) {
+  // When we land on the summary step, wire up the summary buttons
   if (stepNumber === project.totalSteps) {
-    nextBtn.style.display = "none";   // No Finish button anymore
-  } else {
-    nextBtn.style.display = "inline-flex";
-    nextBtn.textContent = "Next";
-  }
-}
-  // When we land on the summary step, wire up the buttons
-  if (stepNumber === 5) {
     setupSummaryActions();
   }
 }
