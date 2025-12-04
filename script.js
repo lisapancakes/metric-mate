@@ -69,7 +69,11 @@ const defaultUserPains = [
 // ============================================================================
 // DOM ELEMENTS
 // ============================================================================
-const form = document.getElementById('surveyForm');
+
+// Kickoff page uses #app, midterm uses #surveyForm.
+// Try surveyForm first, then fall back to app.
+const form = document.getElementById('surveyForm') || document.getElementById('app');
+
 const prevBtn = document.getElementById('prevBtn');
 const nextBtn = document.getElementById('nextBtn');
 const progressBar = document.getElementById('progressBar');
