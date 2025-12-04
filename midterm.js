@@ -20,7 +20,7 @@ const midterm = {
   nextSteps: ""
 };
 
-// DOM refs
+// DOM refs (elements exist because script is loaded at bottom of body)
 const form = document.getElementById("surveyForm");
 const prevBtn = document.getElementById("prevBtn");
 const nextBtn = document.getElementById("nextBtn");
@@ -31,12 +31,18 @@ const progressBar = document.getElementById("progressBar");
 // ============================================================================
 function getKickoffDataFromUrl() {
   try {
+    // 1) Try URL ?data=...
     const params = new URLSearchParams(window.location.search);
     const raw = params.get("data");
-    if (raw) return JSON.parse(decodeURIComponent(raw));
+    if (raw) {
+      return JSON.parse(decodeURIComponent(raw));
+    }
 
+    // 2) Fallback: localStorage (saved by the kickoff survey)
     const stored = localStorage.getItem("metricMateKickoff");
-    if (stored) return JSON.parse(stored);
+    if (stored) {
+      return JSON.parse(stored);
+    }
 
     return null;
   } catch (err) {
@@ -84,59 +90,75 @@ function showStatus(message) {
 
   statusEl.textContent = message;
   statusEl.style.display = "block";
-  setTimeout(() => (statusEl.style.display = "none"), 2500);
+  setTimeout(() => {
+    statusEl.style.display = "none";
+  }, 2500);
 }
 
 // ============================================================================
 // INIT
 // ============================================================================
 function init() {
+  // Hydrate from kickoff data (URL or localStorage)
   const kickoffData = getKickoffDataFromUrl();
 
   if (kickoffData && kickoffData.info) {
     const info = kickoffData.info;
     const dir = kickoffData.directory || {};
 
+    // Project name
     midterm.info.projectName =
       info.projectName || info.name || midterm.info.projectName;
 
-    midterm.info.client =
-      (typeof info.clientId === "number" && dir.clients?.[info.clientId]) ||
-      info.client ||
-      info.clientName ||
-      midterm.info.client;
+    // Client
+    if (typeof info.clientId === "number" && Array.isArray(dir.clients)) {
+      midterm.info.client = dir.clients[info.clientId] || "";
+    } else {
+      midterm.info.client =
+        info.client || info.clientName || midterm.info.client;
+    }
 
-    midterm.info.pm =
-      (typeof info.pmId === "number" && dir.pms?.[info.pmId]) ||
-      info.pm ||
-      info.pmName ||
-      midterm.info.pm;
+    // PM
+    if (typeof info.pmId === "number" && Array.isArray(dir.pms)) {
+      midterm.info.pm = dir.pms[info.pmId] || "";
+    } else {
+      midterm.info.pm = info.pm || info.pmName || midterm.info.pm;
+    }
 
-    midterm.info.designer =
-      (typeof info.designerId === "number" &&
-        dir.designers?.[info.designerId]) ||
-      info.designer ||
-      info.designerName ||
-      midterm.info.designer;
+    // Designer
+    if (typeof info.designerId === "number" && Array.isArray(dir.designers)) {
+      midterm.info.designer = dir.designers[info.designerId] || "";
+    } else {
+      midterm.info.designer =
+        info.designer || info.designerName || midterm.info.designer;
+    }
 
-    midterm.info.dev =
-      (typeof info.devId === "number" && dir.devs?.[info.devId]) ||
-      info.dev ||
-      info.devName ||
-      midterm.info.dev;
+    // Dev
+    if (typeof info.devId === "number" && Array.isArray(dir.devs)) {
+      midterm.info.dev = dir.devs[info.devId] || "";
+    } else {
+      midterm.info.dev = info.dev || info.devName || midterm.info.dev;
+    }
   }
 
+  // Wire up navigation
   if (prevBtn) prevBtn.addEventListener("click", goToPreviousStep);
   if (nextBtn) nextBtn.addEventListener("click", goToNextStep);
 
+  // Form events
   if (form) {
-    form.addEventListener("submit", (e) => e.preventDefault());
+    form.addEventListener("submit", (e) => {
+      e.preventDefault();
+      goToNextStep();
+    });
+
     form.addEventListener("change", handleChange);
     form.addEventListener("input", handleInput);
   }
 
+  // Start on Step 1
   midterm.currentStep = 1;
-  renderStep(1);
+  renderStep(midterm.currentStep);
   updateProgressBar();
 }
 
@@ -152,6 +174,7 @@ function goToNextStep() {
     updateProgressBar();
     window.scrollTo(0, 0);
   } else {
+    // Already at final step; hide Next button
     if (nextBtn) nextBtn.style.display = "none";
   }
 }
@@ -191,7 +214,7 @@ function validateCurrentStep() {
 function renderStep(step) {
   if (!form) return;
 
-  // Clear previous content
+  // Clear previous
   form.innerHTML = "";
 
   let stepEl = document.createElement("section");
@@ -203,39 +226,36 @@ function renderStep(step) {
 
   if (step === 1) {
     stepEl.innerHTML = renderStep1();
-  } 
-  else if (step === 2) {
+  } else if (step === 2) {
     stepEl.innerHTML = renderStep2();
-  } 
-  else if (step === 3) {
+  } else if (step === 3) {
     internalSummary = buildInternalSummary();
     clientSummary = buildClientSummary();
     stepEl.innerHTML = renderStep3(internalSummary, clientSummary);
   }
 
-  // Add the HTML to the form
+  // Append to form
   form.appendChild(stepEl);
 
-  // Step 3 needs summary actions
+  // Step 3 needs summary actions + calendar wiring
   if (step === 3) {
     setupSummaryActions(internalSummary, clientSummary);
   }
 
-  // Navigation buttons
+  // Nav button states
   if (prevBtn) prevBtn.disabled = step === 1;
 
   if (nextBtn) {
     if (step === midterm.totalSteps) {
-      nextBtn.style.display = "none";   // hide Next button
+      nextBtn.style.display = "none"; // hide Next on summary page
     } else {
       nextBtn.style.display = "inline-block";
       nextBtn.textContent = "Next";
     }
   }
 }
-// ============================================================================
-// STEP MARKUP
-// ============================================================================
+
+// STEP 1 – Project info for midterm
 function renderStep1() {
   return `
     <h2>Project Information</h2>
@@ -272,6 +292,7 @@ function renderStep1() {
   `;
 }
 
+// STEP 2 – Health + progress questions
 function renderStep2() {
   return `
     <h2>Mid-Project Check-In</h2>
@@ -284,15 +305,15 @@ function renderStep2() {
           ${[1, 2, 3, 4, 5]
             .map(
               (num) => `
-            <label class="rating-option">
-              <input 
-                type="radio" 
-                name="healthScore" 
-                value="${num}" 
-                ${midterm.healthScore === num ? "checked" : ""}>
-              <span>${num}</span>
-            </label>
-          `
+                <label class="rating-option">
+                  <input 
+                    type="radio" 
+                    name="healthScore" 
+                    value="${num}" 
+                    ${midterm.healthScore === num ? "checked" : ""}>
+                  <span>${num}</span>
+                </label>
+              `
             )
             .join("")}
         </div>
@@ -302,64 +323,195 @@ function renderStep2() {
 
     <div class="form-group">
       <label for="progressGood">What’s going well?</label>
-      <textarea id="progressGood" rows="3">${midterm.progressGood}</textarea>
+      <textarea id="progressGood" rows="3"
+        placeholder="Wins, green lights, decisions that paid off...">${midterm.progressGood}</textarea>
     </div>
 
     <div class="form-group">
       <label for="progressOff">What’s off track or unclear?</label>
-      <textarea id="progressOff" rows="3">${midterm.progressOff}</textarea>
+      <textarea id="progressOff" rows="3"
+        placeholder="Scope creep, blockers, misalignments, unanswered questions...">${midterm.progressOff}</textarea>
     </div>
 
     <div class="form-group">
       <label for="risks">Risks to call out</label>
-      <textarea id="risks" rows="3">${midterm.risks}</textarea>
+      <textarea id="risks" rows="3"
+        placeholder="Dependencies, technical unknowns, timeline risks...">${midterm.risks}</textarea>
     </div>
 
     <div class="form-group">
       <label for="decisions">Key decisions since kickoff</label>
-      <textarea id="decisions" rows="3">${midterm.decisions}</textarea>
+      <textarea id="decisions" rows="3"
+        placeholder="What did we lock in? What changed from the original plan?">${midterm.decisions}</textarea>
     </div>
 
     <div class="form-group">
       <label for="nextSteps">Next 2–3 concrete next steps</label>
-      <textarea id="nextSteps" rows="3">${midterm.nextSteps}</textarea>
+      <textarea id="nextSteps" rows="3"
+        placeholder="What should happen next to keep this project healthy?">${midterm.nextSteps}</textarea>
     </div>
   `;
 }
 
+// STEP 3 – Summaries
 function renderStep3(internalSummary, clientSummary) {
   return `
     <h2>Review & Share</h2>
-    <p class="help-text">Use these summaries in your mid-project sync, internal notes, or client email.</p>
+    <p class="help-text">
+      Use these summaries in your mid-project sync, internal notes, or client email.
+    </p>
 
     <section class="summary-section">
       <h3>1. Internal Mid-Project Summary</h3>
+      <p class="help-text">Drop this into Asana, Slack, or your team doc.</p>
       <textarea id="internalSummary" rows="10" readonly>${internalSummary}</textarea>
-      <button type="button" id="copyInternalSummary" class="btn btn-secondary">Copy Internal Summary</button>
+      <div class="form-actions" style="margin-top: 0.75rem;">
+        <button type="button" id="copyInternalSummary" class="btn btn-secondary">
+          <i class="fa-solid fa-copy"></i>
+          Copy Internal Summary
+        </button>
+      </div>
     </section>
 
     <section class="summary-section">
       <h3>2. Client-Friendly Check-In</h3>
+      <p class="help-text">Use this in a short email or slide to align on where things stand.</p>
       <textarea id="clientSummary" rows="10" readonly>${clientSummary}</textarea>
-      <button type="button" id="copyClientSummary" class="btn btn-secondary">Copy Client Summary</button>
+      <div class="form-actions" style="margin-top: 0.75rem;">
+        <button type="button" id="copyClientSummary" class="btn btn-secondary">
+          <i class="fa-solid fa-copy"></i>
+          Copy Client Summary
+        </button>
+      </div>
     </section>
 
     <section class="summary-section">
       <h3>3. Final Review Reminder</h3>
-      <a id="finalReviewCalendarLink" class="btn btn-primary" href="#" target="_blank" rel="noopener">
+      <p class="help-text">
+        Create a calendar event for your end-of-project / retrospective conversation.
+      </p>
+      <a
+        id="finalReviewCalendarLink"
+        href="https://calendar.google.com/calendar/render?action=TEMPLATE"
+        target="_blank"
+        rel="noopener"
+        class="btn btn-primary"
+      >
+        <i class="fa-solid fa-calendar"></i>
         Add Final Review to Google Calendar
       </a>
     </section>
 
     <section class="summary-section">
       <h3>4. Project Dashboard</h3>
-      <button type="button" class="btn btn-primary" onclick="openDashboardFromMidterm()">View Project Dashboard</button>
+      <p class="help-text">
+        See the project’s kickoff and mid-project data side by side.
+      </p>
+      <div class="form-actions">
+        <button
+          type="button"
+          class="btn btn-primary"
+          onclick="openDashboardFromMidterm()"
+        >
+          <i class="fa-solid fa-chart-line"></i>
+          View Project Dashboard
+        </button>
+      </div>
     </section>
   `;
 }
 
 // ============================================================================
-// SUMMARY ACTIONS
+// SUMMARY BUILDERS
+// ============================================================================
+function buildInternalSummary() {
+  const i = midterm.info;
+
+  let lines = [];
+  lines.push("MID-PROJECT REVIEW — INTERNAL");
+  lines.push("--------------------------------");
+  lines.push(`Project: ${i.projectName || "Untitled project"}`);
+  if (i.client) lines.push(`Client: ${i.client}`);
+  if (i.pm) lines.push(`PM: ${i.pm}`);
+  if (i.designer) lines.push(`Product Designer: ${i.designer}`);
+  if (i.dev) lines.push(`Lead Developer: ${i.dev}`);
+  if (i.date) lines.push(`Review Date: ${i.date}`);
+  lines.push("");
+  lines.push(`Overall project health (self-rated): ${midterm.healthScore}/5`);
+  lines.push("");
+  if (midterm.progressGood.trim()) {
+    lines.push("What’s going well:");
+    lines.push(midterm.progressGood.trim());
+    lines.push("");
+  }
+  if (midterm.progressOff.trim()) {
+    lines.push("What’s off track or unclear:");
+    lines.push(midterm.progressOff.trim());
+    lines.push("");
+  }
+  if (midterm.risks.trim()) {
+    lines.push("Risks:");
+    lines.push(midterm.risks.trim());
+    lines.push("");
+  }
+  if (midterm.decisions.trim()) {
+    lines.push("Key decisions since kickoff:");
+    lines.push(midterm.decisions.trim());
+    lines.push("");
+  }
+  if (midterm.nextSteps.trim()) {
+    lines.push("Next 2–3 concrete steps:");
+    lines.push(midterm.nextSteps.trim());
+  }
+
+  return lines.join("\n");
+}
+
+function buildClientSummary() {
+  const i = midterm.info;
+  const nameForGreeting = i.client || "there";
+
+  let lines = [];
+  lines.push(`Hi ${nameForGreeting},`);
+  lines.push("");
+  lines.push(
+    `Here’s a quick mid-project snapshot for ${i.projectName || "the project"}:`
+  );
+  lines.push("");
+  lines.push(`• Overall health: ${midterm.healthScore}/5`);
+  if (midterm.progressGood.trim()) {
+    lines.push("");
+    lines.push("What’s going well:");
+    lines.push(midterm.progressGood.trim());
+  }
+  if (midterm.progressOff.trim()) {
+    lines.push("");
+    lines.push("What’s off track / needs attention:");
+    lines.push(midterm.progressOff.trim());
+  }
+  if (midterm.risks.trim()) {
+    lines.push("");
+    lines.push("Risks we’re watching:");
+    lines.push(midterm.risks.trim());
+  }
+  if (midterm.nextSteps.trim()) {
+    lines.push("");
+    lines.push("Proposed next steps:");
+    lines.push(midterm.nextSteps.trim());
+  }
+  lines.push("");
+  lines.push(
+    "If anything here feels off or if you’d like to adjust scope or priorities, we’re happy to recalibrate together."
+  );
+  lines.push("");
+  lines.push("Best,");
+  lines.push("The Thinklogic team");
+
+  return lines.join("\n");
+}
+
+// ============================================================================
+// SUMMARY ACTIONS + CALENDAR
 // ============================================================================
 function setupSummaryActions(internalSummary, clientSummary) {
   const internalBtn = document.getElementById("copyInternalSummary");
@@ -369,32 +521,34 @@ function setupSummaryActions(internalSummary, clientSummary) {
   if (internalBtn) {
     internalBtn.addEventListener("click", () => {
       copyToClipboard(internalSummary);
-      showStatus("✅ Internal summary copied");
+      showStatus("✅ Internal summary copied to clipboard");
     });
   }
 
   if (clientBtn) {
     clientBtn.addEventListener("click", () => {
       copyToClipboard(clientSummary);
-      showStatus("✅ Client summary copied");
+      showStatus("✅ Client summary copied to clipboard");
     });
   }
 
   if (calendarLink) {
     calendarLink.addEventListener("click", (e) => {
       e.preventDefault();
-      window.open(buildFinalReviewCalendarUrl(), "_blank");
+      const url = buildFinalReviewCalendarUrl();
+      window.open(url, "_blank");
     });
   }
+
+  // Save midterm so dashboard/final can read it
+  saveMidtermForDashboard();
 }
 
-// ============================================================================
-// CALENDAR URL
-// ============================================================================
 function buildFinalReviewCalendarUrl() {
   const projectName = midterm.info.projectName || "Project";
   const clientName = midterm.info.client || "Client";
 
+  // 21 days from today, 10–11am
   const start = new Date();
   start.setDate(start.getDate() + 21);
   start.setHours(10, 0, 0, 0);
@@ -409,9 +563,10 @@ function buildFinalReviewCalendarUrl() {
 
   const params = new URLSearchParams({
     text: `Final review: ${projectName} (${clientName})`,
-    details:
-      buildInternalSummary() +
-      "\n\nFinal review form:\nhttps://lisapancakes.github.io/metric-mate/final.html",
+    details: `${buildInternalSummary()}
+
+Final review form:
+https://lisapancakes.github.io/metric-mate/final.html`,
     dates: `${formatDate(start)}/${formatDate(end)}`
   });
 
@@ -422,38 +577,59 @@ function buildFinalReviewCalendarUrl() {
 // FORM HANDLERS
 // ============================================================================
 function handleChange(e) {
-  if (e.target.name === "healthScore") {
-    midterm.healthScore = Number(e.target.value);
+  const t = e.target;
+
+  // healthScore radio
+  if (t.name === "healthScore" && t.type === "radio") {
+    midterm.healthScore = parseInt(t.value, 10);
+    saveMidtermForDashboard();
+    return;
   }
 }
 
 function handleInput(e) {
-  const id = e.target.id;
-  midterm.info[id] ??= undefined;
+  const t = e.target;
+  const val = t.value;
 
-  switch (id) {
+  switch (t.id) {
     case "projectName":
-    case "client":
-    case "pm":
-    case "designer":
-    case "dev":
-    case "date":
-      midterm.info[id] = e.target.value;
+      midterm.info.projectName = val;
       break;
-
+    case "client":
+      midterm.info.client = val;
+      break;
+    case "pm":
+      midterm.info.pm = val;
+      break;
+    case "designer":
+      midterm.info.designer = val;
+      break;
+    case "dev":
+      midterm.info.dev = val;
+      break;
+    case "date":
+      midterm.info.date = val;
+      break;
     case "progressGood":
+      midterm.progressGood = val;
+      break;
     case "progressOff":
+      midterm.progressOff = val;
+      break;
     case "risks":
+      midterm.risks = val;
+      break;
     case "decisions":
+      midterm.decisions = val;
+      break;
     case "nextSteps":
-      midterm[id] = e.target.value;
+      midterm.nextSteps = val;
       break;
   }
+
+  saveMidtermForDashboard();
 }
 
-// ============================================================================
-// DASHBOARD STORAGE
-// ============================================================================
 function saveMidtermForDashboard() {
   try {
     const exportObj = {
