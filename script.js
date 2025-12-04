@@ -597,7 +597,8 @@ function renderSummaryStep() {
       <textarea id="internalSummary" rows="10" readonly>${internalSummary}</textarea>
       <div class="form-actions" style="margin-top: 0.75rem;">
         <button type="button" id="copyInternalSummary" class="btn btn-secondary">
-          📋 Copy Internal Summary
+          <i class="fa-solid fa-copy"></i>
+          Copy Internal Summary
         </button>
       </div>
     </section>
@@ -608,7 +609,8 @@ function renderSummaryStep() {
       <textarea id="clientSummary" rows="10" readonly>${clientSummary}</textarea>
       <div class="form-actions" style="margin-top: 0.75rem;">
         <button type="button" id="copyClientSummary" class="btn btn-secondary">
-          📋 Copy Client Summary
+          <i class="fa-solid fa-copy"></i>
+          Copy Client Summary
         </button>
       </div>
     </section>
@@ -621,10 +623,12 @@ function renderSummaryStep() {
       <textarea id="goalNarratives" rows="12" readonly>${goalNarratives}</textarea>
       <div class="form-actions" style="margin-top: 0.75rem;">
         <button type="button" id="copyGoalNarratives" class="btn btn-secondary">
-          📋 Copy Goal Narratives
+          <i class="fa-solid fa-copy"></i>
+          Copy Goal Narratives
         </button>
         <button type="button" id="copyChatGPTPromptBtn" class="btn btn-secondary btn-sm">
-          🤖 Refine with ChatGPT
+          <i class="fa-solid fa-robot"></i>
+          Refine with ChatGPT
         </button>
       </div>
     </section>
@@ -643,15 +647,23 @@ function renderSummaryStep() {
     </section>
 
     <section class="summary-section">
-      <h3>5. Raw Data (Optional)</h3>
-      <p class="help-text">For debugging or future automation, you can copy the full JSON.</p>
-      <div class="form-actions">
-        <button type="button" id="copyJsonBtn" class="btn btn-secondary">
-          📋 Copy Data as JSON
-        </button>
-      </div>
-      <div id="copyStatus" class="status-message" style="display: none; margin-top: 0.75rem;"></div>
-    </section>
+  <h3>5. Project Dashboard</h3>
+  <p class="help-text">
+    Open the evolving project dashboard based on completed surveys.  
+    Kickoff-only data appears now — midterm and final reviews will enrich it.
+  </p>
+
+  <div class="form-actions" style="display:flex; gap:0.75rem; margin-top:1rem;">
+    <button
+      type="button"
+      class="btn btn-primary"
+      onclick="openDashboardFromKickoff()"
+    >
+      <i class="fa-solid fa-chart-line"></i>
+      View Dashboard
+    </button>
+  </div>
+</section>
   `;
 }
 
@@ -1280,27 +1292,45 @@ function showThankYouPage() {
   const app = document.getElementById('app');
   if (!app) return;
 
-  const thankYou = document.createElement('section');
-  thankYou.className = 'step thank-you active';
-  thankYou.innerHTML = `
-    <h2>Kickoff captured 🎉</h2>
-    <p>
-      You’ve just given yourself and your team a clear snapshot of this project’s 
-      <strong>business goals</strong>, <strong>product priorities</strong>, and 
-      <strong>user needs</strong>. This becomes your baseline to check against
-      when you review progress mid-project.
-    </p>
-    <p style="margin-top: 1rem;">
-      To make that review actually happen, set a 
-      <strong>mid-project review calendar event</strong> now:
-    </p>
-    <div class="form-actions" style="margin-top: 1.5rem;">
-      <button type="button" id="createCalendarEventBtnThankYou" class="btn btn-primary">
-        <i class="fa-solid fa-calendar"></i>
+const thankYou = document.createElement('section');
+thankYou.className = 'step thank-you active';
+thankYou.innerHTML = `
+  <h2>Kickoff captured 🎉</h2>
+  <p>
+    You’ve just given yourself and your team a clear snapshot of this project’s 
+    <strong>business goals</strong>, <strong>product priorities</strong>, and 
+    <strong>user needs</strong>. This becomes your baseline to check against
+    when you review progress mid-project.
+  </p>
+  <p style="margin-top: 1rem;">
+    To make that review actually happen, set a 
+    <strong>mid-project review calendar event</strong> now:
+  </p>
+
+  <div class="form-actions" style="margin-top: 1.5rem; display: flex; gap: 0.75rem;">
+    <!-- Calendar Event Button -->
+    <button
+      type="button"
+      id="createCalendarEventBtnThankYou"
+      class="btn btn-primary"
+    >
+      <i class="fa-solid fa-calendar"></i>
       Save Mid-Project Review to Google Calendar
-      </button>
-    </div>
-  `;
+    </button>
+
+    <!-- Dashboard Button -->
+    <a
+      href="dashboard.html"
+      target="_blank"
+      id="openDashboardBtnKickoff"
+      class="btn btn-secondary"
+      style="text-decoration: none;"
+    >
+      <i class="fa-solid fa-chart-line"></i>
+      View Dashboard
+    </a>
+  </div>
+`;
 
   // Insert before the navigation (if it exists) or at the end of #app
   const nav = document.querySelector('.navigation');
