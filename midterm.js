@@ -358,7 +358,8 @@ function renderStep3(internalSummary, clientSummary) {
       <textarea id="internalSummary" rows="10" readonly>${internalSummary}</textarea>
       <div class="form-actions" style="margin-top: 0.75rem;">
         <button type="button" id="copyInternalSummary" class="btn btn-secondary">
-          📋 Copy Internal Summary
+          <i class="fa-solid fa-copy"></i>
+          Copy Internal Summary
         </button>
       </div>
     </section>
@@ -369,7 +370,8 @@ function renderStep3(internalSummary, clientSummary) {
       <textarea id="clientSummary" rows="10" readonly>${clientSummary}</textarea>
       <div class="form-actions" style="margin-top: 0.75rem;">
         <button type="button" id="copyClientSummary" class="btn btn-secondary">
-          📋 Copy Client Summary
+          <i class="fa-solid fa-copy"></i>
+          Copy Client Summary
         </button>
       </div>
     </section>
