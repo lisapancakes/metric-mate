@@ -1,12 +1,51 @@
 // =====================================
-// Metric Mate – Midterm Rendering & Logic
+// Metric Mate – Midterm Rendering & Logic (v2)
 // Responsibilities:
-//  - Hydrate state from kickoff
-//  - Render steps and summaries
-//  - Handle navigation and form events
+//  - Hydrate state from kickoff + saved midterm
+//  - Render modular sections (v2 UX)
+//  - Collect goalStatuses with type for dashboard consumption
 // =====================================
 
+const STATUS_OPTIONS = [
+  { value: "not-started", label: "Not started" },
+  { value: "in-progress", label: "In progress" },
+  { value: "completed", label: "Completed" },
+  { value: "na", label: "N/A" }
+];
+
+function addSection(title, body, subtitle = "") {
+  return `
+    <section class="summary-section">
+      <div class="section-head">
+        <h3>${title}</h3>
+        ${subtitle ? `<p class="help-text">${subtitle}</p>` : ""}
+      </div>
+      ${body}
+    </section>
+  `;
+}
+
 function initMidterm() {
+  // Hydrate from saved midterm first
+  const savedMidterm = loadSavedMidterm();
+  if (savedMidterm) {
+    Object.assign(midterm.info, savedMidterm.info || {});
+    midterm.healthScore = savedMidterm.healthScore ?? midterm.healthScore;
+    midterm.progressScore = savedMidterm.progressScore ?? midterm.progressScore;
+    midterm.progressGood = savedMidterm.progressGood || "";
+    midterm.progressOff = savedMidterm.progressOff || "";
+    midterm.goalStatuses = savedMidterm.goalStatuses || [];
+    midterm.risks = (savedMidterm.risks || []).map(r => ({
+      id: r.id || generateId(),
+      label: r.label || "",
+      selected: r.selected ?? false,
+      notes: r.notes || ""
+    }));
+    midterm.wins = savedMidterm.wins || "";
+    midterm.learnings = savedMidterm.learnings || "";
+    midterm.nextSteps = savedMidterm.nextSteps || "";
+  }
+
   // Hydrate from kickoff data (URL or localStorage)
   const kickoffData = getKickoffDataFromUrl();
 
@@ -47,6 +86,17 @@ function initMidterm() {
     } else {
       midterm.info.dev = info.dev || info.devName || midterm.info.dev;
     }
+
+    // Other contributors (optional)
+    if (info.otherContributors) {
+      midterm.info.otherContributors = info.otherContributors;
+    }
+
+    // Merge kickoff goals into a unified goalStatuses table
+    midterm.goalStatuses = normalizeGoalStatusesFromKickoff(
+      kickoffData,
+      midterm.goalStatuses
+    );
   }
 
   // Wire up navigation
@@ -62,12 +112,14 @@ function initMidterm() {
 
     form.addEventListener("change", handleChange);
     form.addEventListener("input", handleInput);
+    form.addEventListener("click", handleClick);
   }
 
   // Start on Step 1
   midterm.currentStep = 1;
   renderStep(midterm.currentStep);
   updateProgressBar();
+  saveMidtermForDashboard();
 }
 
 // NAVIGATION
@@ -80,7 +132,6 @@ function goToNextStep() {
     updateProgressBar();
     window.scrollTo(0, 0);
   } else {
-    // Already at final step; hide Next button
     if (nextBtn) nextBtn.style.display = "none";
   }
 }
@@ -108,6 +159,14 @@ function validateCurrentStep() {
       alert("Please enter a project name");
       return false;
     }
+    if (midterm.healthScore == null) {
+      alert("Please rate overall project health");
+      return false;
+    }
+    if (midterm.progressScore == null) {
+      alert("Please rate overall project progress");
+      return false;
+    }
   }
   return true;
 }
@@ -116,10 +175,9 @@ function validateCurrentStep() {
 function renderStep(step) {
   if (!form) return;
 
-  // Clear previous
   form.innerHTML = "";
 
-  let stepEl = document.createElement("section");
+  const stepEl = document.createElement("section");
   stepEl.className = "step active";
   stepEl.id = `step-${step}`;
 
@@ -136,20 +194,17 @@ function renderStep(step) {
     stepEl.innerHTML = renderStep3(internalSummary, clientSummary);
   }
 
-  // Append to form
   form.appendChild(stepEl);
 
-  // Step 3 needs summary actions + calendar wiring
   if (step === 3) {
     setupSummaryActions(internalSummary, clientSummary);
   }
 
-  // Nav button states
   if (prevBtn) prevBtn.disabled = step === 1;
 
   if (nextBtn) {
     if (step === midterm.totalSteps) {
-      nextBtn.style.display = "none"; // hide Next on summary page
+      nextBtn.style.display = "none";
     } else {
       nextBtn.style.display = "inline-block";
       nextBtn.textContent = "Next";
@@ -157,102 +212,181 @@ function renderStep(step) {
   }
 }
 
-// STEP 1 – Project info for midterm
+// STEP 1 – Project meta + health
 function renderStep1() {
-  return `
-    <h2>Project Information</h2>
+  const metaSection = addSection(
+    "Project Meta",
+    `
+      <div class="form-grid">
+        <div class="form-group">
+          <label for="projectName">Project Name</label>
+          <input type="text" id="projectName" value="${midterm.info.projectName || ""}" />
+        </div>
+        <div class="form-group">
+          <label for="client">Client</label>
+          <input type="text" id="client" value="${midterm.info.client || ""}" />
+        </div>
+        <div class="form-group">
+          <label for="pm">Project Manager</label>
+          <input type="text" id="pm" value="${midterm.info.pm || ""}" />
+        </div>
+        <div class="form-group">
+          <label for="designer">Product Designer</label>
+          <input type="text" id="designer" value="${midterm.info.designer || ""}" />
+        </div>
+        <div class="form-group">
+          <label for="dev">Lead Developer</label>
+          <input type="text" id="dev" value="${midterm.info.dev || ""}" />
+        </div>
+        <div class="form-group">
+          <label for="otherContributors">Other Contributors</label>
+          <input type="text" id="otherContributors" value="${midterm.info.otherContributors || ""}" />
+        </div>
+        <div class="form-group">
+          <label for="date">Review Date</label>
+          <input type="text" id="date" placeholder="e.g. Dec 10, 2025" value="${midterm.info.date || ""}" />
+        </div>
+      </div>
+    `,
+    "Auto-injected from Kickoff; adjust if needed."
+  );
 
-    <div class="form-group">
-      <label for="projectName">Project Name</label>
-      <input type="text" id="projectName" value="${midterm.info.projectName}" />
-    </div>
+  const healthSection = addSection(
+    "Project Health Check",
+    `
+      <div class="form-group">
+        <label>Overall project health today</label>
+        <div class="rating">
+          <div class="rating-label">At risk</div>
+          <div class="rating-scale">
+            ${[1, 2, 3, 4, 5]
+              .map(
+                (num) => `
+                  <label class="rating-option">
+                    <input 
+                      type="radio" 
+                      name="healthScore" 
+                      value="${num}" 
+                      ${midterm.healthScore === num ? "checked" : ""}>
+                    <span>${num}</span>
+                  </label>
+                `
+              )
+              .join("")}
+          </div>
+          <div class="rating-label">On track</div>
+        </div>
+      </div>
+      <div class="form-group">
+        <label>Overall progress vs. plan</label>
+        <div class="rating">
+          <div class="rating-label">Behind</div>
+          <div class="rating-scale">
+            ${[1, 2, 3, 4, 5]
+              .map(
+                (num) => `
+                  <label class="rating-option">
+                    <input 
+                      type="radio" 
+                      name="progressScore" 
+                      value="${num}" 
+                      ${midterm.progressScore === num ? "checked" : ""}>
+                    <span>${num}</span>
+                  </label>
+                `
+              )
+              .join("")}
+          </div>
+          <div class="rating-label">Ahead</div>
+        </div>
+      </div>
+    `,
+    "Two required scores to track health and velocity."
+  );
 
-    <div class="form-group">
-      <label for="client">Client</label>
-      <input type="text" id="client" value="${midterm.info.client}" />
-    </div>
-
-    <div class="form-group">
-      <label for="pm">Project Manager</label>
-      <input type="text" id="pm" value="${midterm.info.pm}" />
-    </div>
-
-    <div class="form-group">
-      <label for="designer">Product Designer</label>
-      <input type="text" id="designer" value="${midterm.info.designer}" />
-    </div>
-
-    <div class="form-group">
-      <label for="dev">Lead Developer</label>
-      <input type="text" id="dev" value="${midterm.info.dev}" />
-    </div>
-
-    <div class="form-group">
-      <label for="date">Review Date</label>
-      <input type="text" id="date" placeholder="e.g. Dec 10, 2025" value="${midterm.info.date}" />
-    </div>
-  `;
+  return metaSection + healthSection;
 }
 
-// STEP 2 – Health + progress questions
+// STEP 2 – Status table + narrative fields
 function renderStep2() {
-  return `
-    <h2>Mid-Project Check-In</h2>
-
-    <div class="form-group">
-      <label>Overall project health today</label>
-      <div class="rating">
-        <div class="rating-label">At risk</div>
-        <div class="rating-scale">
-          ${[1, 2, 3, 4, 5]
-            .map(
-              (num) => `
-                <label class="rating-option">
-                  <input 
-                    type="radio" 
-                    name="healthScore" 
-                    value="${num}" 
-                    ${midterm.healthScore === num ? "checked" : ""}>
-                  <span>${num}</span>
-                </label>
-              `
-            )
-            .join("")}
+  const statusTable =
+    midterm.goalStatuses.length > 0
+      ? `
+        <div class="table-wrapper">
+          <table class="dash-table">
+            <thead>
+              <tr>
+                <th>Goal Label</th>
+                <th>Type</th>
+                <th>Status</th>
+                <th>Notes</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${midterm.goalStatuses
+                .map(
+                  (item) => `
+                    <tr>
+                      <td>${item.label}</td>
+                      <td>${item.type}</td>
+                      <td>
+                        <select data-type="goal-status" data-id="${item.id}">
+                          ${STATUS_OPTIONS.map(
+                            (opt) => `<option value="${opt.value}" ${
+                              item.status === opt.value ? "selected" : ""
+                            }>${opt.label}</option>`
+                          ).join("")}
+                        </select>
+                      </td>
+                      <td>
+                        <textarea
+                          rows="2"
+                          data-type="goal-notes"
+                          data-id="${item.id}"
+                          placeholder="Notes on progress, blockers, scope changes..."
+                        >${item.notes || ""}</textarea>
+                      </td>
+                    </tr>
+                  `
+                )
+                .join("")}
+            </tbody>
+          </table>
         </div>
-        <div class="rating-label">On track</div>
-      </div>
-    </div>
+      `
+      : `<p class="help-text">No kickoff goals were selected, so there are no midterm statuses to capture.</p>`;
 
-    <div class="form-group">
-      <label for="progressGood">What’s going well?</label>
-      <textarea id="progressGood" rows="3"
-        placeholder="Wins, green lights, decisions that paid off...">${midterm.progressGood}</textarea>
-    </div>
+  const risksSection = renderRisksSection();
+  const winsSection = renderTextAreaSection(
+    "Biggest Wins",
+    "wins",
+    midterm.wins,
+    "Celebrate notable outcomes since kickoff."
+  );
+  const learningsSection = renderTextAreaSection(
+    "Key Learnings",
+    "learnings",
+    midterm.learnings,
+    "Observations, hypotheses proven or disproven."
+  );
+  const nextStepsSection = renderTextAreaSection(
+    "Updated Next Steps",
+    "nextSteps",
+    midterm.nextSteps,
+    "What should happen next to keep the project healthy?"
+  );
 
-    <div class="form-group">
-      <label for="progressOff">What’s off track or unclear?</label>
-      <textarea id="progressOff" rows="3"
-        placeholder="Scope creep, blockers, misalignments, unanswered questions...">${midterm.progressOff}</textarea>
-    </div>
-
-    <div class="form-group">
-      <label for="risks">Risks to call out</label>
-      <textarea id="risks" rows="3"
-        placeholder="Dependencies, technical unknowns, timeline risks...">${midterm.risks}</textarea>
-    </div>
-
-    <div class="form-group">
-      <label for="decisions">Key decisions since kickoff</label>
-      <textarea id="decisions" rows="3"
-        placeholder="What did we lock in? What changed from the original plan?">${midterm.decisions}</textarea>
-    </div>
-
-    <div class="form-group">
-      <label for="nextSteps">Next 2–3 concrete next steps</label>
-      <textarea id="nextSteps" rows="3"
-        placeholder="What should happen next to keep this project healthy?">${midterm.nextSteps}</textarea>
-    </div>
-  `;
+  return (
+    addSection(
+      "Status Update Table",
+      statusTable,
+      "Auto-generated from kickoff selections. Track progress by goal."
+    ) +
+    risksSection +
+    winsSection +
+    learningsSection +
+    nextStepsSection
+  );
 }
 
 // STEP 3 – Summaries
@@ -323,7 +457,69 @@ function renderStep3(internalSummary, clientSummary) {
   `;
 }
 
+// HELPERS FOR SECTIONS
+function renderRisksSection() {
+  const rows = (midterm.risks || []).map(
+    (risk) => `
+      <div class="risk-row" data-id="${risk.id}">
+        <label class="checkbox-container">
+          <input type="checkbox" data-type="risk-selected" data-id="${risk.id}" ${
+            risk.selected ? "checked" : ""
+          }>
+          <span>Select</span>
+        </label>
+        <input
+          type="text"
+          class="risk-label-input"
+          data-type="risk-label"
+          data-id="${risk.id}"
+          placeholder="Risk label"
+          value="${risk.label || ""}"
+        />
+        <textarea
+          rows="2"
+          data-type="risk-notes"
+          data-id="${risk.id}"
+          placeholder="Notes / owner / mitigation"
+        >${risk.notes || ""}</textarea>
+      </div>
+    `
+  );
+
+  const body = `
+    <div class="risk-list">
+      ${rows.join("")}
+    </div>
+    <div class="form-actions" style="margin-top:0.75rem;">
+      <button type="button" class="btn btn-secondary btn-sm" id="addRiskRow">
+        <i class="fa-solid fa-plus"></i>
+        Add risk
+      </button>
+    </div>
+  `;
+
+  return addSection(
+    "Risks & Issues",
+    body,
+    "Track blockers or watchlist items; toggle Select for active risks."
+  );
+}
+
+function renderTextAreaSection(title, id, value, subtitle) {
+  return addSection(
+    title,
+    `
+      <div class="form-group">
+        <textarea id="${id}" rows="3" placeholder="">${value || ""}</textarea>
+      </div>
+    `,
+    subtitle
+  );
+}
+
+// ============================================================================
 // SUMMARY BUILDERS
+// ============================================================================
 function buildInternalSummary() {
   const i = midterm.info;
 
@@ -337,30 +533,43 @@ function buildInternalSummary() {
   if (i.dev) lines.push(`Lead Developer: ${i.dev}`);
   if (i.date) lines.push(`Review Date: ${i.date}`);
   lines.push("");
-  lines.push(`Overall project health (self-rated): ${midterm.healthScore}/5`);
+  if (midterm.healthScore != null) {
+    lines.push(`Overall project health: ${midterm.healthScore}/5`);
+  }
+  if (midterm.progressScore != null) {
+    lines.push(`Progress vs. plan: ${midterm.progressScore}/5`);
+  }
   lines.push("");
-  if (midterm.progressGood.trim()) {
-    lines.push("What’s going well:");
-    lines.push(midterm.progressGood.trim());
+
+  if (midterm.goalStatuses.length) {
+    lines.push("Goal statuses:");
+    midterm.goalStatuses.forEach((g) => {
+      lines.push(
+        `• [${g.type}] ${g.label} — ${g.status}${g.notes ? ` (${g.notes})` : ""}`
+      );
+    });
     lines.push("");
   }
-  if (midterm.progressOff.trim()) {
-    lines.push("What’s off track or unclear:");
-    lines.push(midterm.progressOff.trim());
+
+  const activeRisks = (midterm.risks || []).filter(r => r.selected && r.label);
+  if (activeRisks.length) {
+    lines.push("Risks / issues:");
+    activeRisks.forEach(r => {
+      lines.push(`• ${r.label}${r.notes ? ` — ${r.notes}` : ""}`);
+    });
     lines.push("");
   }
-  if (midterm.risks.trim()) {
-    lines.push("Risks:");
-    lines.push(midterm.risks.trim());
-    lines.push("");
+
+  if (midterm.wins.trim()) {
+    lines.push("Biggest wins:");
+    lines.push(midterm.wins.trim(), "");
   }
-  if (midterm.decisions.trim()) {
-    lines.push("Key decisions since kickoff:");
-    lines.push(midterm.decisions.trim());
-    lines.push("");
+  if (midterm.learnings.trim()) {
+    lines.push("Key learnings:");
+    lines.push(midterm.learnings.trim(), "");
   }
   if (midterm.nextSteps.trim()) {
-    lines.push("Next 2–3 concrete steps:");
+    lines.push("Next steps:");
     lines.push(midterm.nextSteps.trim());
   }
 
@@ -378,30 +587,39 @@ function buildClientSummary() {
     `Here’s a quick mid-project snapshot for ${i.projectName || "the project"}:`
   );
   lines.push("");
-  lines.push(`• Overall health: ${midterm.healthScore}/5`);
-  if (midterm.progressGood.trim()) {
-    lines.push("");
-    lines.push("What’s going well:");
-    lines.push(midterm.progressGood.trim());
+  if (midterm.healthScore != null) {
+    lines.push(`• Overall health: ${midterm.healthScore}/5`);
   }
-  if (midterm.progressOff.trim()) {
-    lines.push("");
-    lines.push("What’s off track / needs attention:");
-    lines.push(midterm.progressOff.trim());
+  if (midterm.progressScore != null) {
+    lines.push(`• Progress vs. plan: ${midterm.progressScore}/5`);
   }
-  if (midterm.risks.trim()) {
+  if (midterm.goalStatuses.length) {
     lines.push("");
-    lines.push("Risks we’re watching:");
-    lines.push(midterm.risks.trim());
+    lines.push("Status by goal:");
+    midterm.goalStatuses.forEach((g) => {
+      lines.push(
+        `• [${g.type}] ${g.label}: ${g.status}${g.notes ? ` — ${g.notes}` : ""}`
+      );
+    });
+  }
+  if (midterm.wins.trim()) {
+    lines.push("");
+    lines.push("Biggest wins:");
+    lines.push(midterm.wins.trim());
+  }
+  if (midterm.learnings.trim()) {
+    lines.push("");
+    lines.push("Key learnings:");
+    lines.push(midterm.learnings.trim());
   }
   if (midterm.nextSteps.trim()) {
     lines.push("");
-    lines.push("Proposed next steps:");
+    lines.push("Next steps:");
     lines.push(midterm.nextSteps.trim());
   }
   lines.push("");
   lines.push(
-    "If anything here feels off or if you’d like to adjust scope or priorities, we’re happy to recalibrate together."
+    "If anything here feels off or needs adjustment, we’re happy to recalibrate together."
   );
   lines.push("");
   lines.push("Best,");
@@ -410,7 +628,9 @@ function buildClientSummary() {
   return lines.join("\n");
 }
 
+// ============================================================================
 // SUMMARY ACTIONS + CALENDAR
+// ============================================================================
 function setupSummaryActions(internalSummary, clientSummary) {
   const internalBtn = document.getElementById("copyInternalSummary");
   const clientBtn = document.getElementById("copyClientSummary");
@@ -438,7 +658,6 @@ function setupSummaryActions(internalSummary, clientSummary) {
     });
   }
 
-  // Save midterm so dashboard/final can read it
   saveMidtermForDashboard();
 }
 
@@ -446,7 +665,6 @@ function buildFinalReviewCalendarUrl() {
   const projectName = midterm.info.projectName || "Project";
   const clientName = midterm.info.client || "Client";
 
-  // 21 days from today, 10–11am
   const start = new Date();
   start.setDate(start.getDate() + 21);
   start.setHours(10, 0, 0, 0);
@@ -471,14 +689,41 @@ https://lisapancakes.github.io/metric-mate/final.html`,
   return `${base}&${params.toString()}`;
 }
 
+// ============================================================================
 // FORM HANDLERS
+// ============================================================================
 function handleChange(e) {
   const t = e.target;
 
-  // healthScore radio
   if (t.name === "healthScore" && t.type === "radio") {
     midterm.healthScore = parseInt(t.value, 10);
     saveMidtermForDashboard();
+    return;
+  }
+
+  if (t.name === "progressScore" && t.type === "radio") {
+    midterm.progressScore = parseInt(t.value, 10);
+    saveMidtermForDashboard();
+    return;
+  }
+
+  if (t.dataset.type === "goal-status") {
+    const id = t.dataset.id;
+    const gs = midterm.goalStatuses.find(g => g.id === id);
+    if (gs) {
+      gs.status = t.value;
+      saveMidtermForDashboard();
+    }
+    return;
+  }
+
+  if (t.dataset.type === "risk-selected") {
+    const id = t.dataset.id;
+    const risk = midterm.risks.find(r => r.id === id);
+    if (risk) {
+      risk.selected = t.checked;
+      saveMidtermForDashboard();
+    }
     return;
   }
 }
@@ -503,25 +748,58 @@ function handleInput(e) {
     case "dev":
       midterm.info.dev = val;
       break;
+    case "otherContributors":
+      midterm.info.otherContributors = val;
+      break;
     case "date":
       midterm.info.date = val;
       break;
-    case "progressGood":
-      midterm.progressGood = val;
+    case "wins":
+      midterm.wins = val;
       break;
-    case "progressOff":
-      midterm.progressOff = val;
-      break;
-    case "risks":
-      midterm.risks = val;
-      break;
-    case "decisions":
-      midterm.decisions = val;
+    case "learnings":
+      midterm.learnings = val;
       break;
     case "nextSteps":
       midterm.nextSteps = val;
       break;
   }
 
+  if (t.dataset.type === "goal-notes") {
+    const id = t.dataset.id;
+    const gs = midterm.goalStatuses.find(g => g.id === id);
+    if (gs) gs.notes = val;
+  }
+
+  if (t.dataset.type === "risk-label") {
+    const id = t.dataset.id;
+    const risk = midterm.risks.find(r => r.id === id);
+    if (risk) risk.label = val;
+  }
+
+  if (t.dataset.type === "risk-notes") {
+    const id = t.dataset.id;
+    const risk = midterm.risks.find(r => r.id === id);
+    if (risk) risk.notes = val;
+  }
+
+  saveMidtermForDashboard();
+}
+
+function handleClick(e) {
+  const t = e.target;
+  if (t.id === "addRiskRow" || t.closest("#addRiskRow")) {
+    addRiskRow();
+  }
+}
+
+function addRiskRow() {
+  midterm.risks.push({
+    id: generateId(),
+    label: "",
+    selected: true,
+    notes: ""
+  });
+  renderStep(midterm.currentStep);
   saveMidtermForDashboard();
 }

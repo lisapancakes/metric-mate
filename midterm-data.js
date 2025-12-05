@@ -16,13 +16,17 @@ const midterm = {
     pm: "",
     designer: "",
     dev: "",
+    otherContributors: "",
     date: ""
   },
-  healthScore: 3,
+  healthScore: null,
+  progressScore: null,
   progressGood: "",
   progressOff: "",
-  risks: "",
-  decisions: "",
+  goalStatuses: [],
+  risks: [],
+  wins: "",
+  learnings: "",
   nextSteps: ""
 };
 
@@ -31,6 +35,10 @@ const form = document.getElementById("surveyForm");
 const prevBtn = document.getElementById("prevBtn");
 const nextBtn = document.getElementById("nextBtn");
 const progressBar = document.getElementById("progressBar");
+
+function generateId() {
+  return Math.random().toString(36).substr(2, 9);
+}
 
 // LOAD KICKOFF DATA
 function getKickoffDataFromUrl() {
@@ -51,6 +59,17 @@ function getKickoffDataFromUrl() {
     return null;
   } catch (err) {
     console.error("Failed to load kickoff data", err);
+    return null;
+  }
+}
+
+function loadSavedMidterm() {
+  try {
+    const stored = localStorage.getItem("metricMateMidterm");
+    if (!stored) return null;
+    return JSON.parse(stored);
+  } catch (e) {
+    console.warn("Failed to load saved midterm", e);
     return null;
   }
 }
@@ -97,15 +116,47 @@ function showStatus(message) {
   }, 2500);
 }
 
+function normalizeGoalStatusesFromKickoff(kickoff, existingStatuses = []) {
+  if (!kickoff) return [];
+
+  const selections = [];
+  const existingMap = new Map(
+    (existingStatuses || []).map(item => [item.id, item])
+  );
+
+  function addGoals(list, type) {
+    (list || [])
+      .filter(g => g && g.selected)
+      .forEach(g => {
+        const previous = existingMap.get(g.id) || {};
+        selections.push({
+          id: g.id,
+          label: g.label,
+          type,
+          status: previous.status || "not-started",
+          notes: previous.notes || ""
+        });
+      });
+  }
+
+  addGoals(kickoff.businessGoals, "business");
+  addGoals(kickoff.productGoals, "product");
+  addGoals(kickoff.userGoals, "user");
+  addGoals(kickoff.userPains, "pain");
+
+  return selections;
+}
+
 function saveMidtermForDashboard() {
   try {
     const exportObj = {
       info: { ...midterm.info },
       healthScore: midterm.healthScore,
-      progressGood: midterm.progressGood,
-      progressOff: midterm.progressOff,
+      progressScore: midterm.progressScore,
+      goalStatuses: midterm.goalStatuses,
       risks: midterm.risks,
-      decisions: midterm.decisions,
+      wins: midterm.wins,
+      learnings: midterm.learnings,
       nextSteps: midterm.nextSteps
     };
     localStorage.setItem("metricMateMidterm", JSON.stringify(exportObj));
