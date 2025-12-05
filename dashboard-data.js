@@ -43,7 +43,8 @@ function loadDashboardData() {
       const midterm = JSON.parse(localStorage.getItem("metricMateMidterm") || "null");
       const final = JSON.parse(localStorage.getItem("metricMateFinal") || "null");
       if (kickoff || midterm || final) {
-        data = { kickoff, midterm, final };
+        const goals = final && Array.isArray(final.goals) ? final.goals : [];
+        data = { kickoff, midterm, final, goals };
         source = "survey-localStorage";
       }
     } catch (e) {
@@ -115,6 +116,11 @@ function normalizeDashboardData(raw) {
     kickoff: raw.kickoff || null,
     midterm: raw.midterm || null,
     final: raw.final || null,
+    goals: Array.isArray(raw.goals)
+      ? [...raw.goals]
+      : (raw.midterm && Array.isArray(raw.midterm.goalStatuses))
+        ? [...raw.midterm.goalStatuses]
+        : [],
     finalSummary: raw.finalSummary || "",
     project: raw.project ? { ...raw.project } : {}
   };
