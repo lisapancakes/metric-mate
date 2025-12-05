@@ -44,6 +44,12 @@ function hydrateForm() {
     finalState.date = midterm.info.date;
   }
 
+  // Build goals list from kickoff + midterm
+  finalGoals = normalizeGoalsFromKickoff(kickoff, midterm).map(g => {
+    const existing = finalGoals.find(fg => fg.id === g.id);
+    return existing ? { ...g, finalStatus: existing.finalStatus || "", finalNotes: existing.finalNotes || "" } : g;
+  });
+
   const projectInput = $("projectName");
   if (projectInput) projectInput.value = finalState.projectName;
 
@@ -61,6 +67,8 @@ function hydrateForm() {
 
   const dateInput = $("date");
   if (dateInput) dateInput.value = finalState.date;
+
+  renderGoalsTable();
 }
 
 // INPUT HANDLER
@@ -71,6 +79,22 @@ function handleInput(e) {
 
   if (Object.prototype.hasOwnProperty.call(finalState, id)) {
     finalState[id] = val;
+  }
+
+  if (t.dataset.type === "final-status") {
+    const id = t.dataset.id;
+    const goal = finalGoals.find(g => g.id === id);
+    if (goal) goal.finalStatus = t.value;
+    updateSummary();
+    return;
+  }
+
+  if (t.dataset.type === "final-notes") {
+    const id = t.dataset.id;
+    const goal = finalGoals.find(g => g.id === id);
+    if (goal) goal.finalNotes = val;
+    updateSummary();
+    return;
   }
 
   updateSummary();
@@ -116,6 +140,18 @@ function buildFinalSummary() {
     out.push(s.nextSteps.trim());
   }
 
+  if (finalGoals.length) {
+    out.push("");
+    out.push("Goal statuses:");
+    finalGoals.forEach(g => {
+      out.push(
+        `• [${g.type}] ${g.label} — importance ${g.importance}; ` +
+        `midterm: ${g.midtermStatus || "n/a"}${g.midtermNotes ? ` (${g.midtermNotes})` : ""}; ` +
+        `final: ${g.finalStatus || "n/a"}${g.finalNotes ? ` (${g.finalNotes})` : ""}`
+      );
+    });
+  }
+
   return out.join("\n");
 }
 
@@ -126,44 +162,52 @@ function updateSummary() {
   const summaryText = buildFinalSummary();
   summaryEl.value = summaryText;
 
-  updateDashboardPayload(summaryText);
+  saveDashboardPayload(summaryText);
+}
+
+// GOALS TABLE RENDER
+function renderGoalsTable() {
+  const tbody = document.getElementById("goalsTableBody");
+  if (!tbody) return;
+
+  const typeOrder = ["business", "product", "user", "pain"];
+  const sorted = [...finalGoals].sort(
+    (a, b) => typeOrder.indexOf(a.type) - typeOrder.indexOf(b.type)
+  );
+
+  tbody.innerHTML = sorted
+    .map(
+      (g) => `
+        <tr>
+          <td>${g.label || ""}</td>
+          <td>${g.type || ""}</td>
+          <td>${g.importance != null ? g.importance : ""}</td>
+          <td>${g.midtermStatus || ""}</td>
+          <td>${g.midtermNotes || ""}</td>
+          <td>
+            <select data-type="final-status" data-id="${g.id}">
+              ${["Green", "Yellow", "Red", "Blocked"]
+                .map(
+                  s => `<option value="${s}" ${g.finalStatus === s ? "selected" : ""}>${s}</option>`
+                )
+                .join("")}
+            </select>
+          </td>
+          <td>
+            <textarea
+              rows="2"
+              data-type="final-notes"
+              data-id="${g.id}"
+              placeholder="Final notes"
+            >${g.finalNotes || ""}</textarea>
+          </td>
+        </tr>
+      `
+    )
+    .join("");
 }
 
 // DASHBOARD PAYLOAD + LINK
-function updateDashboardPayload(summaryText) {
-  const kickoff = loadKickoffData();
-  const info = kickoff && kickoff.info ? kickoff.info : {};
-
-  const project = {
-    name: finalState.projectName || info.projectName || info.name || "",
-    client: finalState.client || info.client || info.clientName || "",
-    pm: finalState.pm || info.pm || info.pmName || "",
-    designer:
-      finalState.designer || info.designer || info.designerName || "",
-    dev: finalState.dev || info.dev || info.devName || "",
-    kickoffDate: info.date || "",
-    finalReviewDate: finalState.date || ""
-  };
-
-  const payload = {
-    project,
-    final: { ...finalState },
-    finalSummary: summaryText || ""
-  };
-
-  try {
-    localStorage.setItem("metricMateDashboard", JSON.stringify(payload));
-  } catch (e) {
-    console.warn("Failed to save dashboard payload", e);
-  }
-
-  const linkEl = $("openDashboardBtn");
-  if (!linkEl) return;
-
-  const encoded = encodeURIComponent(JSON.stringify(payload));
-  linkEl.href = `dashboard.html?data=${encoded}`;
-}
-
 // INIT
 function initFinal() {
   const form = $("finalForm");
@@ -173,6 +217,7 @@ function initFinal() {
 
   if (form) {
     form.addEventListener("input", handleInput);
+    form.addEventListener("change", handleInput);
   }
 
   updateSummary();

@@ -833,6 +833,32 @@ a.btn-primary:hover {
   word-break: break-word;
 }
 
+.scrollable-table {
+  max-height: 420px;
+  overflow: auto;
+  border: 1px solid var(--tl-border-subtle);
+  border-radius: 0.75rem;
+  padding: 0.25rem;
+  background: #fff;
+}
+
+.scrollable-table table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.scrollable-table th {
+  position: sticky;
+  top: 0;
+  background: #f8fafc;
+}
+
+@media (max-width: 700px) {
+  .scrollable-table {
+    overflow-x: auto;
+  }
+}
+
 @media (max-width: 900px) {
   .dashboard-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));

@@ -27,148 +27,137 @@ referrerpolicy="no-referrer"
 <body>
 <div class="app" id="app">
 <header class="app-header">
-<h1>Final project review</h1>
-<p class="app-subtitle">
-Wrap up the project with a clear, honest summary you can reuse in emails,
-retros, and case studies.
-</p>
+  <h1>Final project review</h1>
+  <p class="app-subtitle">
+    Wrap up the project with a clear, honest summary you can reuse in emails,
+    retros, and case studies.
+  </p>
 </header>
 
 <main class="app-main">
-<form id="finalForm" class="form">
-<!-- 1. Project snapshot (NO .step class) -->
-<section id="final-step-1">
-<h2>1. Project snapshot</h2>
+  <form id="finalForm" class="form">
 
-<div class="form-group">
-<label for="projectName">Project name</label>
-<input type="text" id="projectName" />
-</div>
+    <!-- Project Info (read-only) -->
+    <section class="summary-section">
+      <div class="section-head">
+        <h2>Project Info</h2>
+        <p class="help-text">Auto-filled from Kickoff / Midterm</p>
+      </div>
+      <div class="form-grid">
+        <div class="form-group">
+          <label for="projectName">Project name</label>
+          <input type="text" id="projectName" readonly />
+        </div>
+        <div class="form-group">
+          <label for="client">Client</label>
+          <input type="text" id="client" readonly />
+        </div>
+        <div class="form-group">
+          <label for="pm">Project Manager</label>
+          <input type="text" id="pm" readonly />
+        </div>
+        <div class="form-group">
+          <label for="designer">Product Designer</label>
+          <input type="text" id="designer" readonly />
+        </div>
+        <div class="form-group">
+          <label for="dev">Lead Developer</label>
+          <input type="text" id="dev" readonly />
+        </div>
+        <div class="form-group">
+          <label for="date">Final review date</label>
+          <input type="text" id="date" placeholder="e.g. Mar 15, 2026" />
+        </div>
+      </div>
+    </section>
 
-<div class="form-group">
-<label for="client">Client</label>
-<input type="text" id="client" />
-</div>
+    <!-- Final narrative fields -->
+    <section class="summary-section">
+      <div class="section-head">
+        <h2>Final Narrative</h2>
+        <p class="help-text">What we shipped, results, wins, challenges, learnings, next steps.</p>
+      </div>
+      <div class="form-grid">
+        <div class="form-group">
+          <label for="outcomes">What did we ship?</label>
+          <textarea id="outcomes" rows="3" placeholder="Major releases, features, or milestones..."></textarea>
+        </div>
+        <div class="form-group">
+          <label for="results">Results / impact</label>
+          <textarea id="results" rows="3" placeholder="Metrics, client feedback, internal impact..."></textarea>
+        </div>
+        <div class="form-group">
+          <label for="wins">Biggest wins</label>
+          <textarea id="wins" rows="3" placeholder="Where did we deliver the most value?"></textarea>
+        </div>
+        <div class="form-group">
+          <label for="challenges">Challenges / misses</label>
+          <textarea id="challenges" rows="3" placeholder="What was hard? What didn’t land?"></textarea>
+        </div>
+        <div class="form-group">
+          <label for="learnings">Key learnings</label>
+          <textarea id="learnings" rows="3" placeholder="What should we remember for future projects?"></textarea>
+        </div>
+        <div class="form-group">
+          <label for="nextSteps">Next steps / follow-ups</label>
+          <textarea id="nextSteps" rows="3" placeholder="Phase 2 ideas, handoff notes, optimizations..."></textarea>
+        </div>
+      </div>
+    </section>
 
-<div class="form-group">
-<label for="pm">Project Manager</label>
-<input type="text" id="pm" />
-</div>
+    <!-- Goals table -->
+    <section class="summary-section">
+      <div class="section-head">
+        <h2>Goals – Midterm to Final</h2>
+        <p class="help-text">Kickoff goals with midterm status/notes (read-only) and final status/notes (editable).</p>
+      </div>
+      <div class="table-wrapper scrollable-table">
+        <table class="dash-table">
+          <thead>
+            <tr>
+              <th>Goal</th>
+              <th>Type</th>
+              <th>Importance</th>
+              <th>Midterm Status</th>
+              <th>Midterm Notes</th>
+              <th>Final Status</th>
+              <th>Final Notes</th>
+            </tr>
+          </thead>
+          <tbody id="goalsTableBody"></tbody>
+        </table>
+      </div>
+    </section>
 
-<div class="form-group">
-<label for="designer">Product Designer</label>
-<input type="text" id="designer" />
-</div>
+    <!-- Final summary -->
+    <section class="summary-section">
+      <div class="section-head">
+        <h2>Final summary</h2>
+        <p class="help-text">Generated automatically as you fill in the fields.</p>
+      </div>
+      <textarea id="finalSummary" rows="14" readonly></textarea>
+    </section>
 
-<div class="form-group">
-<label for="dev">Lead Developer</label>
-<input type="text" id="dev" />
-</div>
-
-<div class="form-group">
-<label for="date">Final review date</label>
-<input
-type="text"
-id="date"
-placeholder="e.g. Mar 15, 2026"
-/>
-</div>
-</section>
-
-<!-- 2. Outcomes & learnings (NO .step class) -->
-<section id="final-step-2">
-<h2>2. Outcomes & learnings</h2>
-
-<div class="form-group">
-<label for="outcomes">What did we ship?</label>
-<textarea
-id="outcomes"
-rows="3"
-placeholder="Major releases, features, or milestones..."
-></textarea>
-</div>
-
-<div class="form-group">
-<label for="results">Results / impact</label>
-<textarea
-id="results"
-rows="3"
-placeholder="Early metrics, client feedback, internal impact..."
-></textarea>
-</div>
-
-<div class="form-group">
-<label for="wins">Biggest wins</label>
-<textarea
-id="wins"
-rows="3"
-placeholder="Where did we really deliver value?"
-></textarea>
-</div>
-
-<div class="form-group">
-<label for="challenges">Challenges or misses</label>
-<textarea
-id="challenges"
-rows="3"
-placeholder="What was hard? What didn’t land as planned?"
-></textarea>
-</div>
-
-<div class="form-group">
-<label for="learnings">Key learnings</label>
-<textarea
-id="learnings"
-rows="3"
-placeholder="What should we remember for future projects?"
-></textarea>
-</div>
-
-<div class="form-group">
-<label for="nextSteps">Next steps or follow-ups</label>
-<textarea
-id="nextSteps"
-rows="3"
-placeholder="Phase 2 ideas, optimizations, or handoff notes..."
-></textarea>
-</div>
-</section>
-
-<!-- 3. Final summary -->
-<section class="summary-section">
-<h2>3. Final summary</h2>
-<p class="help-text">
-This is generated as you type. Paste it into your retro doc, Asana,
-or a client wrap-up email.
-</p>
-
-<textarea id="finalSummary" rows="14" readonly></textarea>
-
-<div
-  class="form-actions"
-  style="margin-top: 1.25rem; display: flex; gap: 0.75rem;"
->
-  <button
-    type="button"
-    id="copyFinalSummaryBtn"
-    class="btn btn-secondary"
-  >
-    <i class="fa-solid fa-copy"></i>
-    Copy Summary
-  </button>
-
-  <a
-  id="openDashboardBtn"
-  href="dashboard.html"
-  target="_blank"
-  class="btn btn-primary"
->
-    <i class="fa-solid fa-chart-line"></i>
-    View Dashboard
-  </a>
-</div>
-</section>
-</form>
+    <!-- Actions -->
+    <section class="summary-section">
+      <div class="form-actions" style="display:flex; gap:0.75rem; flex-wrap:wrap;">
+        <button type="button" id="copyFinalSummaryBtn" class="btn btn-secondary">
+          <i class="fa-solid fa-copy"></i>
+          Copy Final Summary
+        </button>
+        <a
+          id="openDashboardBtn"
+          href="dashboard.html"
+          target="_blank"
+          class="btn btn-primary"
+          rel="noopener"
+        >
+          <i class="fa-solid fa-chart-line"></i>
+          Open Dashboard
+        </a>
+      </div>
+    </section>
+  </form>
 </main>
 </div>
 <script src="final-data.js"></script>
