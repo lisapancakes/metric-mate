@@ -199,7 +199,7 @@ function renderDashboard(rawData) {
 
   const titleCaseType = (t) => {
     if (!t) return "";
-    return t.charAt(0).toUpperCase() + t.slice(1);
+    return t.replace(/\b\w/g, (c) => c.toUpperCase());
   };
 
   const formatStatus = (s) => {
