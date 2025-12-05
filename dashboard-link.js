@@ -31,8 +31,13 @@ if (!window.openDashboardFromKickoff) {
       return;
     }
 
-    const encoded = encodeURIComponent(JSON.stringify(payload));
-    window.open(`dashboard.html?data=${encoded}`, "_blank", "noopener");
+    try {
+      localStorage.setItem("metricMateDashboard", JSON.stringify(payload));
+    } catch (e) {
+      console.warn("Failed to save dashboard payload for kickoff", e);
+    }
+
+    window.open("dashboard.html", "_blank", "noopener");
   };
 }
 
@@ -45,8 +50,13 @@ if (!window.openDashboardFromMidterm) {
       return;
     }
 
-    const encoded = encodeURIComponent(JSON.stringify(payload));
-    window.open(`dashboard.html?data=${encoded}`, "_blank", "noopener");
+    try {
+      localStorage.setItem("metricMateDashboard", JSON.stringify(payload));
+    } catch (e) {
+      console.warn("Failed to save dashboard payload for midterm", e);
+    }
+
+    window.open("dashboard.html", "_blank", "noopener");
   };
 }
 
