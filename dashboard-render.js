@@ -148,7 +148,6 @@ function renderDashboard(rawData) {
     if (project.pm) items.push(`PM: ${project.pm}`);
     if (project.designer) items.push(`Designer: ${project.designer}`);
     if (project.dev) items.push(`Dev: ${project.dev}`);
-    if (project.kickoffDate) items.push(`Kickoff: ${project.kickoffDate}`);
     if (project.finalReviewDate && hasFinal) {
       items.push(`Final Review: ${project.finalReviewDate}`);
     }
