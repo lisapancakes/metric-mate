@@ -5,7 +5,7 @@
 const titleCaseTypeFinal = (t) => (t ? t.replace(/\b\w/g, (c) => c.toUpperCase()) : "");
 const formatFinalStatus = (value) =>
   value ? value.replace(/-/g, " ").replace(/\b\w/g, (c) => c.toUpperCase()) : "";
-const finalFlow = { currentStep: 1, totalSteps: 4 };
+const finalFlow = { currentStep: 1, totalSteps: 3 };
 const finalPrevBtn = $("prevBtn");
 const finalNextBtn = $("nextBtn");
 const finalProgressBar = $("progressBar");
