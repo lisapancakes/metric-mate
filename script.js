@@ -390,6 +390,12 @@ function renderBusinessGoalsStep() {
         <button type="button" id="addCustomBusinessGoalBtn" class="btn btn-secondary">
   <i class="fa-solid fa-plus"></i>
   Add Business Goal        </button>
+        <div id="newBusinessGoalContainer" class="new-item-container" style="display:none; margin-top:0.75rem;">
+          <div style="display:flex; gap:0.5rem;">
+            <input type="text" id="newBusinessGoalInput" placeholder="Enter new Business Goal" style="flex:1;">
+            <button type="button" id="submitCustomBusinessGoalBtn" class="btn btn-secondary btn-sm">Add</button>
+          </div>
+        </div>
       </div>
     </div>
   `;
@@ -455,6 +461,12 @@ function renderProductGoalsStep() {
         <i class="fa-solid fa-plus"></i>
   Add Product Goal
         </button>
+        <div id="newProductGoalContainer" class="new-item-container" style="display:none; margin-top:0.75rem;">
+          <div style="display:flex; gap:0.5rem;">
+            <input type="text" id="newProductGoalInput" placeholder="Enter new Product Goal" style="flex:1;">
+            <button type="button" id="submitCustomProductGoalBtn" class="btn btn-secondary btn-sm">Add</button>
+          </div>
+        </div>
       </div>
     </div>
   `;
@@ -488,6 +500,12 @@ function renderUserGoalsStep() {
 <i class="fa-solid fa-plus"></i>
   Add User Goal
           </button>
+          <div id="newGoalContainer" class="new-item-container" style="display:none; margin-top:0.75rem;">
+            <div style="display:flex; gap:0.5rem;">
+              <input type="text" id="newGoalInput" placeholder="Enter new User Goal" style="flex:1;">
+              <button type="button" id="submitUserGoalBtn" class="btn btn-secondary btn-sm">Add</button>
+            </div>
+          </div>
         </div>
       </div>
     </div>
@@ -512,6 +530,12 @@ function renderUserGoalsStep() {
 <i class="fa-solid fa-plus"></i>
   Add Pain Point
           </button>
+          <div id="newPainContainer" class="new-item-container" style="display:none; margin-top:0.75rem;">
+            <div style="display:flex; gap:0.5rem;">
+              <input type="text" id="newPainInput" placeholder="Enter new Pain Point" style="flex:1;">
+              <button type="button" id="submitUserPainBtn" class="btn btn-secondary btn-sm">Add</button>
+            </div>
+          </div>
         </div>
       </div>
     </div>
@@ -1154,25 +1178,45 @@ function handleFormClick(e) {
 
   // Custom business goal
   if (id === 'addCustomBusinessGoalBtn') {
-    addCustomGoal('business');
+    toggleCustomGoalForm('business');
+    return;
+  }
+
+  if (id === 'submitCustomBusinessGoalBtn') {
+    addCustomGoalFromInput('business');
     return;
   }
 
   // Custom product goal
   if (id === 'addCustomProductGoalBtn') {
-    addCustomGoal('product');
+    toggleCustomGoalForm('product');
+    return;
+  }
+
+  if (id === 'submitCustomProductGoalBtn') {
+    addCustomGoalFromInput('product');
     return;
   }
 
   // Custom user goal
   if (id === 'addUserGoalBtn') {
-    addCustomUserItem('goal');
+    toggleCustomUserForm('goal');
+    return;
+  }
+
+  if (id === 'submitUserGoalBtn') {
+    addCustomUserItemFromInput('goal');
     return;
   }
 
   // Custom user pain
   if (id === 'addUserPainBtn') {
-    addCustomUserItem('pain');
+    toggleCustomUserForm('pain');
+    return;
+  }
+
+  if (id === 'submitUserPainBtn') {
+    addCustomUserItemFromInput('pain');
     return;
   }
 }
@@ -1210,8 +1254,9 @@ function handleDropdownChange(select) {
 }
 
 function handleAddNewItem(button) {
-  const type = button.id.replace('add', '').replace('Btn', '');
-  const cap = type.charAt(0).toUpperCase() + type.slice(1);
+  const rawType = button.id.replace('add', '').replace('Btn', '');
+  const type = rawType.charAt(0).toLowerCase() + rawType.slice(1);
+  const cap = rawType.charAt(0).toUpperCase() + rawType.slice(1);
   const input = document.getElementById(`new${cap}Input`);
 
   if (!input || !input.value.trim()) return;
@@ -1232,18 +1277,38 @@ function handleAddNewItem(button) {
     const infoKey = `${type}Id`;
     project.info[infoKey] = index;
 
+    // Clear the input and hide the adder
+    input.value = '';
+    const container = document.getElementById(`new${cap}Container`);
+    if (container) container.style.display = 'none';
+
     renderStep(project.currentStep);
   }
 }
 
-function addCustomGoal(type) {
-  const label = type === 'business' ? 'Business Goal' : 'Product Goal';
-  const newGoal = prompt(`Enter the new ${label}:`);
-  if (!newGoal || !newGoal.trim()) return;
+function toggleCustomGoalForm(type) {
+  const cap = type === 'business' ? 'Business' : 'Product';
+  const container = document.getElementById(`new${cap}GoalContainer`);
+  if (container) {
+    const isHidden = container.style.display === 'none';
+    container.style.display = isHidden ? 'block' : 'none';
+    if (isHidden) {
+      const input = document.getElementById(`new${cap}GoalInput`);
+      if (input) input.focus();
+    }
+  }
+}
+
+function addCustomGoalFromInput(type) {
+  const cap = type === 'business' ? 'Business' : 'Product';
+  const input = document.getElementById(`new${cap}GoalInput`);
+  if (!input || !input.value.trim()) return;
+
+  const newGoal = input.value.trim();
 
   const goal = {
     id: generateId(),
-    label: newGoal.trim(),
+    label: newGoal,
     selected: true,
     currentScore: 3,
     notes: '',
@@ -1257,16 +1322,37 @@ function addCustomGoal(type) {
   }
 
   renderStep(project.currentStep);
+  input.value = '';
+  const container = document.getElementById(`new${cap}GoalContainer`);
+  if (container) container.style.display = 'none';
 }
 
-function addCustomUserItem(type) {
+function toggleCustomUserForm(type) {
+  const containerId = type === 'goal' ? 'newGoalContainer' : 'newPainContainer';
+  const inputId = type === 'goal' ? 'newGoalInput' : 'newPainInput';
+  const container = document.getElementById(containerId);
+  if (container) {
+    const isHidden = container.style.display === 'none';
+    container.style.display = isHidden ? 'block' : 'none';
+    if (isHidden) {
+      const input = document.getElementById(inputId);
+      if (input) input.focus();
+    }
+  }
+}
+
+function addCustomUserItemFromInput(type) {
   const label = type === 'goal' ? 'user goal' : 'pain point';
-  const newItem = prompt(`Enter the new ${label}:`);
-  if (!newItem || !newItem.trim()) return;
+  const inputId = type === 'goal' ? 'newGoalInput' : 'newPainInput';
+  const containerId = type === 'goal' ? 'newGoalContainer' : 'newPainContainer';
+  const input = document.getElementById(inputId);
+  if (!input || !input.value.trim()) return;
+
+  const newItem = input.value.trim();
 
   const item = {
     id: generateId(),
-    label: newItem.trim(),
+    label: newItem,
     selected: true,
     severity: 3,
     notes: '',
@@ -1281,6 +1367,9 @@ function addCustomUserItem(type) {
   }
 
   renderStep(project.currentStep);
+  input.value = '';
+  const container = document.getElementById(containerId);
+  if (container) container.style.display = 'none';
 }
 
 // ============================================================================

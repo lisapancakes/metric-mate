@@ -107,14 +107,22 @@ function renderDashboard(rawData) {
 
     const statuses = [
       { label: `Last updated: ${lastUpdated || "N/A"}`, color: "muted", active: true },
-      { label: "Kickoff completed", color: "green", active: !!kickoff },
       {
-        label: hasMidterm ? "Midterm completed" : "Midterm not started",
+        label: `Kickoff completed${project.kickoffDate ? `, ${project.kickoffDate}` : ""}`,
+        color: "green",
+        active: !!kickoff
+      },
+      {
+        label: hasMidterm
+          ? `Midterm completed${midterm.info && midterm.info.date ? `, ${midterm.info.date}` : ""}`
+          : "Midterm not started",
         color: hasMidterm ? "green" : "yellow",
         active: true
       },
       {
-        label: hasFinal ? "Final Review completed" : "Final Review not started",
+        label: hasFinal
+          ? `Final Review completed${project.finalReviewDate ? `, ${project.finalReviewDate}` : ""}`
+          : "Final Review not started",
         color: hasFinal ? "green" : "yellow",
         active: true
       }
