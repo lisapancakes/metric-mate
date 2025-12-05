@@ -33,24 +33,32 @@ function addSection(title, body, subtitle = "") {
 }
 
 function initMidterm() {
-  // Hydrate from saved midterm first
-  const savedMidterm = loadSavedMidterm();
-  if (savedMidterm) {
-    Object.assign(midterm.info, savedMidterm.info || {});
-    midterm.healthScore = savedMidterm.healthScore ?? midterm.healthScore;
-    midterm.progressScore = savedMidterm.progressScore ?? midterm.progressScore;
-    midterm.progressGood = savedMidterm.progressGood || "";
-    midterm.progressOff = savedMidterm.progressOff || "";
-    midterm.goalStatuses = savedMidterm.goalStatuses || [];
-    midterm.risks = (savedMidterm.risks || []).map(r => ({
-      id: r.id || generateId(),
-      label: r.label || "",
-      selected: r.selected ?? false,
-      notes: r.notes || ""
-    }));
-    midterm.wins = savedMidterm.wins || "";
-    midterm.learnings = savedMidterm.learnings || "";
-    midterm.nextSteps = savedMidterm.nextSteps || "";
+  const params = new URLSearchParams(window.location.search);
+  const hasKickoffParam = params.has("data");
+
+  // Hydrate from saved midterm first (unless this is a fresh kickoff handoff)
+  if (!hasKickoffParam) {
+    const savedMidterm = loadSavedMidterm();
+    if (savedMidterm) {
+      Object.assign(midterm.info, savedMidterm.info || {});
+      midterm.healthScore = savedMidterm.healthScore ?? midterm.healthScore;
+      midterm.progressScore = savedMidterm.progressScore ?? midterm.progressScore;
+      midterm.progressGood = savedMidterm.progressGood || "";
+      midterm.progressOff = savedMidterm.progressOff || "";
+      midterm.goalStatuses = savedMidterm.goalStatuses || [];
+      midterm.risks = (savedMidterm.risks || []).map(r => ({
+        id: r.id || generateId(),
+        label: r.label || "",
+        selected: r.selected ?? false,
+        notes: r.notes || ""
+      }));
+      midterm.wins = savedMidterm.wins || "";
+      midterm.learnings = savedMidterm.learnings || "";
+      midterm.nextSteps = savedMidterm.nextSteps || "";
+    }
+  } else {
+    // Fresh kickoff → clear any previously saved midterm snapshot
+    localStorage.removeItem("metricMateMidterm");
   }
 
   // Hydrate from kickoff data (URL or localStorage)
