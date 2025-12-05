@@ -1,9 +1,8 @@
 // =====================================
 // Metric Mate – Project Dashboard
-// Works with:
-//  - kickoff-only payloads: { kickoff: { info, directory, ... } }
-//  - final payloads:        { project, final, finalSummary }
-//  - combined payloads:     { kickoff, project, midterm, final, finalSummary }
+// Supports:
+//  - kickoff-only: { kickoff: { info, directory, businessGoals, ... } }
+//  - full:         { kickoff, midterm, final, finalSummary, project }
 // =====================================
 
 // -------------------------------
@@ -12,7 +11,7 @@
 function loadDashboardData() {
   let data = null;
 
-  // 1) URL ?data=... (preferred, always freshest)
+  // 1) URL ?data=... (preferred)
   try {
     const params = new URLSearchParams(window.location.search);
     const raw = params.get("data");
@@ -68,10 +67,7 @@ function deriveProjectFromKickoff(kickoff) {
   }
 
   // Designer
-  if (
-    typeof info.designerId === "number" &&
-    Array.isArray(dir.designers)
-  ) {
+  if (typeof info.designerId === "number" && Array.isArray(dir.designers)) {
     project.designer = dir.designers[info.designerId] || "";
   } else {
     project.designer = info.designer || info.designerName || "";
@@ -86,13 +82,13 @@ function deriveProjectFromKickoff(kickoff) {
 
   // Dates
   project.kickoffDate =
-    info.kickoffDate || info.date || info.startDate || "";
+    info.kickoffDate || info.date || info.startDate || kickoff.kickoffDate || "";
 
   return project;
 }
 
 // -------------------------------
-// Normalise any payload shape into
+// Normalise payload into
 //   { project, kickoff, midterm, final, finalSummary }
 // -------------------------------
 function normalizeDashboardData(raw) {
@@ -106,7 +102,7 @@ function normalizeDashboardData(raw) {
     project: raw.project ? { ...raw.project } : {}
   };
 
-  // If we don't have a project.name, derive from kickoff.info
+  // Derive from kickoff if needed
   if (!data.project.name && data.kickoff) {
     const fromKickoff = deriveProjectFromKickoff(data.kickoff);
     data.project = { ...fromKickoff, ...data.project };
@@ -116,159 +112,39 @@ function normalizeDashboardData(raw) {
 }
 
 // -------------------------------
-// Helpers
-// -------------------------------
-function setText(el, text) {
-  if (!el) return;
-  el.textContent = text || "";
-}
-
-function joinList(labels) {
-  if (!labels || !labels.length) return "";
-  if (labels.length === 1) return labels[0];
-  if (labels.length === 2) return `${labels[0]} and ${labels[1]}`;
-  return `${labels.slice(0, -1).join(", ")}, and ${labels[labels.length - 1]}`;
-}
-
-// Build kickoff-based copy for each card
-function buildKickoffCardCopy(kickoff) {
-  const business = (kickoff.businessGoals || []).filter(g => g.selected);
-  const product = (kickoff.productGoals || []).filter(g => g.selected);
-  const userGoals = (kickoff.userGoals || []).filter(g => g.selected);
-  const pains = (kickoff.userPains || []).filter(p => p.selected);
-
-  const businessLabels = business.map(g => g.label);
-  const productLabels = product.map(g => g.label);
-  const goalLabels = userGoals.map(g => g.label);
-  const painLabels = pains.map(p => p.label);
-
-  // What we shipped (baseline = what we plan to change)
-  let whatWeShipped;
-  if (productLabels.length) {
-    whatWeShipped = `At kickoff, we agreed to focus the work on ${
-      joinList(productLabels)
-    }. These will shape what we ultimately ship.`;
-  } else if (businessLabels.length) {
-    whatWeShipped = `At kickoff, we framed the project around business outcomes like ${joinList(
-      businessLabels
-    )}. Specific product changes will be defined as we move forward.`;
-  } else {
-    whatWeShipped =
-      "No product or experience goals were selected during kickoff. This dashboard will update once Midterm and Final reviews are completed.";
-  }
-
-  // Results & impact (baseline = what success will look like)
-  let resultsImpact;
-  if (businessLabels.length) {
-    resultsImpact = `Success will be measured against outcomes such as ${joinList(
-      businessLabels
-    )}. As we complete Midterm and Final reviews, this section will describe actual impact against those goals.`;
-  } else {
-    resultsImpact =
-      "No business goals were selected during kickoff. Once goals are defined and later surveys are completed, this section will describe measured impact.";
-  }
-
-  // Biggest wins (baseline = opportunities / focus)
-  let biggestWins;
-  if (goalLabels.length) {
-    biggestWins = `The biggest opportunities we identified for users are to help them ${joinList(
-      goalLabels
-    )}. Future wins will map back to how much we improve these goals.`;
-  } else {
-    biggestWins =
-      "No user goals were captured during kickoff. As we collect more insight at Midterm and Final, this section will highlight concrete wins.";
-  }
-
-  // Challenges (baseline = user pains)
-  let challenges;
-  if (painLabels.length) {
-    challenges = `Key user challenges we’re targeting include ${joinList(
-      painLabels
-    )}. Design and implementation work will focus on reducing these pain points.`;
-  } else {
-    challenges =
-      "No user pain points were captured during kickoff. Later reviews will surface where users still struggle and what remains challenging.";
-  }
-
-  // Key learnings
-  const keyLearnings =
-    "Kickoff establishes our initial assumptions about goals, users, and constraints. Midterm and Final surveys will capture what we actually learned from the build and launch.";
-
-  // Next steps
-  const nextSteps =
-    "Use this baseline to plan next steps and prioritize work. Completing the Midterm and Final surveys will turn this dashboard into a full narrative of what we shipped, the outcome, and what we’d do differently next time.";
-
-  // Full summary text (baseline)
-  const summaryText =
-    "Kickoff-only view: final narrative summary will appear here once the Final Review survey is completed.";
-
-  return {
-    whatWeShipped,
-    resultsImpact,
-    biggestWins,
-    challenges,
-    keyLearnings,
-    nextSteps,
-    summaryText
-  };
-}
-
-// -------------------------------
-// Status chip
-// -------------------------------
-function renderStatusChip(container, data) {
-  if (!container) return;
-
-  container.innerHTML = "";
-
-  let text = "Kickoff baseline only";
-  let cls = "chip chip--info";
-
-  if (data.final) {
-    text = "Final review completed";
-    cls = "chip chip--success";
-  } else if (data.midterm) {
-    text = "Midterm review completed";
-    cls = "chip chip--progress";
-  }
-
-  const chip = document.createElement("span");
-  chip.className = cls;
-  chip.textContent = text;
-  container.appendChild(chip);
-}
-
-// -------------------------------
 // Render dashboard UI
 // -------------------------------
 function renderDashboard(rawData) {
+  const app = document.getElementById("app"); // mostly unused now, but we clear it
   const errorPanel = document.getElementById("errorPanel");
   const emptyState = document.getElementById("dashboardEmpty");
-  const content = document.getElementById("dashboardContent");
+  const dashboardContent = document.getElementById("dashboardContent");
 
   const titleEl = document.getElementById("dashboardProjectTitle");
   const metaEl = document.getElementById("dashboardProjectMeta");
   const datesEl = document.getElementById("dashboardDates");
-  const statusChipsEl = document.getElementById("statusChips");
+  const chipsEl = document.getElementById("statusChips");
 
-  const outEl = document.getElementById("dashOutcomes");
-  const resultsEl = document.getElementById("dashResults");
-  const winsEl = document.getElementById("dashWins");
-  const challengesEl = document.getElementById("dashChallenges");
-  const learningsEl = document.getElementById("dashLearnings");
-  const nextStepsEl = document.getElementById("dashNextSteps");
-  const summaryPre = document.getElementById("dashSummaryText");
+  const dashOutcomes = document.getElementById("dashOutcomes");
+  const dashResults = document.getElementById("dashResults");
+  const dashWins = document.getElementById("dashWins");
+  const dashChallenges = document.getElementById("dashChallenges");
+  const dashLearnings = document.getElementById("dashLearnings");
+  const dashNextSteps = document.getElementById("dashNextSteps");
+  const dashSummaryText = document.getElementById("dashSummaryText");
+
+  if (app) app.innerHTML = "";
 
   const data = normalizeDashboardData(rawData);
 
-  if (!data || !data.project) {
+  if (!data || !data.project || !data.project.name) {
     if (errorPanel) {
       errorPanel.style.display = "block";
       errorPanel.textContent =
-        "No project data found. Open this dashboard from any survey page so it can pass in context.";
+        "No project data found. Open this dashboard from a survey page so it can pass in context.";
     }
+    if (dashboardContent) dashboardContent.style.display = "none";
     if (emptyState) emptyState.style.display = "block";
-    if (content) content.style.display = "none";
     return;
   }
 
@@ -278,69 +154,180 @@ function renderDashboard(rawData) {
   }
 
   if (emptyState) emptyState.style.display = "none";
-  if (content) content.style.display = "grid";
+  if (dashboardContent) dashboardContent.style.display = "grid";
 
-  const project = data.project;
-  const kickoff = data.kickoff || {};
-  const final = data.final || {};
-  const finalSummary = data.finalSummary || "";
+  const { kickoff, midterm, final, finalSummary, project } = data;
 
-  // ---- Header ----
-  setText(titleEl, project.name || "Untitled project");
+  // --- Status helpers ---
+  const hasMidterm = !!(midterm && (
+    midterm.healthScore != null ||
+    midterm.progressScore != null ||
+    (Array.isArray(midterm.risks) && midterm.risks.length)
+  ));
 
-  const metaBits = [];
-  if (project.client) metaBits.push(project.client);
-  if (project.pm) metaBits.push(`PM: ${project.pm}`);
-  if (project.designer) metaBits.push(`Designer: ${project.designer}`);
-  if (project.dev) metaBits.push(`Dev: ${project.dev}`);
-  setText(metaEl, metaBits.join(" • "));
+  const hasFinal = !!(final && (
+    final.outcomes ||
+    final.results ||
+    final.wins ||
+    final.challenges ||
+    final.learnings ||
+    final.nextSteps
+  ));
 
-  const dateBits = [];
-  if (project.kickoffDate)
-    dateBits.push(`Kickoff: ${project.kickoffDate}`);
-  if (project.finalReviewDate)
-    dateBits.push(`Final review: ${project.finalReviewDate}`);
-  setText(datesEl, dateBits.join(" • "));
+  // --- Header: title, meta, dates ---
+  if (titleEl) {
+    titleEl.textContent = project.name || "Untitled project";
+  }
 
-  renderStatusChip(statusChipsEl, data);
+  if (metaEl) {
+    const bits = [];
+    if (project.client) bits.push(project.client);
+    if (project.pm) bits.push(`PM: ${project.pm}`);
+    if (project.designer) bits.push(`Designer: ${project.designer}`);
+    if (project.dev) bits.push(`Dev: ${project.dev}`);
+    metaEl.textContent = bits.join(" • ");
+  }
 
-  // ---- Cards ----
-  if (final && (
-      final.outcomes ||
-      final.results ||
-      final.wins ||
-      final.challenges ||
-      final.learnings ||
-      final.nextSteps
-    )) {
-    // We have final data – use it directly
-    setText(outEl, final.outcomes || "—");
-    setText(resultsEl, final.results || "—");
-    setText(winsEl, final.wins || "—");
-    setText(challengesEl, final.challenges || "—");
-    setText(learningsEl, final.learnings || "—");
-    setText(nextStepsEl, final.nextSteps || "—");
-    summaryPre.textContent = finalSummary || "—";
-  } else if (kickoff && kickoff.businessGoals) {
-    // Kickoff-only baseline view
-    const baseline = buildKickoffCardCopy(kickoff);
-    setText(outEl, baseline.whatWeShipped);
-    setText(resultsEl, baseline.resultsImpact);
-    setText(winsEl, baseline.biggestWins);
-    setText(challengesEl, baseline.challenges);
-    setText(learningsEl, baseline.keyLearnings);
-    setText(nextStepsEl, baseline.nextSteps);
-    summaryPre.textContent = baseline.summaryText;
-  } else {
-    // Fallback (should be rare)
-    setText(outEl, "No data available yet.");
-    setText(resultsEl, "No data available yet.");
-    setText(winsEl, "No data available yet.");
-    setText(challengesEl, "No data available yet.");
-    setText(learningsEl, "No data available yet.");
-    setText(nextStepsEl, "No data available yet.");
-    summaryPre.textContent =
-      "No survey responses have been captured for this project.";
+  if (datesEl) {
+    const dates = [];
+    if (project.kickoffDate) dates.push(`Kickoff: ${project.kickoffDate}`);
+    if (project.finalReviewDate && hasFinal) {
+      dates.push(`Final review: ${project.finalReviewDate}`);
+    }
+    datesEl.textContent = dates.join(" • ");
+  }
+
+  if (chipsEl) {
+    const chips = [];
+
+    if (kickoff) {
+      chips.push({ label: "Kickoff completed", tone: "primary" });
+    }
+
+    if (!hasMidterm) {
+      chips.push({ label: "Midterm not started", tone: "muted" });
+    } else {
+      chips.push({ label: "Midterm completed", tone: "info" });
+    }
+
+    if (!hasFinal) {
+      chips.push({ label: "Final review not started", tone: "muted" });
+    } else {
+      chips.push({ label: "Final review completed", tone: "success" });
+    }
+
+    chipsEl.innerHTML = chips
+      .map(
+        (c) =>
+          `<span class="chip chip--${c.tone}">${c.label}</span>`
+      )
+      .join("");
+  }
+
+  // --- Card content ---
+
+  // If we have final data, show that (full project view)
+  if (hasFinal) {
+    if (dashOutcomes) {
+      dashOutcomes.textContent = final.outcomes || "No data available yet.";
+    }
+    if (dashResults) {
+      dashResults.textContent = final.results || "No data available yet.";
+    }
+    if (dashWins) {
+      dashWins.textContent = final.wins || "No data available yet.";
+    }
+    if (dashChallenges) {
+      dashChallenges.textContent = final.challenges || "No data available yet.";
+    }
+    if (dashLearnings) {
+      dashLearnings.textContent = final.learnings || "No data available yet.";
+    }
+    if (dashNextSteps) {
+      dashNextSteps.textContent = final.nextSteps || "No data available yet.";
+    }
+    if (dashSummaryText) {
+      dashSummaryText.textContent =
+        finalSummary ||
+        "No final summary captured yet. Complete the Final Review survey to generate one.";
+    }
+    return;
+  }
+
+  // Otherwise: kickoff-only baseline view
+  const selectedBusinessGoals =
+    (kickoff && kickoff.businessGoals || []).filter((g) => g.selected);
+  const selectedProductGoals =
+    (kickoff && kickoff.productGoals || []).filter((g) => g.selected);
+  const selectedUserGoals =
+    (kickoff && kickoff.userGoals || []).filter((g) => g.selected);
+  const selectedUserPains =
+    (kickoff && kickoff.userPains || []).filter((g) => g.selected);
+
+  // What we shipped → baseline business goals
+  if (dashOutcomes) {
+    if (selectedBusinessGoals.length) {
+      const labels = selectedBusinessGoals.map((g) => g.label).join(", ");
+      dashOutcomes.textContent = `Baseline business focus at kickoff: ${labels}.`;
+    } else {
+      dashOutcomes.textContent =
+        "No business goals were selected during kickoff.";
+    }
+  }
+
+  // Results & Impact → product / experience goals baseline
+  if (dashResults) {
+    if (selectedProductGoals.length) {
+      const labels = selectedProductGoals.map((g) => g.label).join(", ");
+      dashResults.textContent =
+        `Baseline product / experience focus at kickoff: ${labels}. ` +
+        "Results & impact will be captured at Midterm and Final review.";
+    } else {
+      dashResults.textContent =
+        "No product / experience goals were selected during kickoff.";
+    }
+  }
+
+  // Biggest Wins → user goals we want to enable
+  if (dashWins) {
+    if (selectedUserGoals.length) {
+      const labels = selectedUserGoals.map((g) => g.label).join(", ");
+      dashWins.textContent =
+        `Key user wins we’re aiming for: ${labels}. ` +
+        "Future surveys will confirm if we achieved them.";
+    } else {
+      dashWins.textContent = "No user goals were selected during kickoff.";
+    }
+  }
+
+  // Challenges → user pains
+  if (dashChallenges) {
+    if (selectedUserPains.length) {
+      const labels = selectedUserPains.map((p) => p.label).join(", ");
+      dashChallenges.textContent =
+        `User pain points we’re targeting: ${labels}.`;
+    } else {
+      dashChallenges.textContent =
+        "No user pain points were captured during kickoff.";
+    }
+  }
+
+  // Key Learnings → explanation
+  if (dashLearnings) {
+    dashLearnings.textContent =
+      "Midterm and Final surveys will capture learnings over time. For now, this is a kickoff-only baseline.";
+  }
+
+  // Next Steps → explanation
+  if (dashNextSteps) {
+    dashNextSteps.textContent =
+      "Use this baseline to plan next steps. Once you complete the Midterm and Final reviews, this dashboard will show progress and outcomes over the full project lifecycle.";
+  }
+
+  // Full Final Summary → placeholder
+  if (dashSummaryText) {
+    dashSummaryText.textContent =
+      "Kickoff-only view: final narrative summary will appear here once the Final Review survey is completed.";
   }
 }
 
