@@ -9,7 +9,7 @@
 // STATE
 const midterm = {
   currentStep: 1,
-  totalSteps: 3,
+  totalSteps: 4,
   metaExpanded: false,
   info: {
     projectName: "",

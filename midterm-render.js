@@ -194,16 +194,18 @@ function renderStep(step) {
   if (step === 1) {
     stepEl.innerHTML = renderStep1();
   } else if (step === 2) {
-    stepEl.innerHTML = renderStep2();
+    stepEl.innerHTML = renderStatusStep();
   } else if (step === 3) {
+    stepEl.innerHTML = renderNarrativesStep();
+  } else if (step === 4) {
     internalSummary = buildInternalSummary();
     clientSummary = buildClientSummary();
-    stepEl.innerHTML = renderStep3(internalSummary, clientSummary);
+    stepEl.innerHTML = renderSummaryStep(internalSummary, clientSummary);
   }
 
   form.appendChild(stepEl);
 
-  if (step === 3) {
+  if (step === midterm.totalSteps) {
     setupSummaryActions(internalSummary, clientSummary);
   }
 
@@ -329,8 +331,8 @@ function renderStep1() {
   return metaSection + healthSection;
 }
 
-// STEP 2 – Status table + narrative fields
-function renderStep2() {
+// STEP 2 – Status table
+function renderStatusStep() {
   const statusTable =
     midterm.goalStatuses.length > 0
       ? `
@@ -421,6 +423,17 @@ function renderStep2() {
       `
       : `<p class="help-text">No Kickoff Goals Were Selected, So There Are No Midterm Statuses to Capture.</p>`;
 
+  return (
+    addSection(
+      "Status Update Table",
+      statusTable,
+      "Auto-Generated From Kickoff Selections. Track Progress by Goal."
+    )
+  );
+}
+
+// STEP 3 – Narrative fields
+function renderNarrativesStep() {
   const risksSection = renderRisksSection();
   const winsSection = renderTextAreaSection(
     "Biggest Wins",
@@ -441,21 +454,17 @@ function renderStep2() {
     "What Should Happen Next to Keep the Project Healthy?"
   );
 
-  return (
-    addSection(
-      "Status Update Table",
-      statusTable,
-      "Auto-Generated From Kickoff Selections. Track Progress by Goal."
-    ) +
-    risksSection +
-    winsSection +
-    learningsSection +
-    nextStepsSection
-  );
+  return `
+    <h2>Risks, Wins, and Next Steps</h2>
+    ${risksSection}
+    ${winsSection}
+    ${learningsSection}
+    ${nextStepsSection}
+  `;
 }
 
-// STEP 3 – Summaries
-function renderStep3(internalSummary, clientSummary) {
+// STEP 4 – Summaries
+function renderSummaryStep(internalSummary, clientSummary) {
   return `
     <h2>Review and Share</h2>
     <p class="help-text">

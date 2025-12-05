@@ -3,7 +3,7 @@
 // ============================================================================
 const project = {
   currentStep: 1,
-  totalSteps: 5,
+  totalSteps: 4,
   info: {
     name: '',
     clientId: null,
@@ -233,15 +233,16 @@ function validateCurrentStep() {
       alert('Please select at least one business goal');
       return false;
     }
-  } else if (project.currentStep === 3) {
     const hasSelectedProductGoal = project.productGoals.some(goal => goal.selected);
     if (!hasSelectedProductGoal) {
       if (!confirm('No product goals selected. Are you sure you want to continue?')) {
         return false;
       }
     }
+  } else if (project.currentStep === 3) {
+    // User goals/pains are optional; no additional validation.
   }
-  // Step 4 optional
+  // Step 4 is summary only
   return true;
 }
 
@@ -294,15 +295,12 @@ function createStepElement(stepNumber) {
       step.innerHTML = renderProjectInfoStep();
       break;
     case 2:
-      step.innerHTML = renderBusinessGoalsStep();
+      step.innerHTML = renderBusinessGoalsStep() + renderProductGoalsStep();
       break;
     case 3:
-      step.innerHTML = renderProductGoalsStep();
-      break;
-    case 4:
       step.innerHTML = renderUserGoalsStep();
       break;
-    case 5:
+    case 4:
       step.innerHTML = renderSummaryStep();
       break;
   }

@@ -5,6 +5,10 @@
 const titleCaseTypeFinal = (t) => (t ? t.replace(/\b\w/g, (c) => c.toUpperCase()) : "");
 const formatFinalStatus = (value) =>
   value ? value.replace(/-/g, " ").replace(/\b\w/g, (c) => c.toUpperCase()) : "";
+const finalFlow = { currentStep: 1, totalSteps: 4 };
+const finalPrevBtn = $("prevBtn");
+const finalNextBtn = $("nextBtn");
+const finalProgressBar = $("progressBar");
 
 // HYDRATE FROM KICKOFF + MIDTERM
 function hydrateForm() {
@@ -178,6 +182,61 @@ function updateSummary() {
   saveDashboardPayload(summaryText);
 }
 
+// NAVIGATION HELPERS
+function updateFinalProgressBar() {
+  if (!finalProgressBar) return;
+  const progress =
+    ((finalFlow.currentStep - 1) / (finalFlow.totalSteps - 1)) * 100;
+  finalProgressBar.style.width = `${progress}%`;
+}
+
+function updateFinalNav() {
+  if (finalPrevBtn) {
+    finalPrevBtn.disabled = finalFlow.currentStep === 1;
+    finalPrevBtn.style.display = finalFlow.currentStep === 1 ? "none" : "inline-flex";
+  }
+  if (finalNextBtn) {
+    if (finalFlow.currentStep === finalFlow.totalSteps) {
+      finalNextBtn.style.display = "none";
+      finalNextBtn.disabled = true;
+    } else {
+      finalNextBtn.style.display = "inline-flex";
+      finalNextBtn.disabled = false;
+      finalNextBtn.textContent = "Next";
+    }
+  }
+}
+
+function showFinalStep(step) {
+  finalFlow.currentStep = step;
+  const sections = document.querySelectorAll("[data-step]");
+  sections.forEach((section) => {
+    const secStep = parseInt(section.getAttribute("data-step"), 10);
+    section.style.display = secStep === step ? "" : "none";
+  });
+
+  updateFinalNav();
+  updateFinalProgressBar();
+
+  if (step === finalFlow.totalSteps) {
+    updateSummary();
+  }
+}
+
+function goToNextFinalStep() {
+  if (finalFlow.currentStep < finalFlow.totalSteps) {
+    showFinalStep(finalFlow.currentStep + 1);
+    window.scrollTo(0, 0);
+  }
+}
+
+function goToPreviousFinalStep() {
+  if (finalFlow.currentStep > 1) {
+    showFinalStep(finalFlow.currentStep - 1);
+    window.scrollTo(0, 0);
+  }
+}
+
 // GOALS TABLE RENDER
 function renderGoalsTable() {
   const tbody = document.getElementById("goalsTableBody");
@@ -285,6 +344,9 @@ function initFinal() {
 
   hydrateForm();
 
+  if (finalPrevBtn) finalPrevBtn.addEventListener("click", goToPreviousFinalStep);
+  if (finalNextBtn) finalNextBtn.addEventListener("click", goToNextFinalStep);
+
   if (form) {
     form.addEventListener("input", handleInput);
     form.addEventListener("change", handleInput);
@@ -292,6 +354,7 @@ function initFinal() {
   }
 
   updateSummary();
+  showFinalStep(finalFlow.currentStep);
 
   if (copyBtn) {
     copyBtn.addEventListener("click", () => {

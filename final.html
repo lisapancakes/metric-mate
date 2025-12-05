@@ -32,13 +32,16 @@ referrerpolicy="no-referrer"
     Wrap Up the Project With a Clear, Honest Summary You Can Reuse in Emails,
     Retros, and Case Studies.
   </p>
+  <div class="progress">
+    <div class="progress-bar" id="progressBar"></div>
+  </div>
 </header>
 
 <main class="app-main">
   <form id="finalForm" class="form">
 
     <!-- Project Info (read-only) -->
-    <section class="summary-section">
+    <section class="summary-section" data-step="1">
       <div class="section-head">
         <h2>Project Info</h2>
         <p class="help-text">Auto-Filled From Kickoff / Midterm</p>
@@ -81,8 +84,32 @@ referrerpolicy="no-referrer"
       </div>
     </section>
 
+    <!-- Goals table -->
+    <section class="summary-section" data-step="2">
+      <div class="section-head">
+        <h2>Goals – Midterm to Final</h2>
+        <p class="help-text">Kickoff Goals With Midterm Status/Notes (Read-Only) and Final Status/Notes (Editable).</p>
+      </div>
+      <div class="table-wrapper scrollable-table">
+        <table class="dash-table">
+          <thead>
+            <tr>
+              <th>Goal</th>
+              <th>Type</th>
+              <th>Importance</th>
+              <th>Midterm Status</th>
+              <th>Midterm Notes</th>
+              <th>Final Status</th>
+              <th>Final Notes</th>
+            </tr>
+          </thead>
+          <tbody id="goalsTableBody"></tbody>
+        </table>
+      </div>
+    </section>
+
     <!-- Final narrative fields -->
-    <section class="summary-section">
+    <section class="summary-section" data-step="3">
       <div class="section-head">
         <h2>Final Narrative</h2>
         <p class="help-text">What We Shipped, Results, Wins, Challenges, Learnings, Next Steps.</p>
@@ -115,32 +142,8 @@ referrerpolicy="no-referrer"
       </div>
     </section>
 
-    <!-- Goals table -->
-    <section class="summary-section">
-      <div class="section-head">
-        <h2>Goals – Midterm to Final</h2>
-        <p class="help-text">Kickoff Goals With Midterm Status/Notes (Read-Only) and Final Status/Notes (Editable).</p>
-      </div>
-      <div class="table-wrapper scrollable-table">
-        <table class="dash-table">
-          <thead>
-            <tr>
-              <th>Goal</th>
-              <th>Type</th>
-              <th>Importance</th>
-              <th>Midterm Status</th>
-              <th>Midterm Notes</th>
-              <th>Final Status</th>
-              <th>Final Notes</th>
-            </tr>
-          </thead>
-          <tbody id="goalsTableBody"></tbody>
-        </table>
-      </div>
-    </section>
-
     <!-- Final summary -->
-    <section class="summary-section">
+    <section class="summary-section" data-step="4">
       <div class="section-head">
         <h2>Final Summary</h2>
         <p class="help-text">Generated Automatically as You Fill in the Fields.</p>
@@ -149,7 +152,7 @@ referrerpolicy="no-referrer"
     </section>
 
     <!-- Actions -->
-    <section class="summary-section">
+    <section class="summary-section" data-step="4">
       <div class="form-actions" style="display:flex; gap:0.75rem; flex-wrap:wrap;">
         <button type="button" id="copyFinalSummaryBtn" class="btn btn-secondary">
           <i class="fa-solid fa-copy"></i>
@@ -168,6 +171,10 @@ referrerpolicy="no-referrer"
       </div>
     </section>
   </form>
+  <div class="navigation">
+    <button type="button" id="prevBtn" class="btn btn-secondary" disabled>Previous</button>
+    <button type="button" id="nextBtn" class="btn btn-primary">Next</button>
+  </div>
 </main>
 </div>
 <script src="final-data.js"></script>
