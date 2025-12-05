@@ -14,6 +14,11 @@ const STATUS_OPTIONS = [
 ];
 
 const titleCaseType = (t) => (t ? t.replace(/\b\w/g, (c) => c.toUpperCase()) : "");
+const formatStatusLabel = (value) => {
+  const opt = STATUS_OPTIONS.find((o) => o.value === value);
+  if (opt) return opt.label;
+  return value ? value.replace(/-/g, " ").replace(/\b\w/g, (c) => c.toUpperCase()) : "";
+};
 
 function addSection(title, body, subtitle = "") {
   return `
@@ -158,15 +163,15 @@ function updateProgressBar() {
 function validateCurrentStep() {
   if (midterm.currentStep === 1) {
     if (!midterm.info.projectName.trim()) {
-      alert("Please enter a project name");
+      alert("Please Enter a Project Name");
       return false;
     }
     if (midterm.healthScore == null) {
-      alert("Please rate overall project health");
+      alert("Please Rate Overall Project Health");
       return false;
     }
     if (midterm.progressScore == null) {
-      alert("Please rate overall project progress");
+      alert("Please Rate Overall Project Progress");
       return false;
     }
   }
@@ -265,16 +270,16 @@ function renderStep1() {
         </div>
       </div>
     `,
-    "Auto-injected from Kickoff; expand to adjust."
+    "Auto-Injected From Kickoff; Expand to Adjust."
   );
 
   const healthSection = addSection(
     "Project Health Check",
     `
       <div class="form-group">
-        <label>Overall project health today</label>
+        <label>Overall Project Health Today</label>
         <div class="rating">
-          <div class="rating-label">At risk</div>
+          <div class="rating-label">At Risk</div>
           <div class="rating-scale">
             ${[1, 2, 3, 4, 5]
               .map(
@@ -291,11 +296,11 @@ function renderStep1() {
               )
               .join("")}
           </div>
-          <div class="rating-label">On track</div>
+          <div class="rating-label">On Track</div>
         </div>
       </div>
       <div class="form-group">
-        <label>Overall progress vs. plan</label>
+        <label>Overall Progress vs. Plan</label>
         <div class="rating">
           <div class="rating-label">Behind</div>
           <div class="rating-scale">
@@ -318,7 +323,7 @@ function renderStep1() {
         </div>
       </div>
     `,
-    "Two required scores to track health and velocity."
+    "Two Required Scores to Track Health and Velocity."
   );
 
   return metaSection + healthSection;
@@ -360,7 +365,7 @@ function renderStep2() {
                           rows="2"
                           data-type="goal-notes"
                           data-id="${item.id}"
-                          placeholder="Notes on progress, blockers, scope changes..."
+                          placeholder="Notes on Progress, Blockers, Scope Changes..."
                         >${item.notes || ""}</textarea>
                       </td>
                     </tr>
@@ -378,8 +383,8 @@ function renderStep2() {
           <div id="midtermAddGoalContainer" style="display:none; margin-top:0.75rem;">
             <div class="form-grid">
               <div class="form-group">
-                <label for="midtermNewGoalLabel">Goal label</label>
-                <input type="text" id="midtermNewGoalLabel" placeholder="Add a goal for midterm tracking">
+                <label for="midtermNewGoalLabel">Goal Label</label>
+                <input type="text" id="midtermNewGoalLabel" placeholder="Add a Goal for Midterm Tracking">
               </div>
               <div class="form-group">
                 <label for="midtermNewGoalType">Type</label>
@@ -414,33 +419,33 @@ function renderStep2() {
           </div>
         </div>
       `
-      : `<p class="help-text">No kickoff goals were selected, so there are no midterm statuses to capture.</p>`;
+      : `<p class="help-text">No Kickoff Goals Were Selected, So There Are No Midterm Statuses to Capture.</p>`;
 
   const risksSection = renderRisksSection();
   const winsSection = renderTextAreaSection(
     "Biggest Wins",
     "wins",
     midterm.wins,
-    "Celebrate notable outcomes since kickoff."
+    "Celebrate Notable Outcomes Since Kickoff."
   );
   const learningsSection = renderTextAreaSection(
     "Key Learnings",
     "learnings",
     midterm.learnings,
-    "Observations, hypotheses proven or disproven."
+    "Observations, Hypotheses Proven or Disproven."
   );
   const nextStepsSection = renderTextAreaSection(
     "Updated Next Steps",
     "nextSteps",
     midterm.nextSteps,
-    "What should happen next to keep the project healthy?"
+    "What Should Happen Next to Keep the Project Healthy?"
   );
 
   return (
     addSection(
       "Status Update Table",
       statusTable,
-      "Auto-generated from kickoff selections. Track progress by goal."
+      "Auto-Generated From Kickoff Selections. Track Progress by Goal."
     ) +
     risksSection +
     winsSection +
@@ -452,14 +457,14 @@ function renderStep2() {
 // STEP 3 – Summaries
 function renderStep3(internalSummary, clientSummary) {
   return `
-    <h2>Review & Share</h2>
+    <h2>Review and Share</h2>
     <p class="help-text">
-      Use these summaries in your mid-project sync, internal notes, or client email.
+      Use These Summaries in Your Mid-Project Sync, Internal Notes, or Client Email.
     </p>
 
     <section class="summary-section">
       <h3>1. Internal Mid-Project Summary</h3>
-      <p class="help-text">Drop this into Asana, Slack, or your team doc.</p>
+      <p class="help-text">Drop This Into Asana, Slack, or Your Team Doc.</p>
       <textarea id="internalSummary" rows="10" readonly>${internalSummary}</textarea>
       <div class="form-actions" style="margin-top: 0.75rem;">
         <button type="button" id="copyInternalSummary" class="btn btn-secondary">
@@ -471,7 +476,7 @@ function renderStep3(internalSummary, clientSummary) {
 
     <section class="summary-section">
       <h3>2. Client-Friendly Check-In</h3>
-      <p class="help-text">Use this in a short email or slide to align on where things stand.</p>
+      <p class="help-text">Use This in a Short Email or Slide to Align on Where Things Stand.</p>
       <textarea id="clientSummary" rows="10" readonly>${clientSummary}</textarea>
       <div class="form-actions" style="margin-top: 0.75rem;">
         <button type="button" id="copyClientSummary" class="btn btn-secondary">
@@ -484,7 +489,7 @@ function renderStep3(internalSummary, clientSummary) {
     <section class="summary-section">
       <h3>3. Final Review Reminder</h3>
       <p class="help-text">
-        Create a calendar event for your end-of-project / retrospective conversation.
+        Create a Calendar Event for Your End-of-Project / Retrospective Conversation.
       </p>
       <a
         id="finalReviewCalendarLink"
@@ -501,7 +506,7 @@ function renderStep3(internalSummary, clientSummary) {
     <section class="summary-section">
       <h3>4. Project Dashboard</h3>
       <p class="help-text">
-        See the project’s kickoff and mid-project data side by side.
+        See the Project’s Kickoff and Mid-Project Data Side by Side.
       </p>
       <div class="form-actions">
         <button
@@ -533,14 +538,14 @@ function renderRisksSection() {
           class="risk-label-input"
           data-type="risk-label"
           data-id="${risk.id}"
-          placeholder="Risk label"
+          placeholder="Risk Label"
           value="${risk.label || ""}"
         />
         <textarea
           rows="2"
           data-type="risk-notes"
           data-id="${risk.id}"
-          placeholder="Notes / owner / mitigation"
+          placeholder="Notes / Owner / Mitigation"
         >${risk.notes || ""}</textarea>
       </div>
     `
@@ -553,7 +558,7 @@ function renderRisksSection() {
     <div class="form-actions" style="margin-top:0.75rem;">
       <button type="button" class="btn btn-secondary btn-sm" id="addRiskRow">
         <i class="fa-solid fa-plus"></i>
-        Add risk
+        Add Risk
       </button>
     </div>
   `;
@@ -561,7 +566,7 @@ function renderRisksSection() {
   return addSection(
     "Risks & Issues",
     body,
-    "Track blockers or watchlist items; toggle Select for active risks."
+    "Track Blockers or Watchlist Items; Toggle Select for Active Risks."
   );
 }
 
@@ -586,7 +591,7 @@ function buildInternalSummary() {
   let lines = [];
   lines.push("MID-PROJECT REVIEW — INTERNAL");
   lines.push("--------------------------------");
-  lines.push(`Project: ${i.projectName || "Untitled project"}`);
+  lines.push(`Project: ${i.projectName || "Untitled Project"}`);
   if (i.client) lines.push(`Client: ${i.client}`);
   if (i.pm) lines.push(`PM: ${i.pm}`);
   if (i.designer) lines.push(`Product Designer: ${i.designer}`);
@@ -594,18 +599,18 @@ function buildInternalSummary() {
   if (i.date) lines.push(`Review Date: ${i.date}`);
   lines.push("");
   if (midterm.healthScore != null) {
-    lines.push(`Overall project health: ${midterm.healthScore}/5`);
+    lines.push(`Overall Project Health: ${midterm.healthScore}/5`);
   }
   if (midterm.progressScore != null) {
-    lines.push(`Progress vs. plan: ${midterm.progressScore}/5`);
+    lines.push(`Progress vs. Plan: ${midterm.progressScore}/5`);
   }
   lines.push("");
 
   if (midterm.goalStatuses.length) {
-    lines.push("Goal statuses:");
+    lines.push("Goal Statuses:");
     midterm.goalStatuses.forEach((g) => {
       lines.push(
-        `• [${titleCaseType(g.type)}] ${g.label} — ${g.status}${g.notes ? ` (${g.notes})` : ""}`
+        `• [${titleCaseType(g.type)}] ${g.label} — ${formatStatusLabel(g.status)}${g.notes ? ` (${g.notes})` : ""}`
       );
     });
     lines.push("");
@@ -613,7 +618,7 @@ function buildInternalSummary() {
 
   const activeRisks = (midterm.risks || []).filter(r => r.selected && r.label);
   if (activeRisks.length) {
-    lines.push("Risks / issues:");
+    lines.push("Risks / Issues:");
     activeRisks.forEach(r => {
       lines.push(`• ${r.label}${r.notes ? ` — ${r.notes}` : ""}`);
     });
@@ -621,15 +626,15 @@ function buildInternalSummary() {
   }
 
   if (midterm.wins.trim()) {
-    lines.push("Biggest wins:");
+    lines.push("Biggest Wins:");
     lines.push(midterm.wins.trim(), "");
   }
   if (midterm.learnings.trim()) {
-    lines.push("Key learnings:");
+    lines.push("Key Learnings:");
     lines.push(midterm.learnings.trim(), "");
   }
   if (midterm.nextSteps.trim()) {
-    lines.push("Next steps:");
+    lines.push("Next Steps:");
     lines.push(midterm.nextSteps.trim());
   }
 
@@ -644,46 +649,46 @@ function buildClientSummary() {
   lines.push(`Hi ${nameForGreeting},`);
   lines.push("");
   lines.push(
-    `Here’s a quick mid-project snapshot for ${i.projectName || "the project"}:`
+    `Here’s a Quick Mid-Project Snapshot for ${i.projectName || "the Project"}:`
   );
   lines.push("");
   if (midterm.healthScore != null) {
-    lines.push(`• Overall health: ${midterm.healthScore}/5`);
+    lines.push(`• Overall Health: ${midterm.healthScore}/5`);
   }
   if (midterm.progressScore != null) {
-    lines.push(`• Progress vs. plan: ${midterm.progressScore}/5`);
+    lines.push(`• Progress vs. Plan: ${midterm.progressScore}/5`);
   }
   if (midterm.goalStatuses.length) {
     lines.push("");
-    lines.push("Status by goal:");
+    lines.push("Status by Goal:");
     midterm.goalStatuses.forEach((g) => {
       lines.push(
-        `• [${titleCaseType(g.type)}] ${g.label}: ${g.status}${g.notes ? ` — ${g.notes}` : ""}`
+        `• [${titleCaseType(g.type)}] ${g.label}: ${formatStatusLabel(g.status)}${g.notes ? ` — ${g.notes}` : ""}`
       );
     });
   }
   if (midterm.wins.trim()) {
     lines.push("");
-    lines.push("Biggest wins:");
+    lines.push("Biggest Wins:");
     lines.push(midterm.wins.trim());
   }
   if (midterm.learnings.trim()) {
     lines.push("");
-    lines.push("Key learnings:");
+    lines.push("Key Learnings:");
     lines.push(midterm.learnings.trim());
   }
   if (midterm.nextSteps.trim()) {
     lines.push("");
-    lines.push("Next steps:");
+    lines.push("Next Steps:");
     lines.push(midterm.nextSteps.trim());
   }
   lines.push("");
   lines.push(
-    "If anything here feels off or needs adjustment, we’re happy to recalibrate together."
+    "If Anything Here Feels Off or Needs Adjustment, We’re Happy to Recalibrate Together."
   );
   lines.push("");
   lines.push("Best,");
-  lines.push("The Thinklogic team");
+  lines.push("The Thinklogic Team");
 
   return lines.join("\n");
 }
@@ -699,14 +704,14 @@ function setupSummaryActions(internalSummary, clientSummary) {
   if (internalBtn) {
     internalBtn.addEventListener("click", () => {
       copyToClipboard(internalSummary);
-      showStatus("✅ Internal summary copied to clipboard");
+      showStatus("✅ Internal Summary Copied to Clipboard");
     });
   }
 
   if (clientBtn) {
     clientBtn.addEventListener("click", () => {
       copyToClipboard(clientSummary);
-      showStatus("✅ Client summary copied to clipboard");
+      showStatus("✅ Client Summary Copied to Clipboard");
     });
   }
 
@@ -743,10 +748,10 @@ function buildFinalReviewCalendarUrl() {
       : "file:///Users/lisa/Code/metric-mate/final.html";
 
   const params = new URLSearchParams({
-    text: `Final review: ${projectName} (${clientName})`,
+    text: `Final Review: ${projectName} (${clientName})`,
     details: `${buildInternalSummary()}
 
-Final review form:
+Final Review Form:
 ${finalUrl}`,
     dates: `${formatDate(start)}/${formatDate(end)}`
   });

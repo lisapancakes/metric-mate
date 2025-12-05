@@ -3,6 +3,8 @@
 // ===============================
 
 const titleCaseTypeFinal = (t) => (t ? t.replace(/\b\w/g, (c) => c.toUpperCase()) : "");
+const formatFinalStatus = (value) =>
+  value ? value.replace(/-/g, " ").replace(/\b\w/g, (c) => c.toUpperCase()) : "";
 
 // HYDRATE FROM KICKOFF + MIDTERM
 function hydrateForm() {
@@ -118,47 +120,47 @@ function buildFinalSummary() {
 
   out.push("FINAL PROJECT REVIEW — INTERNAL");
   out.push("--------------------------------");
-  out.push(`Project: ${s.projectName || "Untitled project"}`);
+  out.push(`Project: ${s.projectName || "Untitled Project"}`);
   if (s.client) out.push(`Client: ${s.client}`);
   if (s.pm) out.push(`PM: ${s.pm}`);
   if (s.designer) out.push(`Product Designer: ${s.designer}`);
   if (s.dev) out.push(`Lead Developer: ${s.dev}`);
-  if (s.date) out.push(`Final review date: ${s.date}`);
+  if (s.date) out.push(`Final Review Date: ${s.date}`);
   out.push("");
 
   if (s.outcomes.trim()) {
-    out.push("What we shipped:");
+    out.push("What We Shipped:");
     out.push(s.outcomes.trim(), "");
   }
   if (s.results.trim()) {
-    out.push("Results / impact:");
+    out.push("Results / Impact:");
     out.push(s.results.trim(), "");
   }
   if (s.wins.trim()) {
-    out.push("Biggest wins:");
+    out.push("Biggest Wins:");
     out.push(s.wins.trim(), "");
   }
   if (s.challenges.trim()) {
-    out.push("Challenges / misses:");
+    out.push("Challenges / Misses:");
     out.push(s.challenges.trim(), "");
   }
   if (s.learnings.trim()) {
-    out.push("Key learnings:");
+    out.push("Key Learnings:");
     out.push(s.learnings.trim(), "");
   }
   if (s.nextSteps.trim()) {
-    out.push("Next steps / follow-ups:");
+    out.push("Next Steps / Follow-Ups:");
     out.push(s.nextSteps.trim());
   }
 
   if (finalGoals.length) {
     out.push("");
-    out.push("Goal statuses:");
+    out.push("Goal Statuses:");
     finalGoals.forEach(g => {
       out.push(
-        `• [${titleCaseTypeFinal(g.type)}] ${g.label} — importance ${g.importance}; ` +
-        `midterm: ${g.midtermStatus || "n/a"}${g.midtermNotes ? ` (${g.midtermNotes})` : ""}; ` +
-        `final: ${g.finalStatus || "n/a"}${g.finalNotes ? ` (${g.finalNotes})` : ""}`
+        `• [${titleCaseTypeFinal(g.type)}] ${g.label} — Importance ${g.importance}; ` +
+        `Midterm: ${formatFinalStatus(g.midtermStatus || "N/A")}${g.midtermNotes ? ` (${g.midtermNotes})` : ""}; ` +
+        `Final: ${formatFinalStatus(g.finalStatus || "N/A")}${g.finalNotes ? ` (${g.finalNotes})` : ""}`
       );
     });
   }
@@ -193,7 +195,7 @@ function renderGoalsTable() {
           <td>${g.label || ""}</td>
           <td>${titleCaseTypeFinal(g.type || "")}</td>
           <td>${g.importance != null ? g.importance : ""}</td>
-          <td>${g.midtermStatus || ""}</td>
+          <td>${formatFinalStatus(g.midtermStatus || "")}</td>
           <td>${g.midtermNotes || ""}</td>
           <td>
             <select data-type="final-status" data-id="${g.id}">
@@ -212,7 +214,7 @@ function renderGoalsTable() {
               rows="2"
               data-type="final-notes"
               data-id="${g.id}"
-              placeholder="Final notes"
+              placeholder="Final Notes"
             >${g.finalNotes || ""}</textarea>
           </td>
         </tr>
@@ -232,8 +234,8 @@ function renderGoalsTable() {
           <div id="finalAddGoalContainer" style="display:none; margin-top:0.75rem;">
             <div class="form-grid">
               <div class="form-group">
-                <label for="finalNewGoalLabel">Goal label</label>
-                <input type="text" id="finalNewGoalLabel" placeholder="Add a goal for final tracking">
+                <label for="finalNewGoalLabel">Goal Label</label>
+                <input type="text" id="finalNewGoalLabel" placeholder="Add a Goal for Final Tracking">
               </div>
               <div class="form-group">
                 <label for="finalNewGoalType">Type</label>
@@ -295,7 +297,7 @@ function initFinal() {
     copyBtn.addEventListener("click", () => {
       const summary = $("finalSummary").value || "";
       copyToClipboard(summary);
-      showStatus("✅ Final summary copied to clipboard");
+      showStatus("✅ Final Summary Copied to Clipboard");
     });
   }
 }

@@ -38,7 +38,7 @@ function renderDashboard(rawData) {
     if (errorPanel) {
       errorPanel.style.display = "block";
       errorPanel.textContent =
-        "No project data found. Open this dashboard from a survey page so it can pass in context.";
+        "No Project Data Found. Open This Dashboard From a Survey Page So It Can Pass in Context.";
     }
     if (dashboardContent) dashboardContent.style.display = "none";
     if (emptyState) emptyState.style.display = "block";
@@ -93,7 +93,7 @@ function renderDashboard(rawData) {
 
   // --- Header: title, meta, dates ---
   if (titleEl) {
-    titleEl.textContent = project.name || "Untitled project";
+    titleEl.textContent = project.name || "Untitled Project";
   }
 
   // Status list with traffic lights
@@ -106,23 +106,23 @@ function renderDashboard(rawData) {
       null;
 
     const statuses = [
-      { label: `Last updated: ${lastUpdated || "N/A"}`, color: "muted", active: true },
+      { label: `Last Updated: ${lastUpdated || "N/A"}`, color: "muted", active: true },
       {
-        label: `Kickoff completed${project.kickoffDate ? `, ${project.kickoffDate}` : ""}`,
+        label: `Kickoff Completed${project.kickoffDate ? `, ${project.kickoffDate}` : ""}`,
         color: "green",
         active: !!kickoff
       },
       {
         label: hasMidterm
-          ? `Midterm completed${midterm.info && midterm.info.date ? `, ${midterm.info.date}` : ""}`
-          : "Midterm not started",
+          ? `Midterm Completed${midterm.info && midterm.info.date ? `, ${midterm.info.date}` : ""}`
+          : "Midterm Not Started",
         color: hasMidterm ? "green" : "yellow",
         active: true
       },
       {
         label: hasFinal
-          ? `Final Review completed${project.finalReviewDate ? `, ${project.finalReviewDate}` : ""}`
-          : "Final Review not started",
+          ? `Final Review Completed${project.finalReviewDate ? `, ${project.finalReviewDate}` : ""}`
+          : "Final Review Not Started",
         color: hasFinal ? "green" : "yellow",
         active: true
       }
@@ -167,7 +167,7 @@ function renderDashboard(rawData) {
     if (!dashGoalsTable) return;
     if (!rows.length) {
       dashGoalsTable.innerHTML =
-        '<p class="help-text">No goals were captured. Complete the Kickoff, Midterm, and Final surveys to see a full lifecycle view.</p>';
+        '<p class="help-text">No Goals Were Captured. Complete the Kickoff, Midterm, and Final Surveys to See a Full Lifecycle View.</p>';
       if (goalsCard) goalsCard.style.display = "block";
       return;
     }
@@ -248,27 +248,27 @@ function renderDashboard(rawData) {
   if (hasFinal) {
     if (summaryCard) summaryCard.style.display = "block";
     if (dashOutcomes) {
-      dashOutcomes.textContent = (final.outcomes && final.outcomes.trim()) || "No final outcomes captured yet.";
+      dashOutcomes.textContent = (final.outcomes && final.outcomes.trim()) || "No Final Outcomes Captured Yet.";
     }
     if (dashResults) {
-      dashResults.textContent = (final.results && final.results.trim()) || "No final results captured yet.";
+      dashResults.textContent = (final.results && final.results.trim()) || "No Final Results Captured Yet.";
     }
     if (dashWins) {
-      dashWins.textContent = (final.wins && final.wins.trim()) || "No biggest wins captured yet.";
+      dashWins.textContent = (final.wins && final.wins.trim()) || "No Biggest Wins Captured Yet.";
     }
     if (dashChallenges) {
-      dashChallenges.textContent = (final.challenges && final.challenges.trim()) || "No final challenges captured yet.";
+      dashChallenges.textContent = (final.challenges && final.challenges.trim()) || "No Final Challenges Captured Yet.";
     }
     if (dashLearnings) {
-      dashLearnings.textContent = (final.learnings && final.learnings.trim()) || "No final learnings captured yet.";
+      dashLearnings.textContent = (final.learnings && final.learnings.trim()) || "No Final Learnings Captured Yet.";
     }
     if (dashNextSteps) {
-      dashNextSteps.textContent = (final.nextSteps && final.nextSteps.trim()) || "No final next steps captured yet.";
+      dashNextSteps.textContent = (final.nextSteps && final.nextSteps.trim()) || "No Final Next Steps Captured Yet.";
     }
     if (dashSummaryText) {
       dashSummaryText.textContent =
         (finalSummary && finalSummary.trim()) ||
-        "No final summary captured yet. Complete the Final Review survey to generate one.";
+        "No Final Summary Captured Yet. Complete the Final Review Survey to Generate One.";
     }
     return;
   }
@@ -280,21 +280,21 @@ function renderDashboard(rawData) {
     if (dashOutcomes) {
       dashOutcomes.textContent =
         midterm.healthScore != null
-          ? `Project health: ${midterm.healthScore}/5`
-          : "No data provided during midterm.";
+          ? `Project Health: ${midterm.healthScore}/5`
+          : "No Data Provided During Midterm.";
     }
 
     if (dashResults) {
       dashResults.textContent =
         midterm.progressScore != null
-          ? `Progress confidence: ${midterm.progressScore}/5`
-          : "No data provided during midterm.";
+          ? `Progress Confidence: ${midterm.progressScore}/5`
+          : "No Data Provided During Midterm.";
     }
 
     if (dashWins) {
       dashWins.textContent =
         (midterm.wins && midterm.wins.trim()) ||
-        "No data provided during midterm.";
+        "No Data Provided During Midterm.";
     }
 
     if (dashChallenges) {
@@ -308,20 +308,20 @@ function renderDashboard(rawData) {
       } else if (typeof midterm.risks === "string" && midterm.risks.trim()) {
         dashChallenges.textContent = midterm.risks.trim();
       } else {
-        dashChallenges.textContent = "No data provided during midterm.";
+        dashChallenges.textContent = "No Data Provided During Midterm.";
       }
     }
 
     if (dashLearnings) {
       dashLearnings.textContent =
         (midterm.learnings && midterm.learnings.trim()) ||
-        "No data provided during midterm.";
+        "No Data Provided During Midterm.";
     }
 
     if (dashNextSteps) {
       dashNextSteps.textContent =
         (midterm.nextSteps && midterm.nextSteps.trim()) ||
-        "No data provided during midterm.";
+        "No Data Provided During Midterm.";
     }
 
     // Kickoff baseline placeholders suppressed in midterm view
@@ -372,13 +372,13 @@ function renderDashboard(rawData) {
       })),
       ...selectedUserGoals.map(item => ({
         label: item.label,
-        type: "User goal",
+        type: "User Goal",
         importance: item.severity ?? item.currentScore ?? "—",
         notes: item.notes || ""
       })),
       ...selectedUserPains.map(item => ({
         label: item.label,
-        type: "User pain",
+        type: "User Pain",
         importance: item.severity ?? item.currentScore ?? "—",
         notes: item.notes || ""
       }))
@@ -406,7 +406,7 @@ function renderDashboard(rawData) {
       ].join("");
       dashGoalsTable.innerHTML = tableHtml;
     } else {
-      dashGoalsTable.textContent = "No selections were made during kickoff.";
+      dashGoalsTable.textContent = "No Selections Were Made During Kickoff.";
     }
   }
 
@@ -414,10 +414,10 @@ function renderDashboard(rawData) {
   if (dashOutcomes) {
     if (selectedBusinessGoals.length) {
       const labels = selectedBusinessGoals.map(g => g.label).join(", ");
-      dashOutcomes.textContent = `Baseline business focus at kickoff: ${labels}.`;
+      dashOutcomes.textContent = `Baseline Business Focus at Kickoff: ${labels}.`;
     } else {
       dashOutcomes.textContent =
-        "No business goals were selected during kickoff.";
+        "No Business Goals Were Selected During Kickoff.";
     }
   }
 
@@ -426,11 +426,11 @@ function renderDashboard(rawData) {
     if (selectedProductGoals.length) {
       const labels = selectedProductGoals.map(g => g.label).join(", ");
       dashResults.textContent =
-        `Baseline product / experience focus at kickoff: ${labels}. ` +
-        "Results & impact will be captured at Midterm and Final review.";
+        `Baseline Product / Experience Focus at Kickoff: ${labels}. ` +
+        "Results & Impact Will Be Captured at Midterm and Final Review.";
     } else {
       dashResults.textContent =
-        "No product / experience goals were selected during kickoff.";
+        "No Product / Experience Goals Were Selected During Kickoff.";
     }
   }
 
@@ -439,10 +439,10 @@ function renderDashboard(rawData) {
     if (selectedUserGoals.length) {
       const labels = selectedUserGoals.map(g => g.label).join(", ");
       dashWins.textContent =
-        `Key user wins we’re aiming for: ${labels}. ` +
-        "Future surveys will confirm if we achieved them.";
+        `Key User Wins We’re Aiming For: ${labels}. ` +
+        "Future Surveys Will Confirm if We Achieved Them.";
     } else {
-      dashWins.textContent = "No user goals were selected during kickoff.";
+      dashWins.textContent = "No User Goals Were Selected During Kickoff.";
     }
   }
 
@@ -451,28 +451,28 @@ function renderDashboard(rawData) {
     if (selectedUserPains.length) {
       const labels = selectedUserPains.map(p => p.label).join(", ");
       dashChallenges.textContent =
-        `User pain points we’re targeting: ${labels}.`;
+        `User Pain Points We’re Targeting: ${labels}.`;
     } else {
       dashChallenges.textContent =
-        "No user pain points were captured during kickoff.";
+        "No User Pain Points Were Captured During Kickoff.";
     }
   }
 
   // Key Learnings → explanation
   if (dashLearnings) {
     dashLearnings.textContent =
-      "Midterm and Final surveys will capture learnings over time. For now, this is a kickoff-only baseline.";
+      "Midterm and Final Surveys Will Capture Learnings Over Time. For Now, This Is a Kickoff-Only Baseline.";
   }
 
   // Next Steps → explanation
   if (dashNextSteps) {
     dashNextSteps.textContent =
-      "Use this baseline to plan next steps. Once you complete the Midterm and Final reviews, this dashboard will show progress and outcomes over the full project lifecycle.";
+      "Use This Baseline to Plan Next Steps. Once You Complete the Midterm and Final Reviews, This Dashboard Will Show Progress and Outcomes Over the Full Project Lifecycle.";
   }
 
   // Full Final Summary → placeholder
   if (dashSummaryText) {
     dashSummaryText.textContent =
-      "Kickoff-only view: final narrative summary will appear here once the Final Review survey is completed.";
+      "Kickoff-Only View: Final Narrative Summary Will Appear Here Once the Final Review Survey Is Completed.";
   }
 }
