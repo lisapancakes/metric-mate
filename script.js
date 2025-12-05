@@ -986,8 +986,8 @@ function buildCalendarUrl(project, directory) {
 
   const internalSummary = buildInternalSummary(project, directory);
 
-  // ✅ Short, stable URL to the hosted midterm survey
-  const midtermUrl = 'https://lisapancakes.github.io/metric-mate/midterm.html';
+  // Build URL relative to current origin to avoid stale links
+  const midtermUrl = new URL('midterm.html', window.location.href).href;
 
   // Date ~21 days from now, 9–10am local
   const start = new Date();

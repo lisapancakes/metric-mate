@@ -842,3 +842,60 @@ function addRiskRow() {
   renderStep(midterm.currentStep);
   saveMidtermForDashboard();
 }
+
+// Ensure dashboard opening uses localStorage handoff (avoids long URLs)
+function openDashboardFromMidterm() {
+  saveMidtermForDashboard();
+
+  let kickoff = null;
+  try {
+    kickoff = JSON.parse(localStorage.getItem("metricMateKickoff") || "null");
+  } catch (e) {
+    console.warn("Could not parse metricMateKickoff for dashboard payload", e);
+  }
+
+  let midtermSnapshot = null;
+  try {
+    midtermSnapshot = JSON.parse(localStorage.getItem("metricMateMidterm") || "null");
+  } catch (e) {
+    console.warn("Could not parse metricMateMidterm for dashboard payload", e);
+  }
+
+  const info = kickoff && kickoff.info ? kickoff.info : {};
+  const dir = kickoff && kickoff.directory ? kickoff.directory : {};
+
+  const project = {
+    name: midterm.info.projectName || info.projectName || info.name || "",
+    client: typeof info.clientId === "number" && Array.isArray(dir.clients)
+      ? dir.clients[info.clientId] || ""
+      : (midterm.info.client || info.client || info.clientName || ""),
+    pm: typeof info.pmId === "number" && Array.isArray(dir.pms)
+      ? dir.pms[info.pmId] || ""
+      : (midterm.info.pm || info.pm || info.pmName || ""),
+    designer: typeof info.designerId === "number" && Array.isArray(dir.designers)
+      ? dir.designers[info.designerId] || ""
+      : (midterm.info.designer || info.designer || info.designerName || ""),
+    dev: typeof info.devId === "number" && Array.isArray(dir.devs)
+      ? dir.devs[info.devId] || ""
+      : (midterm.info.dev || info.dev || info.devName || ""),
+    kickoffDate: info.kickoffDate || info.date || info.startDate || (kickoff && kickoff.kickoffDate) || "",
+    finalReviewDate: ""
+  };
+
+  const payload = {
+    kickoff,
+    midterm: midtermSnapshot || midterm,
+    final: null,
+    goals: (midtermSnapshot && (midtermSnapshot.goalStatuses || midtermSnapshot.goals)) || [],
+    finalSummary: "",
+    project
+  };
+
+  try {
+    localStorage.setItem("metricMateDashboard", JSON.stringify(payload));
+  } catch (e) {
+    console.warn("Failed to save dashboard payload from midterm", e);
+  }
+
+  window.open("dashboard.html", "_blank", "noopener");
+}
