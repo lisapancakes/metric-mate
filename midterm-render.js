@@ -737,12 +737,17 @@ function buildFinalReviewCalendarUrl() {
 
   const base = "https://calendar.google.com/calendar/render?action=TEMPLATE";
 
+  const finalUrl =
+    window.location.protocol === "file:"
+      ? new URL("final.html", window.location.href).href
+      : "file:///Users/lisa/Code/metric-mate/final.html";
+
   const params = new URLSearchParams({
     text: `Final review: ${projectName} (${clientName})`,
     details: `${buildInternalSummary()}
 
 Final review form:
-https://lisapancakes.github.io/metric-mate/final.html`,
+${finalUrl}`,
     dates: `${formatDate(start)}/${formatDate(end)}`
   });
 
