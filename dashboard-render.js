@@ -432,6 +432,15 @@ function renderDashboard(rawData) {
         '</tbody></table>'
       ].join("");
       dashGoalsTable.innerHTML = tableHtml;
+      // Normalize any numeric importance
+      const centerCells = dashGoalsTable.querySelectorAll("td:nth-child(3)");
+      centerCells.forEach(cell => {
+        const num = parseFloat(cell.textContent);
+        if (!Number.isNaN(num)) {
+          cell.textContent = `${num}/5`;
+          cell.style.textAlign = "center";
+        }
+      });
     } else {
       dashGoalsTable.textContent = "No Selections Were Made During Kickoff.";
     }
