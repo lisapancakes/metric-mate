@@ -28,7 +28,10 @@
     <!-- DASHBOARD CONTENT (hidden until data loads) -->
     <main id="dashboardContent" class="dashboard-grid" style="display:none;">
       <div class="dash-card dash-full">
-        <h3>Kickoff Selections</h3>
+        <div class="dash-card-title-row" style="display:flex;align-items:center;justify-content:space-between;gap:1rem;">
+          <h3>Project Goals & Status</h3>
+          <span id="goalCounter" class="goal-counter">Completed: 0/0</span>
+        </div>
         <div id="dashGoalsTable" class="dash-text"></div>
       </div>
 

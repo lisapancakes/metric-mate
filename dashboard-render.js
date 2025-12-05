@@ -160,6 +160,14 @@ function renderDashboard(rawData) {
   // --- Goals table (prefer midterm.goalStatuses) ---
   if (goalsCard) goalsCard.style.display = "none";
   if (dashGoalsTable) dashGoalsTable.innerHTML = "";
+  const goalCounterEl = document.getElementById("goalCounter");
+  const updateGoalCounter = (completed = 0, total = 0) => {
+    if (goalCounterEl) {
+      goalCounterEl.textContent = `Completed: ${completed}/${total}`;
+    }
+  };
+  let totalGoals = 0;
+  let completedGoals = 0;
 
   const typeOrder = ["business", "product", "user", "pain"];
 
@@ -225,6 +233,9 @@ function renderDashboard(rawData) {
       { header: "Final Status", render: (r) => formatStatus(r.finalStatus), className: (r) => r.finalStatus === "discard" ? "goal-row--discard" : "" },
       { header: "Final Notes", render: (r) => r.finalNotes || "—", className: (r) => r.finalStatus === "discard" ? "goal-row--discard" : "" }
     ]);
+    totalGoals = sorted.length;
+    completedGoals = sorted.filter(r => (r.finalStatus || r.midtermStatus || "").toLowerCase() === "completed").length;
+    updateGoalCounter(completedGoals, totalGoals);
   } else if (hasMidterm && dashGoalsTable) {
     const list = Array.isArray(midterm.goalStatuses)
       ? [...midterm.goalStatuses]
@@ -240,6 +251,9 @@ function renderDashboard(rawData) {
       { header: "Status", render: (r) => formatStatus(r.status), className: (r) => r.status === "discard" ? "goal-row--discard" : "" },
       { header: "Notes", render: (r) => r.notes || "—", className: (r) => r.status === "discard" ? "goal-row--discard" : "" }
     ]);
+    totalGoals = list.length;
+    completedGoals = list.filter(r => (r.status || "").toLowerCase() === "completed").length;
+    updateGoalCounter(completedGoals, totalGoals);
   }
 
   // --- Card content ---
@@ -408,6 +422,9 @@ function renderDashboard(rawData) {
     } else {
       dashGoalsTable.textContent = "No Selections Were Made During Kickoff.";
     }
+    totalGoals = rows.length;
+    completedGoals = 0;
+    updateGoalCounter(completedGoals, totalGoals);
   }
 
   // What we shipped → baseline business goals
