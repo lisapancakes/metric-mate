@@ -833,6 +833,12 @@ a.btn-primary:hover {
   word-break: break-word;
 }
 
+.goal-row--discard td,
+.goal-row--discard {
+  color: #9ca3af;
+  opacity: 0.7;
+}
+
 .link-button {
   background: none;
   border: none;

@@ -9,7 +9,8 @@
 const STATUS_OPTIONS = [
   { value: "not-started", label: "Not started" },
   { value: "in-progress", label: "In progress" },
-  { value: "completed", label: "Completed" }
+  { value: "completed", label: "Completed" },
+  { value: "discard", label: "Discard" }
 ];
 
 function addSection(title, body, subtitle = "") {
@@ -340,7 +341,7 @@ function renderStep2() {
               ${midterm.goalStatuses
                 .map(
                   (item) => `
-                    <tr>
+                    <tr class="${item.status === "discard" ? "goal-row--discard" : ""}">
                       <td>${item.label}</td>
                       <td>${item.type}</td>
                       <td>
@@ -366,6 +367,43 @@ function renderStep2() {
                 .join("")}
             </tbody>
           </table>
+        </div>
+        <div class="add-goal-inline">
+          <div class="form-grid">
+            <div class="form-group">
+              <label for="midtermNewGoalLabel">Goal label</label>
+              <input type="text" id="midtermNewGoalLabel" placeholder="Add a goal for midterm tracking">
+            </div>
+            <div class="form-group">
+              <label for="midtermNewGoalType">Type</label>
+              <select id="midtermNewGoalType">
+                <option value="business">Business</option>
+                <option value="product">Product</option>
+                <option value="user">User</option>
+                <option value="pain">Pain</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label for="midtermNewGoalImportance">Importance</label>
+              <select id="midtermNewGoalImportance">
+                ${[1,2,3,4,5].map(n => `<option value="${n}" ${n===3?"selected":""}>${n}</option>`).join("")}
+              </select>
+            </div>
+            <div class="form-group">
+              <label for="midtermNewGoalStatus">Status</label>
+              <select id="midtermNewGoalStatus">
+                ${STATUS_OPTIONS.map(opt => `<option value="${opt.value}">${opt.label}</option>`).join("")}
+              </select>
+            </div>
+            <div class="form-group">
+              <label for="midtermNewGoalNotes">Notes</label>
+              <textarea id="midtermNewGoalNotes" rows="2"></textarea>
+            </div>
+          </div>
+          <button type="button" class="btn btn-secondary btn-sm" id="midtermAddGoalBtn">
+            <i class="fa-solid fa-plus"></i>
+            Add Goal
+          </button>
         </div>
       `
       : `<p class="help-text">No kickoff goals were selected, so there are no midterm statuses to capture.</p>`;
@@ -816,6 +854,10 @@ function handleClick(e) {
     midterm.metaExpanded = !midterm.metaExpanded;
     renderStep(midterm.currentStep);
   }
+
+  if (t.id === "midtermAddGoalBtn") {
+    addMidtermInlineGoal();
+  }
 }
 
 function updateMidtermMetaSummary() {
@@ -843,6 +885,36 @@ function addRiskRow() {
   saveMidtermForDashboard();
 }
 
+function addMidtermInlineGoal() {
+  const labelEl = document.getElementById("midtermNewGoalLabel");
+  const typeEl = document.getElementById("midtermNewGoalType");
+  const importanceEl = document.getElementById("midtermNewGoalImportance");
+  const statusEl = document.getElementById("midtermNewGoalStatus");
+  const notesEl = document.getElementById("midtermNewGoalNotes");
+
+  if (!labelEl || !labelEl.value.trim()) return;
+
+  const newGoal = {
+    id: generateId(),
+    label: labelEl.value.trim(),
+    type: typeEl ? typeEl.value : "business",
+    importance: importanceEl ? parseInt(importanceEl.value, 10) : 3,
+    status: statusEl ? statusEl.value : "not-started",
+    notes: notesEl ? notesEl.value : ""
+  };
+
+  midterm.goalStatuses = midterm.goalStatuses || [];
+  midterm.goalStatuses.push(newGoal);
+
+  if (labelEl) labelEl.value = "";
+  if (notesEl) notesEl.value = "";
+  if (typeEl) typeEl.value = "business";
+  if (importanceEl) importanceEl.value = "3";
+  if (statusEl) statusEl.value = "not-started";
+
+  renderStep(midterm.currentStep);
+  saveMidtermForDashboard();
+}
 // Ensure dashboard opening uses localStorage handoff (avoids long URLs)
 function openDashboardFromMidterm() {
   saveMidtermForDashboard();

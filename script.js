@@ -986,8 +986,11 @@ function buildCalendarUrl(project, directory) {
 
   const internalSummary = buildInternalSummary(project, directory);
 
-  // Build URL relative to current origin to avoid stale links
-  const midtermUrl = new URL('midterm.html', window.location.href).href;
+  // Build a local file URL for the midterm survey (fallback to current origin)
+  const midtermUrl =
+    window.location.protocol === 'file:'
+      ? new URL('midterm.html', window.location.href).href
+      : 'file:///Users/lisa/Code/metric-mate/midterm.html';
 
   // Date ~21 days from now, 9–10am local
   const start = new Date();

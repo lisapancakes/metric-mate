@@ -175,7 +175,15 @@ function renderDashboard(rawData) {
     const headers = columns.map(c => `<th>${c.header}</th>`).join("");
     const body = rows
       .map(row => {
-        const cells = columns.map(c => `<td>${c.render(row)}</td>`).join("");
+        const rowClass = columns.some(c => (c.className && c.className(row) === "goal-row--discard"))
+          ? "goal-row--discard"
+          : "";
+        const cells = columns
+          .map(c => {
+            const cls = c.className ? c.className(row) : "";
+            return `<td class="${cls}">${c.render(row)}</td>`;
+          })
+          .join("");
         return `<tr>${cells}</tr>`;
       })
       .join("");
@@ -204,13 +212,13 @@ function renderDashboard(rawData) {
     );
 
     renderGoalsTable(sorted, [
-      { header: "Goal", render: (r) => r.label || "" },
-      { header: "Type", render: (r) => titleCaseType(r.type || "") },
-      { header: "Importance", render: (r) => r.importance != null ? `${r.importance}/5` : "" },
-      { header: "Midterm Status", render: (r) => r.midtermStatus || "—" },
-      { header: "Midterm Notes", render: (r) => r.midtermNotes || "—" },
-      { header: "Final Status", render: (r) => r.finalStatus || "—" },
-      { header: "Final Notes", render: (r) => r.finalNotes || "—" }
+      { header: "Goal", render: (r) => r.label || "", className: (r) => r.finalStatus === "discard" || r.midtermStatus === "discard" ? "goal-row--discard" : "" },
+      { header: "Type", render: (r) => titleCaseType(r.type || ""), className: (r) => r.finalStatus === "discard" || r.midtermStatus === "discard" ? "goal-row--discard" : "" },
+      { header: "Importance", render: (r) => r.importance != null ? `${r.importance}/5` : "", className: (r) => r.finalStatus === "discard" || r.midtermStatus === "discard" ? "goal-row--discard" : "" },
+      { header: "Midterm Status", render: (r) => r.midtermStatus || "—", className: (r) => r.midtermStatus === "discard" ? "goal-row--discard" : "" },
+      { header: "Midterm Notes", render: (r) => r.midtermNotes || "—", className: (r) => r.midtermStatus === "discard" ? "goal-row--discard" : "" },
+      { header: "Final Status", render: (r) => r.finalStatus || "—", className: (r) => r.finalStatus === "discard" ? "goal-row--discard" : "" },
+      { header: "Final Notes", render: (r) => r.finalNotes || "—", className: (r) => r.finalStatus === "discard" ? "goal-row--discard" : "" }
     ]);
   } else if (hasMidterm && dashGoalsTable) {
     const list = Array.isArray(midterm.goalStatuses)
@@ -221,11 +229,11 @@ function renderDashboard(rawData) {
     list.sort((a, b) => typeOrder.indexOf(a.type) - typeOrder.indexOf(b.type));
 
     renderGoalsTable(list, [
-      { header: "Goal", render: (r) => r.label || "" },
-      { header: "Type", render: (r) => titleCaseType(r.type || "") },
-      { header: "Importance", render: (r) => r.importance != null ? `${r.importance}/5` : "" },
-      { header: "Status", render: (r) => r.status || "—" },
-      { header: "Notes", render: (r) => r.notes || "—" }
+      { header: "Goal", render: (r) => r.label || "", className: (r) => r.status === "discard" ? "goal-row--discard" : "" },
+      { header: "Type", render: (r) => titleCaseType(r.type || ""), className: (r) => r.status === "discard" ? "goal-row--discard" : "" },
+      { header: "Importance", render: (r) => r.importance != null ? `${r.importance}/5` : "", className: (r) => r.status === "discard" ? "goal-row--discard" : "" },
+      { header: "Status", render: (r) => r.status || "—", className: (r) => r.status === "discard" ? "goal-row--discard" : "" },
+      { header: "Notes", render: (r) => r.notes || "—", className: (r) => r.status === "discard" ? "goal-row--discard" : "" }
     ]);
   }
 

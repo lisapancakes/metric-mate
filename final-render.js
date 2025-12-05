@@ -187,7 +187,7 @@ function renderGoalsTable() {
   tbody.innerHTML = sorted
     .map(
       (g) => `
-        <tr>
+        <tr class="${g.finalStatus === "discard" || g.midtermStatus === "discard" ? "goal-row--discard" : ""}">
           <td>${g.label || ""}</td>
           <td>${g.type || ""}</td>
           <td>${g.importance != null ? g.importance : ""}</td>
@@ -214,6 +214,49 @@ function renderGoalsTable() {
       `
     )
     .join("");
+
+  // Add inline add-goal controls
+  tbody.insertAdjacentHTML("afterend", `
+    <tr class="add-goal-row">
+      <td colspan="7">
+        <div class="form-grid">
+          <div class="form-group">
+            <label for="finalNewGoalLabel">Goal label</label>
+            <input type="text" id="finalNewGoalLabel" placeholder="Add a goal for final tracking">
+          </div>
+          <div class="form-group">
+            <label for="finalNewGoalType">Type</label>
+            <select id="finalNewGoalType">
+              <option value="business">Business</option>
+              <option value="product">Product</option>
+              <option value="user">User</option>
+              <option value="pain">Pain</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label for="finalNewGoalImportance">Importance</label>
+            <select id="finalNewGoalImportance">
+              ${[1,2,3,4,5].map(n => `<option value="${n}" ${n===3?"selected":""}>${n}</option>`).join("")}
+            </select>
+          </div>
+          <div class="form-group">
+            <label for="finalNewGoalStatus">Final Status</label>
+            <select id="finalNewGoalStatus">
+              ${["not-started","in-progress","completed","discard"].map(s => `<option value="${s}">${s}</option>`).join("")}
+            </select>
+          </div>
+          <div class="form-group">
+            <label for="finalNewGoalNotes">Final Notes</label>
+            <textarea id="finalNewGoalNotes" rows="2"></textarea>
+          </div>
+        </div>
+        <button type="button" class="btn btn-secondary btn-sm" id="finalAddGoalBtn">
+          <i class="fa-solid fa-plus"></i>
+          Add Goal
+        </button>
+      </td>
+    </tr>
+  `);
 }
 
 // DASHBOARD PAYLOAD + LINK
@@ -251,6 +294,11 @@ function handleClick(e) {
     }
     return;
   }
+
+  if (t.id === "finalAddGoalBtn") {
+    addFinalInlineGoal();
+    return;
+  }
 }
 
 function updateFinalMetaSummary() {
@@ -265,4 +313,36 @@ function updateFinalMetaSummary() {
   if (pm) pm.textContent = finalState.pm || "—";
   if (designer) designer.textContent = finalState.designer || "—";
   if (dev) dev.textContent = finalState.dev || "—";
+}
+
+function addFinalInlineGoal() {
+  const labelEl = document.getElementById("finalNewGoalLabel");
+  const typeEl = document.getElementById("finalNewGoalType");
+  const importanceEl = document.getElementById("finalNewGoalImportance");
+  const statusEl = document.getElementById("finalNewGoalStatus");
+  const notesEl = document.getElementById("finalNewGoalNotes");
+
+  if (!labelEl || !labelEl.value.trim()) return;
+
+  const newGoal = {
+    id: generateId(),
+    label: labelEl.value.trim(),
+    type: typeEl ? typeEl.value : "business",
+    importance: importanceEl ? parseInt(importanceEl.value, 10) : 3,
+    midtermStatus: "",
+    midtermNotes: "",
+    finalStatus: statusEl ? statusEl.value : "not-started",
+    finalNotes: notesEl ? notesEl.value : ""
+  };
+
+  finalGoals.push(newGoal);
+
+  labelEl.value = "";
+  if (notesEl) notesEl.value = "";
+  if (typeEl) typeEl.value = "business";
+  if (importanceEl) importanceEl.value = "3";
+  if (statusEl) statusEl.value = "not-started";
+
+  renderGoalsTable();
+  updateSummary();
 }
