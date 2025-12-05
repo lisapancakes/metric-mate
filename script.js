@@ -1315,23 +1315,27 @@ function buildDashboardPayloadFromKickoff() {
   };
 }
 
+// Open dashboard with kickoff-only data
 function openDashboardFromKickoff() {
-  try {
-    const payload = buildDashboardPayloadFromKickoff();
-    const encoded = encodeURIComponent(JSON.stringify(payload));
+  // Build a kickoff payload that includes all the goals & pains
+  const kickoffPayload = {
+    info: project.info,
+    directory,
+    businessGoals: project.businessGoals,
+    productGoals: project.productGoals,
+    userGoals: project.userGoals,
+    userPains: project.userPains
+  };
 
-    // Save a copy in localStorage as a fallback
-    try {
-      localStorage.setItem('metricMateDashboard', JSON.stringify(payload));
-    } catch (e) {
-      console.warn('Could not save dashboard payload to localStorage', e);
-    }
+  // Dashboard expects an object like { kickoff: {...}, project?: {...}, ... }
+  const data = {
+    kickoff: kickoffPayload
+    // we don't need to pass project here;
+    // dashboard.js will derive project meta from kickoff.info + directory
+  };
 
-    window.open(`dashboard.html?data=${encoded}`, '_blank');
-  } catch (e) {
-    console.error('Failed to open dashboard from kickoff', e);
-    alert('Sorry, something went wrong opening the dashboard.');
-  }
+  const url = `dashboard.html?data=${encodeURIComponent(JSON.stringify(data))}`;
+  window.open(url, "_blank");
 }
 
 // ============================================================================
