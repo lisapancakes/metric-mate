@@ -234,7 +234,7 @@ function renderDashboard(rawData) {
     renderGoalsTable(sorted, [
       { header: "Goal", render: (r) => r.label || "", className: (r) => r.finalStatus === "discard" || r.midtermStatus === "discard" ? "goal-row--discard" : "" },
       { header: "Type", render: (r) => titleCaseType(r.type || ""), className: (r) => r.finalStatus === "discard" || r.midtermStatus === "discard" ? "goal-row--discard" : "" },
-      { header: "Importance", render: (r) => r.importance != null ? `${r.importance}/5` : "", className: (r) => r.finalStatus === "discard" || r.midtermStatus === "discard" ? "goal-row--discard" : "" },
+      { header: "Importance", render: (r) => r.importance != null ? `${r.importance}/5` : "", className: (r) => (r.finalStatus === "discard" || r.midtermStatus === "discard" ? "goal-row--discard text-center" : "text-center") },
       { header: "Midterm Status", render: (r) => formatStatus(r.midtermStatus), className: (r) => r.midtermStatus === "discard" ? "goal-row--discard" : "" },
       { header: "Midterm Notes", render: (r) => r.midtermNotes || "—", className: (r) => r.midtermStatus === "discard" ? "goal-row--discard" : "" },
       { header: "Final Status", render: (r) => formatStatus(r.finalStatus), className: (r) => r.finalStatus === "discard" ? "goal-row--discard" : "" },
@@ -273,7 +273,7 @@ function renderDashboard(rawData) {
     renderGoalsTable(list, [
       { header: "Goal", render: (r) => r.label || "", className: (r) => r.status === "discard" ? "goal-row--discard" : "" },
       { header: "Type", render: (r) => titleCaseType(r.type || ""), className: (r) => r.status === "discard" ? "goal-row--discard" : "" },
-      { header: "Importance", render: (r) => r.importance != null ? `${r.importance}/5` : "", className: (r) => r.status === "discard" ? "goal-row--discard" : "" },
+      { header: "Importance", render: (r) => r.importance != null ? `${r.importance}/5` : "", className: (r) => r.status === "discard" ? "goal-row--discard text-center" : "text-center" },
       { header: "Status", render: (r) => formatStatus(r.status), className: (r) => r.status === "discard" ? "goal-row--discard" : "" },
       { header: "Notes", render: (r) => r.notes || "—", className: (r) => r.status === "discard" ? "goal-row--discard" : "" }
     ]);

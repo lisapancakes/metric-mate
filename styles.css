@@ -823,6 +823,10 @@ a.btn-primary:hover {
   vertical-align: middle;
 }
 
+.dash-table .text-center {
+  text-align: center;
+}
+
 .dash-table th {
   font-weight: 600;
   color: var(--tl-text-primary);
