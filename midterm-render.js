@@ -13,6 +13,8 @@ const STATUS_OPTIONS = [
   { value: "discard", label: "Discard" }
 ];
 
+const titleCaseType = (t) => (t ? t.replace(/\b\w/g, (c) => c.toUpperCase()) : "");
+
 function addSection(title, body, subtitle = "") {
   return `
     <section class="summary-section">
@@ -343,7 +345,7 @@ function renderStep2() {
                   (item) => `
                     <tr class="${item.status === "discard" ? "goal-row--discard" : ""}">
                       <td>${item.label}</td>
-                      <td>${item.type}</td>
+                      <td>${titleCaseType(item.type)}</td>
                       <td>
                         <select data-type="goal-status" data-id="${item.id}">
                           ${STATUS_OPTIONS.map(
@@ -603,7 +605,7 @@ function buildInternalSummary() {
     lines.push("Goal statuses:");
     midterm.goalStatuses.forEach((g) => {
       lines.push(
-        `• [${g.type}] ${g.label} — ${g.status}${g.notes ? ` (${g.notes})` : ""}`
+        `• [${titleCaseType(g.type)}] ${g.label} — ${g.status}${g.notes ? ` (${g.notes})` : ""}`
       );
     });
     lines.push("");
@@ -656,7 +658,7 @@ function buildClientSummary() {
     lines.push("Status by goal:");
     midterm.goalStatuses.forEach((g) => {
       lines.push(
-        `• [${g.type}] ${g.label}: ${g.status}${g.notes ? ` — ${g.notes}` : ""}`
+        `• [${titleCaseType(g.type)}] ${g.label}: ${g.status}${g.notes ? ` — ${g.notes}` : ""}`
       );
     });
   }

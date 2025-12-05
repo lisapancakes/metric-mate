@@ -2,6 +2,8 @@
 // Metric Mate – Final Project Review (Render & Logic)
 // ===============================
 
+const titleCaseTypeFinal = (t) => (t ? t.replace(/\b\w/g, (c) => c.toUpperCase()) : "");
+
 // HYDRATE FROM KICKOFF + MIDTERM
 function hydrateForm() {
   const kickoff = loadKickoffData();
@@ -154,7 +156,7 @@ function buildFinalSummary() {
     out.push("Goal statuses:");
     finalGoals.forEach(g => {
       out.push(
-        `• [${g.type}] ${g.label} — importance ${g.importance}; ` +
+        `• [${titleCaseTypeFinal(g.type)}] ${g.label} — importance ${g.importance}; ` +
         `midterm: ${g.midtermStatus || "n/a"}${g.midtermNotes ? ` (${g.midtermNotes})` : ""}; ` +
         `final: ${g.finalStatus || "n/a"}${g.finalNotes ? ` (${g.finalNotes})` : ""}`
       );
@@ -189,7 +191,7 @@ function renderGoalsTable() {
       (g) => `
         <tr class="${g.finalStatus === "discard" || g.midtermStatus === "discard" ? "goal-row--discard" : ""}">
           <td>${g.label || ""}</td>
-          <td>${g.type || ""}</td>
+          <td>${titleCaseTypeFinal(g.type || "")}</td>
           <td>${g.importance != null ? g.importance : ""}</td>
           <td>${g.midtermStatus || ""}</td>
           <td>${g.midtermNotes || ""}</td>
