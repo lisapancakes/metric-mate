@@ -343,6 +343,19 @@ function renderDashboard(rawData) {
   }
 
   // ---------- KICKOFF-ONLY BASELINE VIEW ----------
+  // Hide narrative cards when only kickoff data exists
+  const kickoffCards = [
+    dashOutcomes && dashOutcomes.closest(".dash-card"),
+    dashResults && dashResults.closest(".dash-card"),
+    dashWins && dashWins.closest(".dash-card"),
+    dashChallenges && dashChallenges.closest(".dash-card"),
+    dashLearnings && dashLearnings.closest(".dash-card"),
+    dashNextSteps && dashNextSteps.closest(".dash-card"),
+    summaryCard
+  ].filter(Boolean);
+  kickoffCards.forEach(card => {
+    card.style.display = "none";
+  });
 
   // Helper to safely pull an array from kickoff (supports a couple of shapes)
   function getKickoffArray(propName) {
