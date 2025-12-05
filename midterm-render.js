@@ -369,41 +369,47 @@ function renderStep2() {
           </table>
         </div>
         <div class="add-goal-inline">
-          <div class="form-grid">
-            <div class="form-group">
-              <label for="midtermNewGoalLabel">Goal label</label>
-              <input type="text" id="midtermNewGoalLabel" placeholder="Add a goal for midterm tracking">
-            </div>
-            <div class="form-group">
-              <label for="midtermNewGoalType">Type</label>
-              <select id="midtermNewGoalType">
-                <option value="business">Business</option>
-                <option value="product">Product</option>
-                <option value="user">User</option>
-                <option value="pain">Pain</option>
-              </select>
-            </div>
-            <div class="form-group">
-              <label for="midtermNewGoalImportance">Importance</label>
-              <select id="midtermNewGoalImportance">
-                ${[1,2,3,4,5].map(n => `<option value="${n}" ${n===3?"selected":""}>${n}</option>`).join("")}
-              </select>
-            </div>
-            <div class="form-group">
-              <label for="midtermNewGoalStatus">Status</label>
-              <select id="midtermNewGoalStatus">
-                ${STATUS_OPTIONS.map(opt => `<option value="${opt.value}">${opt.label}</option>`).join("")}
-              </select>
-            </div>
-            <div class="form-group">
-              <label for="midtermNewGoalNotes">Notes</label>
-              <textarea id="midtermNewGoalNotes" rows="2"></textarea>
-            </div>
-          </div>
-          <button type="button" class="btn btn-secondary btn-sm" id="midtermAddGoalBtn">
+          <button type="button" class="btn btn-secondary btn-sm" id="midtermShowAddGoalBtn">
             <i class="fa-solid fa-plus"></i>
             Add Goal
           </button>
+          <div id="midtermAddGoalContainer" style="display:none; margin-top:0.75rem;">
+            <div class="form-grid">
+              <div class="form-group">
+                <label for="midtermNewGoalLabel">Goal label</label>
+                <input type="text" id="midtermNewGoalLabel" placeholder="Add a goal for midterm tracking">
+              </div>
+              <div class="form-group">
+                <label for="midtermNewGoalType">Type</label>
+                <select id="midtermNewGoalType">
+                  <option value="business">Business</option>
+                  <option value="product">Product</option>
+                  <option value="user">User</option>
+                  <option value="pain">Pain</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label for="midtermNewGoalImportance">Importance</label>
+                <select id="midtermNewGoalImportance">
+                  ${[1,2,3,4,5].map(n => `<option value="${n}" ${n===3?"selected":""}>${n}</option>`).join("")}
+                </select>
+              </div>
+              <div class="form-group">
+                <label for="midtermNewGoalStatus">Status</label>
+                <select id="midtermNewGoalStatus">
+                  ${STATUS_OPTIONS.map(opt => `<option value="${opt.value}">${opt.label}</option>`).join("")}
+                </select>
+              </div>
+              <div class="form-group">
+                <label for="midtermNewGoalNotes">Notes</label>
+                <textarea id="midtermNewGoalNotes" rows="2"></textarea>
+              </div>
+            </div>
+            <button type="button" class="btn btn-secondary btn-sm" id="midtermAddGoalBtn">
+              <i class="fa-solid fa-plus"></i>
+              Add Goal
+            </button>
+          </div>
         </div>
       `
       : `<p class="help-text">No kickoff goals were selected, so there are no midterm statuses to capture.</p>`;
@@ -857,6 +863,20 @@ function handleClick(e) {
 
   if (t.id === "midtermAddGoalBtn") {
     addMidtermInlineGoal();
+    return;
+  }
+
+  if (t.id === "midtermShowAddGoalBtn") {
+    const container = document.getElementById("midtermAddGoalContainer");
+    if (container) {
+      const isHidden = container.style.display === "none";
+      container.style.display = isHidden ? "block" : "none";
+      if (isHidden) {
+        const input = document.getElementById("midtermNewGoalLabel");
+        if (input) input.focus();
+      }
+    }
+    return;
   }
 }
 

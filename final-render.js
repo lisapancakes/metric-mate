@@ -215,45 +215,53 @@ function renderGoalsTable() {
     )
     .join("");
 
-  // Add inline add-goal controls
+  // Add inline add-goal controls (initially hidden)
   tbody.insertAdjacentHTML("afterend", `
     <tr class="add-goal-row">
       <td colspan="7">
-        <div class="form-grid">
-          <div class="form-group">
-            <label for="finalNewGoalLabel">Goal label</label>
-            <input type="text" id="finalNewGoalLabel" placeholder="Add a goal for final tracking">
-          </div>
-          <div class="form-group">
-            <label for="finalNewGoalType">Type</label>
-            <select id="finalNewGoalType">
-              <option value="business">Business</option>
-              <option value="product">Product</option>
-              <option value="user">User</option>
-              <option value="pain">Pain</option>
-            </select>
-          </div>
-          <div class="form-group">
-            <label for="finalNewGoalImportance">Importance</label>
-            <select id="finalNewGoalImportance">
-              ${[1,2,3,4,5].map(n => `<option value="${n}" ${n===3?"selected":""}>${n}</option>`).join("")}
-            </select>
-          </div>
-          <div class="form-group">
-            <label for="finalNewGoalStatus">Final Status</label>
-            <select id="finalNewGoalStatus">
-              ${["not-started","in-progress","completed","discard"].map(s => `<option value="${s}">${s}</option>`).join("")}
-            </select>
-          </div>
-          <div class="form-group">
-            <label for="finalNewGoalNotes">Final Notes</label>
-            <textarea id="finalNewGoalNotes" rows="2"></textarea>
+        <div class="add-goal-inline">
+          <button type="button" class="btn btn-secondary btn-sm" id="finalShowAddGoalBtn">
+            <i class="fa-solid fa-plus"></i>
+            Add Goal
+          </button>
+          <div id="finalAddGoalContainer" style="display:none; margin-top:0.75rem;">
+            <div class="form-grid">
+              <div class="form-group">
+                <label for="finalNewGoalLabel">Goal label</label>
+                <input type="text" id="finalNewGoalLabel" placeholder="Add a goal for final tracking">
+              </div>
+              <div class="form-group">
+                <label for="finalNewGoalType">Type</label>
+                <select id="finalNewGoalType">
+                  <option value="business">Business</option>
+                  <option value="product">Product</option>
+                  <option value="user">User</option>
+                  <option value="pain">Pain</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label for="finalNewGoalImportance">Importance</label>
+                <select id="finalNewGoalImportance">
+                  ${[1,2,3,4,5].map(n => `<option value="${n}" ${n===3?"selected":""}>${n}</option>`).join("")}
+                </select>
+              </div>
+              <div class="form-group">
+                <label for="finalNewGoalStatus">Final Status</label>
+                <select id="finalNewGoalStatus">
+                  ${["not-started","in-progress","completed","discard"].map(s => `<option value="${s}">${s}</option>`).join("")}
+                </select>
+              </div>
+              <div class="form-group">
+                <label for="finalNewGoalNotes">Final Notes</label>
+                <textarea id="finalNewGoalNotes" rows="2"></textarea>
+              </div>
+            </div>
+            <button type="button" class="btn btn-secondary btn-sm" id="finalAddGoalBtn">
+              <i class="fa-solid fa-plus"></i>
+              Add Goal
+            </button>
           </div>
         </div>
-        <button type="button" class="btn btn-secondary btn-sm" id="finalAddGoalBtn">
-          <i class="fa-solid fa-plus"></i>
-          Add Goal
-        </button>
       </td>
     </tr>
   `);
@@ -297,6 +305,19 @@ function handleClick(e) {
 
   if (t.id === "finalAddGoalBtn") {
     addFinalInlineGoal();
+    return;
+  }
+
+  if (t.id === "finalShowAddGoalBtn") {
+    const container = document.getElementById("finalAddGoalContainer");
+    if (container) {
+      const isHidden = container.style.display === "none";
+      container.style.display = isHidden ? "block" : "none";
+      if (isHidden) {
+        const input = document.getElementById("finalNewGoalLabel");
+        if (input) input.focus();
+      }
+    }
     return;
   }
 }
