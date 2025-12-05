@@ -429,62 +429,32 @@ function renderDashboard(rawData) {
 
   // What we shipped → baseline business goals
   if (dashOutcomes) {
-    if (selectedBusinessGoals.length) {
-      const labels = selectedBusinessGoals.map(g => g.label).join(", ");
-      dashOutcomes.textContent = `Baseline Business Focus at Kickoff: ${labels}.`;
-    } else {
-      dashOutcomes.textContent =
-        "No Business Goals Were Selected During Kickoff.";
-    }
+    dashOutcomes.textContent = "Not captured yet.";
   }
 
   // Results & Impact → product / experience goals baseline
   if (dashResults) {
-    if (selectedProductGoals.length) {
-      const labels = selectedProductGoals.map(g => g.label).join(", ");
-      dashResults.textContent =
-        `Baseline Product / Experience Focus at Kickoff: ${labels}. ` +
-        "Results & Impact Will Be Captured at Midterm and Final Review.";
-    } else {
-      dashResults.textContent =
-        "No Product / Experience Goals Were Selected During Kickoff.";
-    }
+    dashResults.textContent = "Not captured yet.";
   }
 
   // Biggest Wins → user goals we want to enable
   if (dashWins) {
-    if (selectedUserGoals.length) {
-      const labels = selectedUserGoals.map(g => g.label).join(", ");
-      dashWins.textContent =
-        `Key User Wins We’re Aiming For: ${labels}. ` +
-        "Future Surveys Will Confirm if We Achieved Them.";
-    } else {
-      dashWins.textContent = "No User Goals Were Selected During Kickoff.";
-    }
+    dashWins.textContent = "Not captured yet.";
   }
 
   // Challenges → user pains
   if (dashChallenges) {
-    if (selectedUserPains.length) {
-      const labels = selectedUserPains.map(p => p.label).join(", ");
-      dashChallenges.textContent =
-        `User Pain Points We’re Targeting: ${labels}.`;
-    } else {
-      dashChallenges.textContent =
-        "No User Pain Points Were Captured During Kickoff.";
-    }
+    dashChallenges.textContent = "Not captured yet.";
   }
 
   // Key Learnings → explanation
   if (dashLearnings) {
-    dashLearnings.textContent =
-      "Midterm and Final Surveys Will Capture Learnings Over Time. For Now, This Is a Kickoff-Only Baseline.";
+    dashLearnings.textContent = "Not captured yet.";
   }
 
   // Next Steps → explanation
   if (dashNextSteps) {
-    dashNextSteps.textContent =
-      "Use This Baseline to Plan Next Steps. Once You Complete the Midterm and Final Reviews, This Dashboard Will Show Progress and Outcomes Over the Full Project Lifecycle.";
+    dashNextSteps.textContent = "Not captured yet.";
   }
 
   // Full Final Summary → placeholder
