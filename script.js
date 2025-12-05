@@ -1174,6 +1174,7 @@ function handleFormClick(e) {
 // ============================================================================
 // DROPDOWNS + CUSTOM ITEMS
 // ============================================================================
+
 function handleDropdownChange(select) {
   const type = select.id;
   const value = select.value;
@@ -1230,7 +1231,7 @@ function handleAddNewItem(button) {
 }
 
 function addCustomGoal(type) {
-  const label = type === 'Business' ? 'Business Goal' : 'Product Goal';
+  const label = type === 'business' ? 'Business Goal' : 'Product Goal';
   const newGoal = prompt(`Enter the new ${label}:`);
   if (!newGoal || !newGoal.trim()) return;
 
@@ -1276,39 +1277,61 @@ function addCustomUserItem(type) {
   renderStep(project.currentStep);
 }
 
-function openDashboardFromKickoff() {
-  // Build a kickoff snapshot INCLUDING goal selections
-  const payload = {
-    kickoff: {
-      info: project.info,
-      directory,
-      businessGoals: project.businessGoals,
-      productGoals: project.productGoals,
-      userGoals: project.userGoals,
-      userPains: project.userPains
-    }
+// ============================================================================
+// DASHBOARD LAUNCHER – KICKOFF → DASHBOARD PAYLOAD
+// ============================================================================
+
+function buildDashboardPayloadFromKickoff() {
+  // Stamp a simple kickoff date if you like; otherwise omit this
+  const today = new Date().toISOString().slice(0, 10); // YYYY-MM-DD
+
+  const kickoff = {
+    info: {
+      ...project.info,
+      kickoffDate: project.info.kickoffDate || today
+    },
+    directory: { ...directory },
+    businessGoals: project.businessGoals,
+    productGoals: project.productGoals,
+    userGoals: project.userGoals,
+    userPains: project.userPains
   };
 
-  const url = 'dashboard.html?data=' + encodeURIComponent(JSON.stringify(payload));
-  window.open(url, '_blank');
+  const proj = {
+    name: project.info.name || '',
+    clientId: project.info.clientId,
+    pmId: project.info.pmId,
+    designerId: project.info.designerId,
+    devId: project.info.devId,
+    kickoffDate: kickoff.info.kickoffDate
+  };
+
+  return {
+    kickoff,
+    project: proj,
+    midterm: null,
+    final: null,
+    finalSummary: ''
+  };
 }
 
-  // Dashboard payload (kickoff-only for now)
-  const dashboardData = {
-    kickoff: kickoffPayload
-    // midterm, final, finalSummary will be added later by other surveys
-  };
-
-  // Snapshot fallback in localStorage (if URL param missing)
+function openDashboardFromKickoff() {
   try {
-    localStorage.setItem('metricMateDashboard', JSON.stringify(dashboardData));
-  } catch (e) {
-    console.warn('Could not save dashboard data to localStorage', e);
-  }
+    const payload = buildDashboardPayloadFromKickoff();
+    const encoded = encodeURIComponent(JSON.stringify(payload));
 
-  const encoded = encodeURIComponent(JSON.stringify(dashboardData));
-  const url = `dashboard.html?data=${encoded}`;
-  window.open(url, '_blank');
+    // Save a copy in localStorage as a fallback
+    try {
+      localStorage.setItem('metricMateDashboard', JSON.stringify(payload));
+    } catch (e) {
+      console.warn('Could not save dashboard payload to localStorage', e);
+    }
+
+    window.open(`dashboard.html?data=${encoded}`, '_blank');
+  } catch (e) {
+    console.error('Failed to open dashboard from kickoff', e);
+    alert('Sorry, something went wrong opening the dashboard.');
+  }
 }
 
 // ============================================================================
