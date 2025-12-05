@@ -130,10 +130,16 @@ function normalizeGoalStatusesFromKickoff(kickoff, existingStatuses = []) {
       .filter(g => g && g.selected)
       .forEach(g => {
         const previous = existingMap.get(g.id) || {};
+        const baseImportance =
+          previous.importance ??
+          g.currentScore ??
+          g.severity ??
+          3;
         selections.push({
           id: g.id,
           label: g.label,
           type,
+          importance: baseImportance,
           status: previous.status || "not-started",
           notes: previous.notes || ""
         });
