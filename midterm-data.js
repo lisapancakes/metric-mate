@@ -10,6 +10,7 @@
 const midterm = {
   currentStep: 1,
   totalSteps: 3,
+  metaExpanded: false,
   info: {
     projectName: "",
     client: "",

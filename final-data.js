@@ -18,6 +18,7 @@ const finalState = {
 };
 
 let finalGoals = [];
+let finalMetaExpanded = false;
 
 function $(id) {
   return document.getElementById(id);

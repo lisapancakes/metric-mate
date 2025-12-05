@@ -55,10 +55,11 @@ function renderDashboard(rawData) {
 
   // Prefer normalised kickoff, but also keep a direct reference to the raw one
   const kickoff = data.kickoff || (rawData && rawData.kickoff) || null;
-  const midterm = data.midterm;
+  const midterm = data.midterm || {};
   const final = data.final || {};
   const finalSummary = data.finalSummary || "";
   const project = data.project || {};
+  const goals = Array.isArray(data.goals) ? data.goals : [];
 
   console.log("[dashboard-render] kickoff object:", kickoff);
   console.log("[dashboard-render] project object:", project);
@@ -70,6 +71,7 @@ function renderDashboard(rawData) {
       midterm.healthScore != null ||
       midterm.progressScore != null ||
       (Array.isArray(midterm.goalStatuses) && midterm.goalStatuses.length) ||
+      (Array.isArray(midterm.goals) && midterm.goals.length) ||
       (Array.isArray(midterm.risks) && midterm.risks.length) ||
       (midterm.wins && midterm.wins.trim()) ||
       (midterm.learnings && midterm.learnings.trim()) ||
@@ -80,12 +82,12 @@ function renderDashboard(rawData) {
   const hasFinal = !!(
     final &&
     (
-      final.outcomes ||
-      final.results ||
-      final.wins ||
-      final.challenges ||
-      final.learnings ||
-      final.nextSteps
+      (final.outcomes && final.outcomes.trim()) ||
+      (final.results && final.results.trim()) ||
+      (final.wins && final.wins.trim()) ||
+      (final.challenges && final.challenges.trim()) ||
+      (final.learnings && final.learnings.trim()) ||
+      (final.nextSteps && final.nextSteps.trim())
     )
   );
 
@@ -153,29 +155,71 @@ function renderDashboard(rawData) {
   if (dashGoalsTable) dashGoalsTable.innerHTML = "";
 
   const typeOrder = ["business", "product", "user", "pain"];
-  if (hasMidterm && dashGoalsTable) {
-    const list = Array.isArray(midterm.goalStatuses) ? [...midterm.goalStatuses] : [];
+
+  function renderGoalsTable(rows, columns) {
+    if (!dashGoalsTable) return;
+    if (!rows.length) {
+      dashGoalsTable.innerHTML =
+        '<p class="help-text">No goals were captured. Complete the Kickoff, Midterm, and Final surveys to see a full lifecycle view.</p>';
+      if (goalsCard) goalsCard.style.display = "block";
+      return;
+    }
+
+    const headers = columns.map(c => `<th>${c.header}</th>`).join("");
+    const body = rows
+      .map(row => {
+        const cells = columns.map(c => `<td>${c.render(row)}</td>`).join("");
+        return `<tr>${cells}</tr>`;
+      })
+      .join("");
+
+    dashGoalsTable.innerHTML = `
+      <table class="dash-table">
+        <thead><tr>${headers}</tr></thead>
+        <tbody>${body}</tbody>
+      </table>
+    `;
+    if (goalsCard) goalsCard.style.display = "block";
+  }
+
+  const titleCaseType = (t) => {
+    if (!t) return "";
+    return t.charAt(0).toUpperCase() + t.slice(1);
+  };
+
+  const finalGoalsList = hasFinal
+    ? [...goals]
+    : [];
+
+  if (hasFinal && dashGoalsTable) {
+    const sorted = finalGoalsList.sort(
+      (a, b) => typeOrder.indexOf(a.type) - typeOrder.indexOf(b.type)
+    );
+
+    renderGoalsTable(sorted, [
+      { header: "Goal", render: (r) => r.label || "" },
+      { header: "Type", render: (r) => titleCaseType(r.type || "") },
+      { header: "Importance", render: (r) => r.importance != null ? `${r.importance}/5` : "" },
+      { header: "Midterm Status", render: (r) => r.midtermStatus || "—" },
+      { header: "Midterm Notes", render: (r) => r.midtermNotes || "—" },
+      { header: "Final Status", render: (r) => r.finalStatus || "—" },
+      { header: "Final Notes", render: (r) => r.finalNotes || "—" }
+    ]);
+  } else if (hasMidterm && dashGoalsTable) {
+    const list = Array.isArray(midterm.goalStatuses)
+      ? [...midterm.goalStatuses]
+      : Array.isArray(midterm.goals)
+        ? [...midterm.goals]
+        : [];
     list.sort((a, b) => typeOrder.indexOf(a.type) - typeOrder.indexOf(b.type));
 
-    if (list.length) {
-      const tableHtml = [
-        '<table class="dash-table">',
-        '<thead><tr><th>Goal</th><th>Type</th><th>Importance</th><th>Status</th><th>Notes</th></tr></thead>',
-        '<tbody>',
-        ...list.map(item => `
-          <tr>
-            <td>${item.label || ""}</td>
-            <td>${item.type || ""}</td>
-            <td>${item.importance != null ? item.importance : ""}</td>
-            <td>${item.status || ""}</td>
-            <td>${item.notes || ""}</td>
-          </tr>
-        `),
-        "</tbody></table>"
-      ].join("");
-      dashGoalsTable.innerHTML = tableHtml;
-      if (goalsCard) goalsCard.style.display = "block";
-    }
+    renderGoalsTable(list, [
+      { header: "Goal", render: (r) => r.label || "" },
+      { header: "Type", render: (r) => titleCaseType(r.type || "") },
+      { header: "Importance", render: (r) => r.importance != null ? `${r.importance}/5` : "" },
+      { header: "Status", render: (r) => r.status || "—" },
+      { header: "Notes", render: (r) => r.notes || "—" }
+    ]);
   }
 
   // --- Card content ---
@@ -184,26 +228,26 @@ function renderDashboard(rawData) {
   if (hasFinal) {
     if (summaryCard) summaryCard.style.display = "block";
     if (dashOutcomes) {
-      dashOutcomes.textContent = final.outcomes || "No data available yet.";
+      dashOutcomes.textContent = (final.outcomes && final.outcomes.trim()) || "No final outcomes captured yet.";
     }
     if (dashResults) {
-      dashResults.textContent = final.results || "No data available yet.";
+      dashResults.textContent = (final.results && final.results.trim()) || "No final results captured yet.";
     }
     if (dashWins) {
-      dashWins.textContent = final.wins || "No data available yet.";
+      dashWins.textContent = (final.wins && final.wins.trim()) || "No biggest wins captured yet.";
     }
     if (dashChallenges) {
-      dashChallenges.textContent = final.challenges || "No data available yet.";
+      dashChallenges.textContent = (final.challenges && final.challenges.trim()) || "No final challenges captured yet.";
     }
     if (dashLearnings) {
-      dashLearnings.textContent = final.learnings || "No data available yet.";
+      dashLearnings.textContent = (final.learnings && final.learnings.trim()) || "No final learnings captured yet.";
     }
     if (dashNextSteps) {
-      dashNextSteps.textContent = final.nextSteps || "No data available yet.";
+      dashNextSteps.textContent = (final.nextSteps && final.nextSteps.trim()) || "No final next steps captured yet.";
     }
     if (dashSummaryText) {
       dashSummaryText.textContent =
-        finalSummary ||
+        (finalSummary && finalSummary.trim()) ||
         "No final summary captured yet. Complete the Final Review survey to generate one.";
     }
     return;

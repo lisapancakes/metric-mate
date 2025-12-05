@@ -68,6 +68,12 @@ function hydrateForm() {
   const dateInput = $("date");
   if (dateInput) dateInput.value = finalState.date;
 
+  const metaFields = $("finalMetaFields");
+  if (metaFields) {
+    metaFields.style.display = finalMetaExpanded ? "grid" : "none";
+  }
+
+  updateFinalMetaSummary();
   renderGoalsTable();
 }
 
@@ -79,6 +85,9 @@ function handleInput(e) {
 
   if (Object.prototype.hasOwnProperty.call(finalState, id)) {
     finalState[id] = val;
+    if (["projectName", "client", "pm", "designer", "dev"].includes(id)) {
+      updateFinalMetaSummary();
+    }
   }
 
   if (t.dataset.type === "final-status") {
@@ -218,6 +227,7 @@ function initFinal() {
   if (form) {
     form.addEventListener("input", handleInput);
     form.addEventListener("change", handleInput);
+    form.addEventListener("click", handleClick);
   }
 
   updateSummary();
@@ -229,4 +239,30 @@ function initFinal() {
       showStatus("✅ Final summary copied to clipboard");
     });
   }
+}
+
+function handleClick(e) {
+  const t = e.target;
+  if (t.id === "toggleFinalMeta") {
+    finalMetaExpanded = !finalMetaExpanded;
+    const metaFields = $("finalMetaFields");
+    if (metaFields) {
+      metaFields.style.display = finalMetaExpanded ? "grid" : "none";
+    }
+    return;
+  }
+}
+
+function updateFinalMetaSummary() {
+  const project = document.getElementById("finalMetaProject");
+  const client = document.getElementById("finalMetaClient");
+  const pm = document.getElementById("finalMetaPm");
+  const designer = document.getElementById("finalMetaDesigner");
+  const dev = document.getElementById("finalMetaDev");
+
+  if (project) project.textContent = finalState.projectName || "—";
+  if (client) client.textContent = finalState.client || "—";
+  if (pm) pm.textContent = finalState.pm || "—";
+  if (designer) designer.textContent = finalState.designer || "—";
+  if (dev) dev.textContent = finalState.dev || "—";
 }

@@ -43,26 +43,36 @@ referrerpolicy="no-referrer"
         <h2>Project Info</h2>
         <p class="help-text">Auto-filled from Kickoff / Midterm</p>
       </div>
-      <div class="form-grid">
+      <div class="meta-summary">
+        <div class="meta-item-row"><span class="meta-label">Project</span><span id="finalMetaProject"></span></div>
+        <div class="meta-item-row"><span class="meta-label">Client</span><span id="finalMetaClient"></span></div>
+        <div class="meta-item-row"><span class="meta-label">PM</span><span id="finalMetaPm"></span></div>
+        <div class="meta-item-row"><span class="meta-label">Designer</span><span id="finalMetaDesigner"></span></div>
+        <div class="meta-item-row"><span class="meta-label">Dev</span><span id="finalMetaDev"></span></div>
+      </div>
+      <button type="button" class="link-button link-button-strong meta-edit-spacer" id="toggleFinalMeta">
+        Edit Project Info
+      </button>
+      <div class="form-grid" id="finalMetaFields">
         <div class="form-group">
           <label for="projectName">Project name</label>
-          <input type="text" id="projectName" readonly />
+          <input type="text" id="projectName" />
         </div>
         <div class="form-group">
           <label for="client">Client</label>
-          <input type="text" id="client" readonly />
+          <input type="text" id="client" />
         </div>
         <div class="form-group">
           <label for="pm">Project Manager</label>
-          <input type="text" id="pm" readonly />
+          <input type="text" id="pm" />
         </div>
         <div class="form-group">
           <label for="designer">Product Designer</label>
-          <input type="text" id="designer" readonly />
+          <input type="text" id="designer" />
         </div>
         <div class="form-group">
           <label for="dev">Lead Developer</label>
-          <input type="text" id="dev" readonly />
+          <input type="text" id="dev" />
         </div>
         <div class="form-group">
           <label for="date">Final review date</label>

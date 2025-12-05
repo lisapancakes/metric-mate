@@ -199,6 +199,10 @@ function renderStep(step) {
     setupSummaryActions(internalSummary, clientSummary);
   }
 
+  if (step === 1) {
+    updateMidtermMetaSummary();
+  }
+
   if (prevBtn) prevBtn.disabled = step === 1;
 
   if (nextBtn) {
@@ -213,10 +217,21 @@ function renderStep(step) {
 
 // STEP 1 – Project meta + health
 function renderStep1() {
+  const metaContentStyle = midterm.metaExpanded ? "" : 'style="display:none"';
+  const metaToggleLabel = "Edit Project Info";
+
   const metaSection = addSection(
     "Project Meta",
     `
-      <div class="form-grid">
+      <div class="meta-summary">
+        <div class="meta-item-row"><span class="meta-label">Project</span><span id="midtermMetaProject"></span></div>
+        <div class="meta-item-row"><span class="meta-label">Client</span><span id="midtermMetaClient"></span></div>
+        <div class="meta-item-row"><span class="meta-label">PM</span><span id="midtermMetaPm"></span></div>
+        <div class="meta-item-row"><span class="meta-label">Designer</span><span id="midtermMetaDesigner"></span></div>
+        <div class="meta-item-row"><span class="meta-label">Dev</span><span id="midtermMetaDev"></span></div>
+      </div>
+      <button type="button" class="link-button link-button-strong meta-edit-spacer" id="toggleMidtermMeta">${metaToggleLabel}</button>
+      <div class="form-grid" ${metaContentStyle}>
         <div class="form-group">
           <label for="projectName">Project Name</label>
           <input type="text" id="projectName" value="${midterm.info.projectName || ""}" />
@@ -247,7 +262,7 @@ function renderStep1() {
         </div>
       </div>
     `,
-    "Auto-injected from Kickoff; adjust if needed."
+    "Auto-injected from Kickoff; expand to adjust."
   );
 
   const healthSection = addSection(
@@ -734,18 +749,23 @@ function handleInput(e) {
   switch (t.id) {
     case "projectName":
       midterm.info.projectName = val;
+      updateMidtermMetaSummary();
       break;
     case "client":
       midterm.info.client = val;
+      updateMidtermMetaSummary();
       break;
     case "pm":
       midterm.info.pm = val;
+      updateMidtermMetaSummary();
       break;
     case "designer":
       midterm.info.designer = val;
+      updateMidtermMetaSummary();
       break;
     case "dev":
       midterm.info.dev = val;
+      updateMidtermMetaSummary();
       break;
     case "otherContributors":
       midterm.info.otherContributors = val;
@@ -789,7 +809,27 @@ function handleClick(e) {
   const t = e.target;
   if (t.id === "addRiskRow" || t.closest("#addRiskRow")) {
     addRiskRow();
+    return;
   }
+
+  if (t.id === "toggleMidtermMeta") {
+    midterm.metaExpanded = !midterm.metaExpanded;
+    renderStep(midterm.currentStep);
+  }
+}
+
+function updateMidtermMetaSummary() {
+  const project = document.getElementById("midtermMetaProject");
+  const client = document.getElementById("midtermMetaClient");
+  const pm = document.getElementById("midtermMetaPm");
+  const designer = document.getElementById("midtermMetaDesigner");
+  const dev = document.getElementById("midtermMetaDev");
+
+  if (project) project.textContent = midterm.info.projectName || "—";
+  if (client) client.textContent = midterm.info.client || "—";
+  if (pm) pm.textContent = midterm.info.pm || "—";
+  if (designer) designer.textContent = midterm.info.designer || "—";
+  if (dev) dev.textContent = midterm.info.dev || "—";
 }
 
 function addRiskRow() {
