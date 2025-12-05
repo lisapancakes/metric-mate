@@ -458,7 +458,7 @@ function renderProductGoalsStep() {
       `).join('')}
       <div class="form-group" style="margin-top: 2rem;">
         <button type="button" id="addCustomProductGoalBtn" class="btn btn-secondary">
-        <i class="fa-solid fa-plus"></i>
+          <i class="fa-solid fa-plus"></i>
   Add Product Goal
         </button>
         <div id="newProductGoalContainer" class="new-item-container" style="display:none; margin-top:0.75rem;">
@@ -477,7 +477,7 @@ function renderProductGoalsStep() {
 // ============================================================================
 function renderUserGoalsStep() {
   return `
-    <h2>User Goals & Pain Points</h2>
+    <h2>User Goals and Pain Points</h2>
     <p>Select all that apply in each section</p>
     
     <div class="section">
