@@ -7,8 +7,8 @@
 // =====================================
 
 const STATUS_OPTIONS = [
-  { value: "not-started", label: "Not started" },
-  { value: "in-progress", label: "In progress" },
+  { value: "not-started", label: "Not Started" },
+  { value: "in-progress", label: "In Progress" },
   { value: "completed", label: "Completed" },
   { value: "discard", label: "Discard" }
 ];

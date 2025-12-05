@@ -197,7 +197,10 @@ function renderGoalsTable() {
             <select data-type="final-status" data-id="${g.id}">
               ${["not-started", "in-progress", "completed", "discard"]
                 .map(
-                  s => `<option value="${s}" ${g.finalStatus === s ? "selected" : ""}>${s}</option>`
+                  s => {
+                    const label = s.replace(/-/g, " ").replace(/\b\w/g, c => c.toUpperCase());
+                    return `<option value="${s}" ${g.finalStatus === s ? "selected" : ""}>${label}</option>`;
+                  }
                 )
                 .join("")}
             </select>
@@ -248,9 +251,12 @@ function renderGoalsTable() {
               <div class="form-group">
                 <label for="finalNewGoalStatus">Final Status</label>
                 <select id="finalNewGoalStatus">
-                  ${["not-started","in-progress","completed","discard"].map(s => `<option value="${s}">${s}</option>`).join("")}
-                </select>
-              </div>
+                ${["not-started","in-progress","completed","discard"].map(s => {
+                  const label = s.replace(/-/g," ").replace(/\b\w/g,c=>c.toUpperCase());
+                  return `<option value="${s}">${label}</option>`;
+                }).join("")}
+              </select>
+            </div>
               <div class="form-group">
                 <label for="finalNewGoalNotes">Final Notes</label>
                 <textarea id="finalNewGoalNotes" rows="2"></textarea>
