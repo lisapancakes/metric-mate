@@ -1277,16 +1277,21 @@ function addCustomUserItem(type) {
 }
 
 function openDashboardFromKickoff() {
-  // Full kickoff payload including goals & pains
-  const kickoffPayload = {
-    info: project.info,
-    directory,
-    businessGoals: project.businessGoals,
-    productGoals: project.productGoals,
-    userGoals: project.userGoals,
-    userPains: project.userPains,
-    kickoffDate: new Date().toISOString().slice(0, 10) // YYYY-MM-DD
+  // Build a kickoff snapshot INCLUDING goal selections
+  const payload = {
+    kickoff: {
+      info: project.info,
+      directory,
+      businessGoals: project.businessGoals,
+      productGoals: project.productGoals,
+      userGoals: project.userGoals,
+      userPains: project.userPains
+    }
   };
+
+  const url = 'dashboard.html?data=' + encodeURIComponent(JSON.stringify(payload));
+  window.open(url, '_blank');
+}
 
   // Dashboard payload (kickoff-only for now)
   const dashboardData = {
