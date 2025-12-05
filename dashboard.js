@@ -147,6 +147,9 @@ function buildKickoffBaseline(kickoff) {
 // -------------------------------
 // Render dashboard UI
 // -------------------------------
+// -------------------------------
+// Render dashboard UI
+// -------------------------------
 function renderDashboard(rawData) {
   const app = document.getElementById("app"); // mostly unused now, but we clear it
   const errorPanel = document.getElementById("errorPanel");
@@ -168,9 +171,11 @@ function renderDashboard(rawData) {
 
   if (app) app.innerHTML = "";
 
-const data = normalizeDashboardData(rawData);
-console.log('DASHBOARD DATA:', data);
-  
+  // Normalised data (for project meta, final, etc.)
+  const data = normalizeDashboardData(rawData);
+
+  console.log("DASHBOARD DATA:", rawData);
+
   if (!data || !data.project || !data.project.name) {
     if (errorPanel) {
       errorPanel.style.display = "block";
@@ -190,24 +195,36 @@ console.log('DASHBOARD DATA:', data);
   if (emptyState) emptyState.style.display = "none";
   if (dashboardContent) dashboardContent.style.display = "grid";
 
-  const { kickoff, midterm, final, finalSummary, project } = data;
-  console.log('KICKOFF GOALS:', kickoff && kickoff.businessGoals);
+  // Prefer normalised kickoff, but also keep a direct reference to the raw one
+  const kickoff = data.kickoff || rawData && rawData.kickoff || null;
+  const midterm = data.midterm;
+  const final = data.final || {};
+  const finalSummary = data.finalSummary || "";
+  const project = data.project;
+
+  console.log("KICKOFF OBJECT:", kickoff);
 
   // --- Status helpers ---
-  const hasMidterm = !!(midterm && (
-    midterm.healthScore != null ||
-    midterm.progressScore != null ||
-    (Array.isArray(midterm.risks) && midterm.risks.length)
-  ));
+  const hasMidterm = !!(
+    midterm &&
+    (
+      midterm.healthScore != null ||
+      midterm.progressScore != null ||
+      (Array.isArray(midterm.risks) && midterm.risks.length)
+    )
+  );
 
-  const hasFinal = !!(final && (
-    final.outcomes ||
-    final.results ||
-    final.wins ||
-    final.challenges ||
-    final.learnings ||
-    final.nextSteps
-  ));
+  const hasFinal = !!(
+    final &&
+    (
+      final.outcomes ||
+      final.results ||
+      final.wins ||
+      final.challenges ||
+      final.learnings ||
+      final.nextSteps
+    )
+  );
 
   // --- Header: title, meta, dates ---
   if (titleEl) {
@@ -252,10 +269,7 @@ console.log('DASHBOARD DATA:', data);
     }
 
     chipsEl.innerHTML = chips
-      .map(
-        (c) =>
-          `<span class="chip chip--${c.tone}">${c.label}</span>`
-      )
+      .map(c => `<span class="chip chip--${c.tone}">${c.label}</span>`)
       .join("");
   }
 
@@ -289,20 +303,32 @@ console.log('DASHBOARD DATA:', data);
     return;
   }
 
-  // Otherwise: kickoff-only baseline view
-  const selectedBusinessGoals =
-    (kickoff && kickoff.businessGoals || []).filter((g) => g.selected);
-  const selectedProductGoals =
-    (kickoff && kickoff.productGoals || []).filter((g) => g.selected);
-  const selectedUserGoals =
-    (kickoff && kickoff.userGoals || []).filter((g) => g.selected);
-  const selectedUserPains =
-    (kickoff && kickoff.userPains || []).filter((g) => g.selected);
+  // ---------- KICKOFF-ONLY BASELINE VIEW ----------
+
+  // Helper to safely pull an array from kickoff (supports a couple of shapes)
+  function getKickoffArray(propName) {
+    if (!kickoff) return [];
+    if (Array.isArray(kickoff[propName])) return kickoff[propName];
+
+    // Fallback if we ever nest them under kickoff.goals.{...}
+    if (kickoff.goals && Array.isArray(kickoff.goals[propName])) {
+      return kickoff.goals[propName];
+    }
+
+    return [];
+  }
+
+  const selectedBusinessGoals = getKickoffArray("businessGoals").filter(g => g.selected);
+  const selectedProductGoals = getKickoffArray("productGoals").filter(g => g.selected);
+  const selectedUserGoals = getKickoffArray("userGoals").filter(g => g.selected);
+  const selectedUserPains = getKickoffArray("userPains").filter(p => p.selected);
+
+  console.log("SELECTED BUSINESS GOALS:", selectedBusinessGoals);
 
   // What we shipped → baseline business goals
   if (dashOutcomes) {
     if (selectedBusinessGoals.length) {
-      const labels = selectedBusinessGoals.map((g) => g.label).join(", ");
+      const labels = selectedBusinessGoals.map(g => g.label).join(", ");
       dashOutcomes.textContent = `Baseline business focus at kickoff: ${labels}.`;
     } else {
       dashOutcomes.textContent =
@@ -313,7 +339,7 @@ console.log('DASHBOARD DATA:', data);
   // Results & Impact → product / experience goals baseline
   if (dashResults) {
     if (selectedProductGoals.length) {
-      const labels = selectedProductGoals.map((g) => g.label).join(", ");
+      const labels = selectedProductGoals.map(g => g.label).join(", ");
       dashResults.textContent =
         `Baseline product / experience focus at kickoff: ${labels}. ` +
         "Results & impact will be captured at Midterm and Final review.";
@@ -326,7 +352,7 @@ console.log('DASHBOARD DATA:', data);
   // Biggest Wins → user goals we want to enable
   if (dashWins) {
     if (selectedUserGoals.length) {
-      const labels = selectedUserGoals.map((g) => g.label).join(", ");
+      const labels = selectedUserGoals.map(g => g.label).join(", ");
       dashWins.textContent =
         `Key user wins we’re aiming for: ${labels}. ` +
         "Future surveys will confirm if we achieved them.";
@@ -338,7 +364,7 @@ console.log('DASHBOARD DATA:', data);
   // Challenges → user pains
   if (dashChallenges) {
     if (selectedUserPains.length) {
-      const labels = selectedUserPains.map((p) => p.label).join(", ");
+      const labels = selectedUserPains.map(p => p.label).join(", ");
       dashChallenges.textContent =
         `User pain points we’re targeting: ${labels}.`;
     } else {
