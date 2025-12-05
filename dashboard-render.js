@@ -10,11 +10,11 @@ function renderDashboard(rawData) {
   const errorPanel = document.getElementById("errorPanel");
   const emptyState = document.getElementById("dashboardEmpty");
   const dashboardContent = document.getElementById("dashboardContent");
+  const dashGoalsTable = document.getElementById("dashGoalsTable");
 
   const titleEl = document.getElementById("dashboardProjectTitle");
-  const metaEl = document.getElementById("dashboardProjectMeta");
-  const datesEl = document.getElementById("dashboardDates");
-  const chipsEl = document.getElementById("statusChips");
+  const statusListEl = document.getElementById("statusList");
+  const metaListEl = document.getElementById("metaList");
 
   const dashOutcomes = document.getElementById("dashOutcomes");
   const dashResults = document.getElementById("dashResults");
@@ -31,7 +31,8 @@ function renderDashboard(rawData) {
 
   console.log("DASHBOARD DATA:", rawData);
 
-  if (!data || !data.project || !data.project.name) {
+  // Require at least kickoff or project data; otherwise show empty state
+  if (!data || (!data.project && !data.kickoff)) {
     if (errorPanel) {
       errorPanel.style.display = "block";
       errorPanel.textContent =
@@ -55,9 +56,10 @@ function renderDashboard(rawData) {
   const midterm = data.midterm;
   const final = data.final || {};
   const finalSummary = data.finalSummary || "";
-  const project = data.project;
+  const project = data.project || {};
 
-  console.log("KICKOFF OBJECT:", kickoff);
+  console.log("[dashboard-render] kickoff object:", kickoff);
+  console.log("[dashboard-render] project object:", project);
 
   // --- Status helpers ---
   const hasMidterm = !!(
@@ -86,45 +88,57 @@ function renderDashboard(rawData) {
     titleEl.textContent = project.name || "Untitled project";
   }
 
-  if (metaEl) {
-    const bits = [];
-    if (project.client) bits.push(project.client);
-    if (project.pm) bits.push(`PM: ${project.pm}`);
-    if (project.designer) bits.push(`Designer: ${project.designer}`);
-    if (project.dev) bits.push(`Dev: ${project.dev}`);
-    metaEl.textContent = bits.join(" • ");
+  // Status list with traffic lights
+  if (statusListEl) {
+    const lastUpdated =
+      (kickoff && kickoff.lastUpdated) ||
+      (kickoff && kickoff.info && kickoff.info.lastUpdated) ||
+      (kickoff && kickoff.kickoffDate) ||
+      (project && project.kickoffDate) ||
+      null;
+
+    const statuses = [
+      { label: `Last updated: ${lastUpdated || "N/A"}`, color: "muted", active: true },
+      { label: "Kickoff completed", color: "green", active: !!kickoff },
+      {
+        label: hasMidterm ? "Midterm completed" : "Midterm not started",
+        color: hasMidterm ? "green" : "yellow",
+        active: true
+      },
+      {
+        label: hasFinal ? "Final Review completed" : "Final Review not started",
+        color: hasFinal ? "green" : "yellow",
+        active: true
+      }
+    ];
+
+    statusListEl.innerHTML = statuses
+      .filter(s => s.active)
+      .map(
+        s => `
+          <div class="status-item">
+            <span class="status-dot status-dot--${s.color}"></span>
+            <span>${s.label}</span>
+          </div>
+        `
+      )
+      .join("");
   }
 
-  if (datesEl) {
-    const dates = [];
-    if (project.kickoffDate) dates.push(`Kickoff: ${project.kickoffDate}`);
+  // Meta list stacked vertically
+  if (metaListEl) {
+    const items = [];
+    if (project.client) items.push(`Client: ${project.client}`);
+    if (project.pm) items.push(`PM: ${project.pm}`);
+    if (project.designer) items.push(`Designer: ${project.designer}`);
+    if (project.dev) items.push(`Dev: ${project.dev}`);
+    if (project.kickoffDate) items.push(`Kickoff: ${project.kickoffDate}`);
     if (project.finalReviewDate && hasFinal) {
-      dates.push(`Final review: ${project.finalReviewDate}`);
-    }
-    datesEl.textContent = dates.join(" • ");
-  }
-
-  if (chipsEl) {
-    const chips = [];
-
-    if (kickoff) {
-      chips.push({ label: "Kickoff completed", tone: "primary" });
+      items.push(`Final Review: ${project.finalReviewDate}`);
     }
 
-    if (!hasMidterm) {
-      chips.push({ label: "Midterm not started", tone: "muted" });
-    } else {
-      chips.push({ label: "Midterm completed", tone: "info" });
-    }
-
-    if (!hasFinal) {
-      chips.push({ label: "Final review not started", tone: "muted" });
-    } else {
-      chips.push({ label: "Final review completed", tone: "success" });
-    }
-
-    chipsEl.innerHTML = chips
-      .map(c => `<span class="chip chip--${c.tone}">${c.label}</span>`)
+    metaListEl.innerHTML = items
+      .map(item => `<div class="meta-item">${item}</div>`)
       .join("");
   }
 
@@ -173,12 +187,75 @@ function renderDashboard(rawData) {
     return [];
   }
 
-  const selectedBusinessGoals = getKickoffArray("businessGoals").filter(g => g.selected);
-  const selectedProductGoals = getKickoffArray("productGoals").filter(g => g.selected);
-  const selectedUserGoals = getKickoffArray("userGoals").filter(g => g.selected);
-  const selectedUserPains = getKickoffArray("userPains").filter(p => p.selected);
+  const kickoffBusinessGoals = getKickoffArray("businessGoals");
+  const kickoffProductGoals = getKickoffArray("productGoals");
+  const kickoffUserGoals = getKickoffArray("userGoals");
+  const kickoffUserPains = getKickoffArray("userPains");
+
+  const selectedBusinessGoals = kickoffBusinessGoals.filter(g => g.selected);
+  const selectedProductGoals = kickoffProductGoals.filter(g => g.selected);
+  const selectedUserGoals = kickoffUserGoals.filter(g => g.selected);
+  const selectedUserPains = kickoffUserPains.filter(p => p.selected);
 
   console.log("SELECTED BUSINESS GOALS:", selectedBusinessGoals);
+  console.log("SELECTED PRODUCT GOALS:", selectedProductGoals);
+  console.log("SELECTED USER GOALS:", selectedUserGoals);
+  console.log("SELECTED USER PAINS:", selectedUserPains);
+
+  // Render selected goals into the kickoff card table (full-width)
+  if (dashGoalsTable) {
+    const rows = [
+      ...selectedBusinessGoals.map(item => ({
+        label: item.label,
+        type: "Business",
+        importance: item.currentScore ?? item.severity ?? "—",
+        notes: item.notes || ""
+      })),
+      ...selectedProductGoals.map(item => ({
+        label: item.label,
+        type: "Product",
+        importance: item.currentScore ?? item.severity ?? "—",
+        notes: item.notes || ""
+      })),
+      ...selectedUserGoals.map(item => ({
+        label: item.label,
+        type: "User goal",
+        importance: item.severity ?? item.currentScore ?? "—",
+        notes: item.notes || ""
+      })),
+      ...selectedUserPains.map(item => ({
+        label: item.label,
+        type: "User pain",
+        importance: item.severity ?? item.currentScore ?? "—",
+        notes: item.notes || ""
+      }))
+    ];
+
+    if (rows.length) {
+      const tableHtml = [
+        '<table class="dash-table"><colgroup>',
+        '<col style="width:45%">',
+        '<col style="width:18%">',
+        '<col style="width:12%">',
+        '<col style="width:25%">',
+        '</colgroup><thead>',
+        '<tr><th>Goal</th><th>Type</th><th>Importance</th><th>Kickoff Notes</th></tr>',
+        '</thead><tbody>',
+        ...rows.map(r => `
+          <tr>
+            <td style="white-space: normal;">${r.label}</td>
+            <td>${r.type}</td>
+            <td style="text-align:center;">${r.importance}</td>
+            <td style="white-space: normal;">${r.notes || "—"}</td>
+          </tr>
+        `),
+        '</tbody></table>'
+      ].join("");
+      dashGoalsTable.innerHTML = tableHtml;
+    } else {
+      dashGoalsTable.textContent = "No selections were made during kickoff.";
+    }
+  }
 
   // What we shipped → baseline business goals
   if (dashOutcomes) {

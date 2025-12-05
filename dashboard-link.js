@@ -21,28 +21,33 @@ function buildDashboardPayload() {
   return { kickoff, midterm, final };
 }
 
-function openDashboardFromKickoff() {
-  const payload = buildDashboardPayload();
+// Only register helpers if the page hasn't already defined its own versions.
+if (!window.openDashboardFromKickoff) {
+  window.openDashboardFromKickoff = function openDashboardFromKickoff() {
+    const payload = buildDashboardPayload();
 
-  if (!payload.kickoff) {
-    alert("No kickoff data found yet. Please complete the kickoff survey first.");
-    return;
-  }
+    if (!payload.kickoff) {
+      alert("No kickoff data found yet. Please complete the kickoff survey first.");
+      return;
+    }
 
-  const encoded = encodeURIComponent(JSON.stringify(payload));
-  window.open(`dashboard.html?data=${encoded}`, "_blank", "noopener");
+    const encoded = encodeURIComponent(JSON.stringify(payload));
+    window.open(`dashboard.html?data=${encoded}`, "_blank", "noopener");
+  };
 }
 
-function openDashboardFromMidterm() {
-  const payload = buildDashboardPayload();
+if (!window.openDashboardFromMidterm) {
+  window.openDashboardFromMidterm = function openDashboardFromMidterm() {
+    const payload = buildDashboardPayload();
 
-  if (!payload.kickoff && !payload.midterm) {
-    alert("No mid-project data found yet. Please complete the mid-project review first.");
-    return;
-  }
+    if (!payload.kickoff && !payload.midterm) {
+      alert("No mid-project data found yet. Please complete the mid-project review first.");
+      return;
+    }
 
-  const encoded = encodeURIComponent(JSON.stringify(payload));
-  window.open(`dashboard.html?data=${encoded}`, "_blank", "noopener");
+    const encoded = encodeURIComponent(JSON.stringify(payload));
+    window.open(`dashboard.html?data=${encoded}`, "_blank", "noopener");
+  };
 }
 
 // You already have an openDashboard() in final.js that passes kickoff + midterm + final.

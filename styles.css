@@ -634,6 +634,61 @@ a.btn-primary:hover {
   text-align: left;
 }
 
+.dashboard-subtitle {
+  font-size: 1.1rem;
+  font-weight: 600;
+  margin-top: -0.75rem;
+  margin-bottom: 1rem;
+  color: #111827;
+}
+
+.dashboard-top-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 1rem;
+  align-items: start;
+}
+
+.dashboard-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.status-item {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  font-size: 0.95rem;
+  color: #111827;
+}
+
+.status-dot {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  display: inline-block;
+  box-shadow: 0 0 0 2px rgba(0,0,0,0.04);
+}
+
+.status-dot--green {
+  background: #22c55e;
+}
+
+.status-dot--yellow {
+  background: #f59e0b;
+}
+
+.status-dot--muted {
+  background: transparent;
+  box-shadow: none;
+}
+
+.meta-item {
+  font-size: 0.95rem;
+  color: #111827;
+}
+
 /* Project pill at the top */
 .dashboard-pill {
   background: #ffffff;
@@ -684,48 +739,9 @@ a.btn-primary:hover {
 
 .dashboard-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
-  gap: 1.5rem;
-}
-
-.dashboard-card {
-  background: #ffffff;
-  border-radius: 1rem;
-  padding: 1.2rem 1.4rem;
-  box-shadow: 0 18px 40px rgba(15, 23, 42, 0.06);
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
-}
-
-.dashboard-card h2 {
-  font-size: 0.95rem;
-  text-transform: none;
-  letter-spacing: 0;
-  margin: 0;
-}
-
-.dashboard-card p {
-  margin: 0;
-  font-size: 0.9rem;
-  line-height: 1.5;
-  color: #111827;
-}
-
-/* Full-width final summary card */
-.dashboard-card-full {
-  grid-column: 1 / -1;
-}
-
-.dashboard-summary-text {
-  margin: 0;
-  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
-  font-size: 0.85rem;
-  background: #f9fafb;
-  border-radius: 0.75rem;
-  padding: 0.75rem 0.85rem;
-  white-space: pre-wrap;
-  color: #111827;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 1.2rem;
+  margin-top: 1.5rem;
 }
 
 /* Mobile tweaks */
@@ -736,5 +752,95 @@ a.btn-primary:hover {
 
   .dashboard-pill {
     border-radius: 1rem;
+  }
+}
+
+/* Dashboard goal table */
+.dash-card {
+  background: #ffffff;
+  border-radius: 1rem;
+  padding: 1.2rem 1.4rem;
+  box-shadow: 0 18px 40px rgba(15, 23, 42, 0.06);
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.dash-card h3 {
+  margin: 0;
+  font-size: 1rem;
+}
+
+.dash-card p {
+  margin: 0;
+  font-size: 0.9rem;
+  line-height: 1.5;
+  color: #111827;
+}
+
+.dash-full {
+  grid-column: 1 / -1;
+}
+
+.dash-summary {
+  margin: 0;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+  font-size: 0.85rem;
+  background: #f9fafb;
+  border-radius: 0.75rem;
+  padding: 0.75rem 0.85rem;
+  white-space: pre-wrap;
+  color: #111827;
+}
+
+.dash-text {
+  margin: 0;
+  font-size: 0.9rem;
+  line-height: 1.5;
+  color: #111827;
+}
+
+.dash-summary-full {
+  grid-column: 1 / -1;
+}
+
+.dash-table {
+  width: 100%;
+  border-collapse: collapse;
+  table-layout: fixed;
+  margin-top: 0.5rem;
+}
+
+.dash-table th,
+.dash-table td {
+  padding: 0.5rem 0.6rem;
+  border-bottom: 1px solid var(--tl-border-subtle);
+  text-align: left;
+  vertical-align: middle;
+}
+
+.dash-table th {
+  font-weight: 600;
+  color: var(--tl-text-primary);
+}
+
+.dash-table td {
+  color: var(--tl-text-primary);
+}
+
+.dash-table td:first-child {
+  white-space: normal;
+  word-break: break-word;
+}
+
+@media (max-width: 900px) {
+  .dashboard-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 640px) {
+  .dashboard-grid {
+    grid-template-columns: 1fr;
   }
 }

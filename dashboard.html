@@ -11,20 +11,14 @@
 <div class="dashboard-page">
 <header class="dashboard-header">
 <h1>Project Dashboard</h1>
-      <div class="meta" id="projectMeta"></div>
-      <div class="chip-row" id="statusChips"></div>
+      <div id="dashboardProjectTitle" class="dashboard-subtitle"></div>
 
-      <!-- TITLE -->
-      <div id="dashboardProjectTitle" class="dashboard-title-pill"></div>
-
-      <!-- META -->
-      <div id="dashboardProjectMeta" class="dashboard-meta"></div>
-
-      <!-- DATES -->
-      <div id="dashboardDates" class="dashboard-dates"></div>
+      <div class="dashboard-top-grid">
+        <div id="statusList" class="dashboard-stack"></div>
+        <div id="metaList" class="dashboard-stack"></div>
+      </div>
 </header>
 
-    <main id="app"></main>
     <!-- EMPTY STATE -->
     <section id="dashboardEmpty" class="empty-state" style="display:none;">
       <p>No project data found.<br><br>
@@ -33,7 +27,11 @@
 
     <!-- DASHBOARD CONTENT (hidden until data loads) -->
     <main id="dashboardContent" class="dashboard-grid" style="display:none;">
-      
+      <div class="dash-card dash-full">
+        <h3>Kickoff Selections</h3>
+        <div id="dashGoalsTable" class="dash-text"></div>
+      </div>
+
       <div class="dash-card">
         <h3>What we shipped</h3>
         <p id="dashOutcomes" class="dash-text"></p>

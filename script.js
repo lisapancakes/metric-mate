@@ -903,14 +903,20 @@ if (calendarBtn) {
   calendarBtn.addEventListener('click', () => {
     // Save full kickoff data for the midterm survey
     try {
+      const today = new Date().toISOString().slice(0, 10); // YYYY-MM-DD
       const payload = {
-        info: project.info,
+        info: {
+          ...project.info,
+          kickoffDate: project.info.kickoffDate || today,
+          lastUpdated: today
+        },
         directory,
         businessGoals: project.businessGoals,
         productGoals: project.productGoals,
         userGoals: project.userGoals,
         userPains: project.userPains,
-        kickoffDate: new Date().toISOString().slice(0, 10) // YYYY-MM-DD
+        kickoffDate: project.info.kickoffDate || today,
+        lastUpdated: today
       };
       localStorage.setItem('metricMateKickoff', JSON.stringify(payload));
     } catch (e) {
@@ -1288,13 +1294,15 @@ function buildDashboardPayloadFromKickoff() {
   const kickoff = {
     info: {
       ...project.info,
-      kickoffDate: project.info.kickoffDate || today
+      kickoffDate: project.info.kickoffDate || today,
+      lastUpdated: today
     },
     directory: { ...directory },
     businessGoals: project.businessGoals,
     productGoals: project.productGoals,
     userGoals: project.userGoals,
-    userPains: project.userPains
+    userPains: project.userPains,
+    lastUpdated: today
   };
 
   const proj = {
@@ -1303,7 +1311,8 @@ function buildDashboardPayloadFromKickoff() {
     pmId: project.info.pmId,
     designerId: project.info.designerId,
     devId: project.info.devId,
-    kickoffDate: kickoff.info.kickoffDate
+    kickoffDate: kickoff.info.kickoffDate,
+    lastUpdated: today
   };
 
   return {
@@ -1317,14 +1326,22 @@ function buildDashboardPayloadFromKickoff() {
 
 // Open dashboard with kickoff-only data
 function openDashboardFromKickoff() {
+  const lastUpdated = new Date().toISOString().slice(0, 10); // YYYY-MM-DD
+
   // Build a kickoff payload that includes all the goals & pains
   const kickoffPayload = {
-    info: project.info,
+    info: {
+      ...project.info,
+      kickoffDate: project.info.kickoffDate || lastUpdated,
+      lastUpdated
+    },
     directory,
     businessGoals: project.businessGoals,
     productGoals: project.productGoals,
     userGoals: project.userGoals,
-    userPains: project.userPains
+    userPains: project.userPains,
+    kickoffDate: project.info.kickoffDate || lastUpdated,
+    lastUpdated
   };
 
   // Dashboard expects an object like { kickoff: {...}, project?: {...}, ... }
@@ -1333,6 +1350,18 @@ function openDashboardFromKickoff() {
     // we don't need to pass project here;
     // dashboard-data.js derives project meta from kickoff.info + directory
   };
+
+  // Persist for other pages (and as a fallback if the dashboard opens without ?data=)
+  try {
+    localStorage.setItem('metricMateKickoff', JSON.stringify(kickoffPayload));
+    localStorage.setItem('metricMateDashboard', JSON.stringify(data));
+    console.log('[dashboard-launch] Saved metricMateKickoff + metricMateDashboard', {
+      kickoffPayload,
+      data
+    });
+  } catch (e) {
+    console.warn('Could not save kickoff data to localStorage before opening dashboard', e);
+  }
 
   const url = `dashboard.html?data=${encodeURIComponent(JSON.stringify(data))}`;
   window.open(url, "_blank");

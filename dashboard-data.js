@@ -9,6 +9,7 @@
 // Load dashboard data from either the URL query param or a saved snapshot
 function loadDashboardData() {
   let data = null;
+  let source = "none";
 
   // Prefer URL ?data=... so pages can pass context directly
   try {
@@ -16,21 +17,44 @@ function loadDashboardData() {
     const raw = params.get("data");
     if (raw) {
       data = JSON.parse(decodeURIComponent(raw));
+      source = "querystring";
     }
   } catch (e) {
     console.warn("Failed to parse dashboard data from URL", e);
   }
 
-  // Fallback to localStorage so the dashboard can be opened directly
+  // Fallback: a saved snapshot (metricMateDashboard) or the latest kickoff/midterm/final entries
   if (!data) {
     try {
       const stored = localStorage.getItem("metricMateDashboard");
       if (stored) {
         data = JSON.parse(stored);
+        source = "metricMateDashboard";
       }
     } catch (e) {
-      console.warn("Failed to load dashboard data from localStorage", e);
+      console.warn("Failed to load dashboard data from localStorage snapshot", e);
     }
+  }
+
+  // Last-resort fallback: stitch together whatever survey data exists
+  if (!data) {
+    try {
+      const kickoff = JSON.parse(localStorage.getItem("metricMateKickoff") || "null");
+      const midterm = JSON.parse(localStorage.getItem("metricMateMidterm") || "null");
+      const final = JSON.parse(localStorage.getItem("metricMateFinal") || "null");
+      if (kickoff || midterm || final) {
+        data = { kickoff, midterm, final };
+        source = "survey-localStorage";
+      }
+    } catch (e) {
+      console.warn("Failed to assemble fallback dashboard data", e);
+    }
+  }
+
+  if (data) {
+    console.log("[dashboard-data] Loaded dashboard data from:", source);
+  } else {
+    console.log("[dashboard-data] No dashboard data found (source:", source, ")");
   }
 
   return data;
