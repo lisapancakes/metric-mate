@@ -244,10 +244,29 @@ function renderDashboard(rawData) {
     completedGoals = sorted.filter(r => (r.finalStatus || r.midtermStatus || "").toLowerCase() === "completed").length;
     updateGoalCounter(completedGoals, totalGoals);
   } else if (hasMidterm && dashGoalsTable) {
+    const kickoffImportanceMap = new Map();
+    const addKickoffToMap = (list) => {
+      (list || []).forEach((g) => {
+        kickoffImportanceMap.set(g.id, resolveImportance(g));
+      });
+    };
+    if (kickoff) {
+      addKickoffToMap(kickoff.businessGoals);
+      addKickoffToMap(kickoff.productGoals);
+      addKickoffToMap(kickoff.userGoals);
+      addKickoffToMap(kickoff.userPains);
+    }
+
     const list = Array.isArray(midterm.goalStatuses)
-      ? midterm.goalStatuses.map(g => ({ ...g, importance: resolveImportance(g) }))
+      ? midterm.goalStatuses.map(g => ({
+          ...g,
+          importance: resolveImportance(g) || kickoffImportanceMap.get(g.id) || ""
+        }))
       : Array.isArray(midterm.goals)
-        ? midterm.goals.map(g => ({ ...g, importance: resolveImportance(g) }))
+        ? midterm.goals.map(g => ({
+            ...g,
+            importance: resolveImportance(g) || kickoffImportanceMap.get(g.id) || ""
+          }))
         : [];
     list.sort((a, b) => typeOrder.indexOf(a.type) - typeOrder.indexOf(b.type));
 
