@@ -35,9 +35,11 @@ function addSection(title, body, subtitle = "") {
 function initMidterm() {
   const params = new URLSearchParams(window.location.search);
   const hasKickoffParam = params.has("data");
+  const resumeRequested = params.get("resume") === "1";
+  const shouldResumeSavedMidterm = resumeRequested && !hasKickoffParam;
 
-  // Hydrate from saved midterm first (unless this is a fresh kickoff handoff)
-  if (!hasKickoffParam) {
+  // Decide whether to resume a previous midterm draft
+  if (shouldResumeSavedMidterm) {
     const savedMidterm = loadSavedMidterm();
     if (savedMidterm) {
       Object.assign(midterm.info, savedMidterm.info || {});
@@ -57,8 +59,12 @@ function initMidterm() {
       midterm.nextSteps = savedMidterm.nextSteps || "";
     }
   } else {
-    // Fresh kickoff → clear any previously saved midterm snapshot
-    localStorage.removeItem("metricMateMidterm");
+    // Fresh session → clear any previously saved midterm snapshot
+    try {
+      localStorage.removeItem("metricMateMidterm");
+    } catch (e) {
+      console.warn("Could not clear saved midterm snapshot", e);
+    }
   }
 
   // Hydrate from kickoff data (URL or localStorage)
