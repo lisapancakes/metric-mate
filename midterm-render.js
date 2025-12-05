@@ -9,8 +9,7 @@
 const STATUS_OPTIONS = [
   { value: "not-started", label: "Not started" },
   { value: "in-progress", label: "In progress" },
-  { value: "completed", label: "Completed" },
-  { value: "na", label: "N/A" }
+  { value: "completed", label: "Completed" }
 ];
 
 function addSection(title, body, subtitle = "") {

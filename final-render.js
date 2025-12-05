@@ -186,7 +186,7 @@ function renderGoalsTable() {
           <td>${g.midtermNotes || ""}</td>
           <td>
             <select data-type="final-status" data-id="${g.id}">
-              ${["Green", "Yellow", "Red", "Blocked"]
+              ${["not-started", "in-progress", "completed", "discard"]
                 .map(
                   s => `<option value="${s}" ${g.finalStatus === s ? "selected" : ""}>${s}</option>`
                 )
