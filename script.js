@@ -1331,7 +1331,7 @@ function openDashboardFromKickoff() {
   const data = {
     kickoff: kickoffPayload
     // we don't need to pass project here;
-    // dashboard.js will derive project meta from kickoff.info + directory
+    // dashboard-data.js derives project meta from kickoff.info + directory
   };
 
   const url = `dashboard.html?data=${encodeURIComponent(JSON.stringify(data))}`;
