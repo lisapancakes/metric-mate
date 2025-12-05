@@ -839,6 +839,10 @@ a.btn-primary:hover {
   opacity: 0.7;
 }
 
+.add-goal-inline {
+  margin-top: 0.75rem;
+}
+
 .link-button {
   background: none;
   border: none;
