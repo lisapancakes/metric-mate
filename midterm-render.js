@@ -1,104 +1,12 @@
-// ============================================================================
-// STATE
-// ============================================================================
-const midterm = {
-  currentStep: 1,
-  totalSteps: 3,
-  info: {
-    projectName: "",
-    client: "",
-    pm: "",
-    designer: "",
-    dev: "",
-    date: ""
-  },
-  healthScore: 3,
-  progressGood: "",
-  progressOff: "",
-  risks: "",
-  decisions: "",
-  nextSteps: ""
-};
+// =====================================
+// Metric Mate – Midterm Rendering & Logic
+// Responsibilities:
+//  - Hydrate state from kickoff
+//  - Render steps and summaries
+//  - Handle navigation and form events
+// =====================================
 
-// DOM refs (elements exist because script is loaded at bottom of body)
-const form = document.getElementById("surveyForm");
-const prevBtn = document.getElementById("prevBtn");
-const nextBtn = document.getElementById("nextBtn");
-const progressBar = document.getElementById("progressBar");
-
-// ============================================================================
-// LOAD KICKOFF DATA
-// ============================================================================
-function getKickoffDataFromUrl() {
-  try {
-    // 1) Try URL ?data=...
-    const params = new URLSearchParams(window.location.search);
-    const raw = params.get("data");
-    if (raw) {
-      return JSON.parse(decodeURIComponent(raw));
-    }
-
-    // 2) Fallback: localStorage (saved by the kickoff survey)
-    const stored = localStorage.getItem("metricMateKickoff");
-    if (stored) {
-      return JSON.parse(stored);
-    }
-
-    return null;
-  } catch (err) {
-    console.error("Failed to load kickoff data", err);
-    return null;
-  }
-}
-
-// ============================================================================
-// HELPERS
-// ============================================================================
-function copyToClipboard(text) {
-  if (navigator.clipboard && window.isSecureContext) {
-    navigator.clipboard.writeText(text).catch(() => fallbackCopy(text));
-  } else {
-    fallbackCopy(text);
-  }
-}
-
-function fallbackCopy(text) {
-  const textarea = document.createElement("textarea");
-  textarea.value = text;
-  textarea.style.position = "fixed";
-  textarea.style.top = "-9999px";
-  document.body.appendChild(textarea);
-  textarea.focus();
-  textarea.select();
-  try {
-    document.execCommand("copy");
-  } catch (err) {
-    console.error("Copy failed", err);
-  }
-  document.body.removeChild(textarea);
-}
-
-function showStatus(message) {
-  let statusEl = document.getElementById("copyStatus");
-  if (!statusEl) {
-    statusEl = document.createElement("div");
-    statusEl.id = "copyStatus";
-    statusEl.className = "status-message";
-    statusEl.style.display = "none";
-    document.body.appendChild(statusEl);
-  }
-
-  statusEl.textContent = message;
-  statusEl.style.display = "block";
-  setTimeout(() => {
-    statusEl.style.display = "none";
-  }, 2500);
-}
-
-// ============================================================================
-// INIT
-// ============================================================================
-function init() {
+function initMidterm() {
   // Hydrate from kickoff data (URL or localStorage)
   const kickoffData = getKickoffDataFromUrl();
 
@@ -162,9 +70,7 @@ function init() {
   updateProgressBar();
 }
 
-// ============================================================================
 // NAVIGATION
-// ============================================================================
 function goToNextStep() {
   if (!validateCurrentStep()) return;
 
@@ -195,9 +101,7 @@ function updateProgressBar() {
   progressBar.style.width = `${progress}%`;
 }
 
-// ============================================================================
 // VALIDATION
-// ============================================================================
 function validateCurrentStep() {
   if (midterm.currentStep === 1) {
     if (!midterm.info.projectName.trim()) {
@@ -208,9 +112,7 @@ function validateCurrentStep() {
   return true;
 }
 
-// ============================================================================
 // RENDER STEPS
-// ============================================================================
 function renderStep(step) {
   if (!form) return;
 
@@ -421,9 +323,7 @@ function renderStep3(internalSummary, clientSummary) {
   `;
 }
 
-// ============================================================================
 // SUMMARY BUILDERS
-// ============================================================================
 function buildInternalSummary() {
   const i = midterm.info;
 
@@ -510,9 +410,7 @@ function buildClientSummary() {
   return lines.join("\n");
 }
 
-// ============================================================================
 // SUMMARY ACTIONS + CALENDAR
-// ============================================================================
 function setupSummaryActions(internalSummary, clientSummary) {
   const internalBtn = document.getElementById("copyInternalSummary");
   const clientBtn = document.getElementById("copyClientSummary");
@@ -573,9 +471,7 @@ https://lisapancakes.github.io/metric-mate/final.html`,
   return `${base}&${params.toString()}`;
 }
 
-// ============================================================================
 // FORM HANDLERS
-// ============================================================================
 function handleChange(e) {
   const t = e.target;
 
@@ -629,25 +525,3 @@ function handleInput(e) {
 
   saveMidtermForDashboard();
 }
-
-function saveMidtermForDashboard() {
-  try {
-    const exportObj = {
-      info: { ...midterm.info },
-      healthScore: midterm.healthScore,
-      progressGood: midterm.progressGood,
-      progressOff: midterm.progressOff,
-      risks: midterm.risks,
-      decisions: midterm.decisions,
-      nextSteps: midterm.nextSteps
-    };
-    localStorage.setItem("metricMateMidterm", JSON.stringify(exportObj));
-  } catch (e) {
-    console.warn("Failed to save midterm data for dashboard", e);
-  }
-}
-
-// ============================================================================
-// BOOTSTRAP
-// ============================================================================
-document.addEventListener("DOMContentLoaded", init);
