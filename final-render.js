@@ -262,7 +262,11 @@ function renderGoalsTable() {
                 .map(
                   s => {
                     const label = s.replace(/-/g, " ").replace(/\b\w/g, c => c.toUpperCase());
-                    return `<option value="${s}" ${g.finalStatus === s ? "selected" : ""}>${label}</option>`;
+                    const isSelected =
+                      g.finalStatus
+                        ? g.finalStatus === s
+                        : (g.midtermStatus === s);
+                    return `<option value="${s}" ${isSelected ? "selected" : ""}>${label}</option>`;
                   }
                 )
                 .join("")}
