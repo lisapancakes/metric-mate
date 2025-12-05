@@ -425,6 +425,7 @@ function renderDashboard(rawData) {
     totalGoals = rows.length;
     completedGoals = 0;
     updateGoalCounter(completedGoals, totalGoals);
+    if (goalsCard) goalsCard.style.display = "block";
   }
 
   // What we shipped → baseline business goals
