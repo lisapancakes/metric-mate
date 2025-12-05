@@ -899,13 +899,18 @@ const chatGPTBtn = document.getElementById('copyChatGPTPromptBtn');
     });
   }
 
- if (calendarBtn) {
+if (calendarBtn) {
   calendarBtn.addEventListener('click', () => {
-    // Save kickoff data for the midterm survey
+    // Save full kickoff data for the midterm survey
     try {
       const payload = {
         info: project.info,
-        directory
+        directory,
+        businessGoals: project.businessGoals,
+        productGoals: project.productGoals,
+        userGoals: project.userGoals,
+        userPains: project.userPains,
+        kickoffDate: new Date().toISOString().slice(0, 10) // YYYY-MM-DD
       };
       localStorage.setItem('metricMateKickoff', JSON.stringify(payload));
     } catch (e) {
@@ -1269,6 +1274,36 @@ function addCustomUserItem(type) {
   }
 
   renderStep(project.currentStep);
+}
+
+function openDashboardFromKickoff() {
+  // Full kickoff payload including goals & pains
+  const kickoffPayload = {
+    info: project.info,
+    directory,
+    businessGoals: project.businessGoals,
+    productGoals: project.productGoals,
+    userGoals: project.userGoals,
+    userPains: project.userPains,
+    kickoffDate: new Date().toISOString().slice(0, 10) // YYYY-MM-DD
+  };
+
+  // Dashboard payload (kickoff-only for now)
+  const dashboardData = {
+    kickoff: kickoffPayload
+    // midterm, final, finalSummary will be added later by other surveys
+  };
+
+  // Snapshot fallback in localStorage (if URL param missing)
+  try {
+    localStorage.setItem('metricMateDashboard', JSON.stringify(dashboardData));
+  } catch (e) {
+    console.warn('Could not save dashboard data to localStorage', e);
+  }
+
+  const encoded = encodeURIComponent(JSON.stringify(dashboardData));
+  const url = `dashboard.html?data=${encoded}`;
+  window.open(url, '_blank');
 }
 
 // ============================================================================
