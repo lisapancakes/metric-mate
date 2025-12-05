@@ -111,6 +111,39 @@ function normalizeDashboardData(raw) {
   return data;
 }
 
+function buildKickoffBaseline(kickoff) {
+  if (!kickoff) return null;
+
+  const bg = (kickoff.businessGoals || []).filter(g => g.selected);
+  const pg = (kickoff.productGoals || []).filter(g => g.selected);
+  const ug = (kickoff.userGoals || []).filter(g => g.selected);
+  const up = (kickoff.userPains || []).filter(g => g.selected);
+
+  return {
+    outcomes: bg.length
+      ? `Business goals we committed to at kickoff: ${bg.map(g => g.label).join(', ')}.`
+      : 'No business goals were selected during kickoff.',
+
+    results: pg.length
+      ? `Product / experience areas we agreed to improve: ${pg.map(g => g.label).join(', ')}.`
+      : 'No product / experience goals were selected during kickoff.',
+
+    wins: ug.length
+      ? `User outcomes we want to enable: ${ug.map(g => g.label).join(', ')}.`
+      : 'No user goals were selected during kickoff.',
+
+    challenges: up.length
+      ? `User pain points we want to reduce: ${up.map(g => g.label).join(', ')}.`
+      : 'No user pain points were captured during kickoff.',
+
+    learnings:
+      'Midterm and Final surveys will capture learnings over time. For now, this is a kickoff-only baseline.',
+
+    nextSteps:
+      'Use this baseline to plan next steps. Once you complete the Midterm and Final reviews, this dashboard will show progress and outcomes over the full project lifecycle.'
+  };
+}
+
 // -------------------------------
 // Render dashboard UI
 // -------------------------------
@@ -135,8 +168,9 @@ function renderDashboard(rawData) {
 
   if (app) app.innerHTML = "";
 
-  const data = normalizeDashboardData(rawData);
-
+const data = normalizeDashboardData(rawData);
+console.log('DASHBOARD DATA:', data);
+  
   if (!data || !data.project || !data.project.name) {
     if (errorPanel) {
       errorPanel.style.display = "block";
@@ -157,6 +191,7 @@ function renderDashboard(rawData) {
   if (dashboardContent) dashboardContent.style.display = "grid";
 
   const { kickoff, midterm, final, finalSummary, project } = data;
+  console.log('KICKOFF GOALS:', kickoff && kickoff.businessGoals);
 
   // --- Status helpers ---
   const hasMidterm = !!(midterm && (
