@@ -210,6 +210,13 @@ function renderDashboard(rawData) {
     return t.replace(/\b\w/g, (c) => c.toUpperCase());
   };
 
+  const resolveImportance = (goal) => {
+    if (goal.importance != null) return goal.importance;
+    if (goal.currentScore != null) return goal.currentScore;
+    if (goal.severity != null) return goal.severity;
+    return "";
+  };
+
   const formatStatus = (s) => {
     if (!s) return "—";
     return s.replace(/-/g, " ").replace(/\b\w/g, c => c.toUpperCase());
@@ -238,9 +245,9 @@ function renderDashboard(rawData) {
     updateGoalCounter(completedGoals, totalGoals);
   } else if (hasMidterm && dashGoalsTable) {
     const list = Array.isArray(midterm.goalStatuses)
-      ? [...midterm.goalStatuses]
+      ? midterm.goalStatuses.map(g => ({ ...g, importance: resolveImportance(g) }))
       : Array.isArray(midterm.goals)
-        ? [...midterm.goals]
+        ? midterm.goals.map(g => ({ ...g, importance: resolveImportance(g) }))
         : [];
     list.sort((a, b) => typeOrder.indexOf(a.type) - typeOrder.indexOf(b.type));
 
