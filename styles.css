@@ -823,7 +823,8 @@ a.btn-primary:hover {
   vertical-align: middle;
 }
 
-.dash-table .text-center {
+.dash-table .text-center,
+.dash-table th.text-center {
   text-align: center;
 }
 
