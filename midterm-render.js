@@ -234,7 +234,8 @@ function renderStep(step) {
       nextBtn.style.display = "none";
     } else {
       nextBtn.style.display = "inline-block";
-      nextBtn.textContent = "Next";
+      nextBtn.textContent =
+        step === midterm.totalSteps - 1 ? "Finish" : "Next";
     }
   }
 }

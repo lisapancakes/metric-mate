@@ -274,7 +274,8 @@ function renderStep(stepNumber) {
     } else {
       nextBtn.style.display = 'inline-flex';
       nextBtn.disabled = false;
-      nextBtn.textContent = 'Next';
+      nextBtn.textContent =
+        stepNumber === project.totalSteps - 1 ? 'Finish' : 'Next';
     }
   }
 

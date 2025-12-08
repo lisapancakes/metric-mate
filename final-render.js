@@ -202,7 +202,8 @@ function updateFinalNav() {
     } else {
       finalNextBtn.style.display = "inline-flex";
       finalNextBtn.disabled = false;
-      finalNextBtn.textContent = "Next";
+      finalNextBtn.textContent =
+        finalFlow.currentStep === finalFlow.totalSteps - 1 ? "Finish" : "Next";
     }
   }
 }
