@@ -822,7 +822,8 @@ function initMidtermCopyChips() {
     if (chip.dataset.copyWired === "1") return;
     chip.dataset.copyWired = "1";
     chip.style.display = "none";
-    chip.addEventListener("click", () => {
+    chip.addEventListener("click", (e) => {
+      e.preventDefault();
       const targetId = chip.dataset.copyTarget;
       const target = document.getElementById(targetId);
       if (!target) return;
@@ -830,8 +831,13 @@ function initMidtermCopyChips() {
       if (!val) {
         return;
       }
-      copyToClipboard(val);
-      showStatus("✅ Text Copied to Clipboard");
+      try {
+        copyToClipboard(val);
+        showStatus("✅ Text Copied to Clipboard");
+      } catch (err) {
+        console.error("Copy chip failed", err);
+        alert("Could not copy text. Please try again.");
+      }
     });
   });
 }

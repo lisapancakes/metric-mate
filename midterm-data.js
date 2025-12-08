@@ -77,10 +77,12 @@ function loadSavedMidterm() {
 
 // HELPERS
 function copyToClipboard(text) {
-  if (navigator.clipboard && window.isSecureContext) {
-    navigator.clipboard.writeText(text).catch(() => fallbackCopy(text));
+  const doFallback = () => fallbackCopy(text);
+
+  if (navigator.clipboard && typeof navigator.clipboard.writeText === "function") {
+    navigator.clipboard.writeText(text).catch(doFallback);
   } else {
-    fallbackCopy(text);
+    doFallback();
   }
 }
 
@@ -90,7 +92,6 @@ function fallbackCopy(text) {
   textarea.style.position = "fixed";
   textarea.style.top = "-9999px";
   document.body.appendChild(textarea);
-  textarea.focus();
   textarea.select();
   try {
     document.execCommand("copy");

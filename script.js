@@ -88,40 +88,44 @@ function generateId() {
 
 // Clipboard helper (modern + fallback)
 function copyToClipboard(text) {
-  if (navigator.clipboard && window.isSecureContext) {
-    navigator.clipboard.writeText(text).catch(() => fallbackCopy(text));
+  const doFallback = () => fallbackCopy(text);
+
+  if (navigator.clipboard && typeof navigator.clipboard.writeText === "function") {
+    navigator.clipboard.writeText(text).catch(doFallback);
   } else {
-    fallbackCopy(text);
+    doFallback();
   }
 }
 
 function fallbackCopy(text) {
-  const textarea = document.createElement('textarea');
-  textarea.value = text;
-  textarea.style.position = 'fixed';
-  textarea.style.top = '-9999px';
-  document.body.appendChild(textarea);
-  textarea.focus();
-  textarea.select();
+  const ta = document.createElement("textarea");
+  ta.value = text;
+  ta.style.position = "fixed";
+  ta.style.top = "-9999px";
+  document.body.appendChild(ta);
+  ta.select();
   try {
-    document.execCommand('copy');
+    document.execCommand("copy");
   } catch (err) {
-    console.error('Copy failed', err);
+    console.error("Copy failed", err);
   }
-  document.body.removeChild(textarea);
+  document.body.removeChild(ta);
 }
 
 function showStatus(message) {
-  const statusEl = document.getElementById('copyStatus');
+  let statusEl = document.getElementById("copyStatus");
   if (!statusEl) {
-    console.log(message);
-    return;
+    statusEl = document.createElement("div");
+    statusEl.id = "copyStatus";
+    statusEl.className = "status-message";
+    document.body.appendChild(statusEl);
   }
+
   statusEl.textContent = message;
-  statusEl.style.display = 'block';
+  statusEl.style.display = "block";
   setTimeout(() => {
-    statusEl.style.display = 'none';
-  }, 2500);
+    statusEl.style.display = "none";
+  }, 2200);
 }
 
 // ============================================================================
@@ -240,39 +244,6 @@ function syncCurrentStepFromDOM() {
 // VALIDATION
 // ============================================================================
 function validateCurrentStep() {
-  if (project.currentStep === 1) {
-    if (!project.info.name?.trim()) {
-      alert('Please enter a project name');
-      return false;
-    }
-    if (project.info.clientId === null) {
-      alert('Please select or add a client');
-      return false;
-    }
-    if (project.info.pmId === null) {
-      alert('Please select or add a project manager');
-      return false;
-    }
-  } else if (project.currentStep === 2) {
-    const onGoalsPage = !!document.getElementById('businessGoalsList');
-    if (!project.goalsStepVisited || !onGoalsPage) {
-      return true;
-    }
-    const hasSelectedBusinessGoal = project.businessGoals.some(goal => goal.selected);
-    if (!hasSelectedBusinessGoal) {
-      alert('Please select at least one business goal');
-      return false;
-    }
-    const hasSelectedProductGoal = project.productGoals.some(goal => goal.selected);
-    if (!hasSelectedProductGoal) {
-      if (!confirm('No product goals selected. Are you sure you want to continue?')) {
-        return false;
-      }
-    }
-  } else if (project.currentStep === 3) {
-    // User goals/pains are optional; no additional validation.
-  }
-  // Step 4 is summary only
   return true;
 }
 
@@ -659,7 +630,7 @@ function renderSummaryStep() {
       </div>
       <div class="copy-block">
         <textarea id="kickoff-internal-summary" rows="10" readonly data-original="${internalSummary}" placeholder="This internal kickoff summary will appear here once generated."></textarea>
-        <button type="button" class="copy-chip" data-copy-target="kickoff-internal-summary">Copy Text</button>
+        <button type="button" class="copy-chip" data-copy-target="kickoff-internal-summary" style="display:none;">Copy Text</button>
       </div>
     </section>
 
@@ -676,7 +647,7 @@ function renderSummaryStep() {
       </div>
       <div class="copy-block">
         <textarea id="kickoff-client-summary" rows="10" readonly data-original="${clientSummary}" placeholder="A client-ready kickoff recap email will appear here once generated."></textarea>
-        <button type="button" class="copy-chip" data-copy-target="kickoff-client-summary">Copy Text</button>
+        <button type="button" class="copy-chip" data-copy-target="kickoff-client-summary" style="display:none;">Copy Text</button>
       </div>
     </section>
 
@@ -695,7 +666,7 @@ function renderSummaryStep() {
       </div>
       <div class="copy-block">
         <textarea id="kickoff-goal-narratives" rows="12" readonly data-original="${goalNarratives}" placeholder="Clear goal narratives connecting business, product, and user goals will appear here once generated."></textarea>
-        <button type="button" class="copy-chip" data-copy-target="kickoff-goal-narratives">Copy Text</button>
+        <button type="button" class="copy-chip" data-copy-target="kickoff-goal-narratives" style="display:none;">Copy Text</button>
       </div>
     </section>
 
@@ -815,6 +786,7 @@ function initKickoffAIButtons() {
           projectContext
         });
         ta.value = rewritten;
+        ta.dataset.aiFilled = "true";
         updateCopyButtonsVisibility();
       } catch (e) {
         console.error("[AI rewrite] error", e);
@@ -833,7 +805,8 @@ function initCopyChips() {
     if (chip.dataset.copyWired === "1") return;
     chip.dataset.copyWired = "1";
     chip.style.display = "none";
-    chip.addEventListener("click", () => {
+    chip.addEventListener("click", (e) => {
+      e.preventDefault();
       const targetId = chip.dataset.copyTarget;
       const target = document.getElementById(targetId);
       if (!target) return;
@@ -841,8 +814,13 @@ function initCopyChips() {
       if (!val) {
         return;
       }
-      copyToClipboard(val);
-      showStatus("✅ Text copied to clipboard");
+      try {
+        copyToClipboard(val);
+        showStatus("✅ Text copied to clipboard");
+      } catch (err) {
+        console.error("Copy chip failed", err);
+        alert("Could not copy text. Please try again.");
+      }
     });
   });
 }
@@ -1034,106 +1012,33 @@ function buildGoalNarratives(businessGoals, productGoals, userGoals, userPains) 
 }
 
 function setupSummaryActions() {
-  const jsonBtn = document.getElementById('copyJsonBtn');
   const calendarBtn = document.getElementById('createCalendarEventBtn');
-  const statusEl = document.getElementById('copyStatus');
-
-  function showStatus(message) {
-    if (!statusEl) return;
-    statusEl.textContent = message;
-    statusEl.style.display = 'block';
-    setTimeout(() => {
-      statusEl.style.display = 'none';
-    }, 2500);
-  }
-
-  if (internalBtn) {
-    internalBtn.addEventListener('click', () => {
-      const textArea = document.getElementById('kickoff-internal-summary');
-      if (textArea) {
-        copyToClipboard(textArea.value);
-        showStatus('✅ Internal summary copied to clipboard');
-      }
-    });
-  }
-
-  if (clientBtn) {
-    clientBtn.addEventListener('click', () => {
-      const textArea = document.getElementById('kickoff-client-summary');
-      if (textArea) {
-        copyToClipboard(textArea.value);
-        showStatus('✅ Client summary copied to clipboard');
-      }
-    });
-  }
-
-  if (narrativeBtn) {
-    narrativeBtn.addEventListener('click', () => {
-      const textArea = document.getElementById('kickoff-goal-narratives');
-      if (textArea) {
-        copyToClipboard(textArea.value);
-        showStatus('✅ Goal narratives copied to clipboard');
-      }
-    });
-  }
-
-  if (jsonBtn) {
-    jsonBtn.addEventListener('click', () => {
-      copyToClipboard(JSON.stringify(project, null, 2));
-      showStatus('✅ Raw JSON copied to clipboard');
-    });
-  }
-
-if (calendarBtn) {
-  calendarBtn.addEventListener('click', () => {
-    // Save full kickoff data for the midterm survey
-    try {
-      const today = new Date().toISOString().slice(0, 10); // YYYY-MM-DD
-      const payload = {
-        info: {
-          ...project.info,
+  if (calendarBtn) {
+    calendarBtn.addEventListener('click', () => {
+      // Save full kickoff data for the midterm survey
+      try {
+        const today = new Date().toISOString().slice(0, 10); // YYYY-MM-DD
+        const payload = {
+          info: {
+            ...project.info,
+            kickoffDate: project.info.kickoffDate || today,
+            lastUpdated: today
+          },
+          directory,
+          businessGoals: project.businessGoals,
+          productGoals: project.productGoals,
+          userGoals: project.userGoals,
+          userPains: project.userPains,
           kickoffDate: project.info.kickoffDate || today,
           lastUpdated: today
-        },
-        directory,
-        businessGoals: project.businessGoals,
-        productGoals: project.productGoals,
-        userGoals: project.userGoals,
-        userPains: project.userPains,
-        kickoffDate: project.info.kickoffDate || today,
-        lastUpdated: today
-      };
-      localStorage.setItem('metricMateKickoff', JSON.stringify(payload));
-    } catch (e) {
-      console.warn('Could not save kickoff data to localStorage', e);
-    }
+        };
+        localStorage.setItem('metricMateKickoff', JSON.stringify(payload));
+      } catch (e) {
+        console.warn('Could not save kickoff data to localStorage', e);
+      }
 
-    const url = buildCalendarUrl(project, directory);
-    window.open(url, '_blank');
-  });
-}
-
-    if (chatGPTBtn) {
-    chatGPTBtn.addEventListener('click', () => {
-      const narrativesEl = document.getElementById('goalNarratives');
-      const narratives = narrativesEl ? narrativesEl.value : '';
-
-      const prompt = `
-You are a Product Designer and PM collaborating on a project kickoff.
-
-Rewrite and tighten the following goal narratives so they:
-- stay true to the intent
-- are clear and client-friendly
-- are concise enough to paste into Asana or a project brief
-
-Keep them as bullet points.
-
-Here are the current narratives:
-${narratives}
-      `.trim();
-
-      copyToClipboard(prompt);
-      showStatus('✨ ChatGPT prompt copied to clipboard');
+      const url = buildCalendarUrl(project, directory);
+      window.open(url, '_blank');
     });
   }
 }

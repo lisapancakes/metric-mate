@@ -146,10 +146,12 @@ function normalizeGoalsFromKickoff(kickoff, midterm) {
 
 // Shared helpers
 function copyToClipboard(text) {
-  if (navigator.clipboard && window.isSecureContext) {
-    navigator.clipboard.writeText(text).catch(() => fallbackCopy(text));
+  const doFallback = () => fallbackCopy(text);
+
+  if (navigator.clipboard && typeof navigator.clipboard.writeText === "function") {
+    navigator.clipboard.writeText(text).catch(doFallback);
   } else {
-    fallbackCopy(text);
+    doFallback();
   }
 }
 
@@ -160,7 +162,11 @@ function fallbackCopy(text) {
   ta.style.top = "-9999px";
   document.body.appendChild(ta);
   ta.select();
-  document.execCommand("copy");
+  try {
+    document.execCommand("copy");
+  } catch (err) {
+    console.error("Copy failed", err);
+  }
   document.body.removeChild(ta);
 }
 
