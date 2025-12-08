@@ -193,7 +193,7 @@ margin-top: 4px;
 }
 
 .help-text {
-  margin: 0 0 1.25rem;
+  margin: 0 0 0.5rem;
   font-size: 0.9rem;
   color: var(--tl-text-muted);
 }
@@ -451,6 +451,25 @@ textarea::placeholder {
 
 .summary-section:last-of-type {
   padding-bottom: 24px; /* more space before the footer/navigation */
+}
+
+/* Heading + AI button row */
+.summary-heading-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin-bottom: 0.5rem;
+}
+
+.ai-action-btn {
+  margin-left: auto;
+}
+
+.summary-heading-text {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
 }
 
 /* ============================================================================

@@ -282,6 +282,7 @@ function renderStep(stepNumber) {
   // When we land on the summary step, wire up the summary buttons
   if (stepNumber === project.totalSteps) {
     setupSummaryActions();
+    updateCopyButtonsVisibility();
   }
 }
 
@@ -603,10 +604,18 @@ function renderSummaryStep() {
     </p>
 
     <section class="summary-section">
-      <h3>1. Internal Team Kickoff Summary</h3>
-      <p class="help-text">Use this in Asana, Slack, or your internal kickoff doc.</p>
-      <textarea id="internalSummary" rows="10" readonly>${internalSummary}</textarea>
-      <div class="form-actions" style="margin-top: 0.75rem;">
+      <div class="summary-heading-row">
+        <div class="summary-heading-text">
+          <h3>1. Internal Team Kickoff Summary</h3>
+          <p class="help-text">Use this in Asana, Slack, or your internal kickoff doc.</p>
+        </div>
+        <button type="button" class="btn btn-secondary btn-sm ai-action-btn" id="aiInternalSummaryBtn">
+          <i class="fa-solid fa-robot"></i>
+          Create Kickoff Summary
+        </button>
+      </div>
+      <textarea id="internalSummary" rows="10" readonly placeholder="Create Kickoff Summary with AI"></textarea>
+      <div class="form-actions" style="margin-top: 0.75rem; display:none;" data-copy-wrapper="internalSummary">
         <button type="button" id="copyInternalSummary" class="btn btn-secondary">
           <i class="fa-solid fa-copy"></i>
           Copy Internal Summary
@@ -615,10 +624,18 @@ function renderSummaryStep() {
     </section>
 
     <section class="summary-section">
-      <h3>2. Client-Friendly Summary</h3>
-      <p class="help-text">Use this in a follow-up email or slide for the client to confirm project goals.</p>
-      <textarea id="clientSummary" rows="10" readonly>${clientSummary}</textarea>
-      <div class="form-actions" style="margin-top: 0.75rem;">
+      <div class="summary-heading-row">
+        <div class="summary-heading-text">
+          <h3>2. Client-Friendly Summary</h3>
+          <p class="help-text">Use this in a follow-up email or slide for the client to confirm project goals.</p>
+        </div>
+        <button type="button" class="btn btn-secondary btn-sm ai-action-btn" id="aiClientSummaryBtn">
+          <i class="fa-solid fa-robot"></i>
+          Create Client Email
+        </button>
+      </div>
+      <textarea id="clientSummary" rows="10" readonly placeholder="Create Client Email with AI"></textarea>
+      <div class="form-actions" style="margin-top: 0.75rem; display:none;" data-copy-wrapper="clientSummary">
         <button type="button" id="copyClientSummary" class="btn btn-secondary">
           <i class="fa-solid fa-copy"></i>
           Copy Client Summary
@@ -627,19 +644,23 @@ function renderSummaryStep() {
     </section>
 
         <section class="summary-section">
-      <h3>3. Goal Narratives</h3>
-      <p class="help-text">
-        These sentences connect business, product, and user goals. Great for PM notes or future case studies.
-      </p>
-      <textarea id="goalNarratives" rows="12" readonly>${goalNarratives}</textarea>
-      <div class="form-actions" style="margin-top: 0.75rem;">
+      <div class="summary-heading-row">
+        <div class="summary-heading-text">
+          <h3>3. Goal Narratives</h3>
+          <p class="help-text">
+            These sentences connect business, product, and user goals. Great for PM notes or future case studies.
+          </p>
+        </div>
+        <button type="button" class="btn btn-secondary btn-sm ai-action-btn" id="aiGoalNarrativesBtn">
+          <i class="fa-solid fa-robot"></i>
+          Create Goal Narratives
+        </button>
+      </div>
+      <textarea id="goalNarratives" rows="12" readonly placeholder="Create Goal Narratives with AI"></textarea>
+      <div class="form-actions" style="margin-top: 0.75rem; display:none;" data-copy-wrapper="goalNarratives">
         <button type="button" id="copyGoalNarratives" class="btn btn-secondary">
           <i class="fa-solid fa-copy"></i>
           Copy Goal Narratives
-        </button>
-        <button type="button" id="copyChatGPTPromptBtn" class="btn btn-secondary btn-sm">
-          <i class="fa-solid fa-robot"></i>
-          Refine with ChatGPT
         </button>
       </div>
     </section>
@@ -681,6 +702,22 @@ function renderSummaryStep() {
 // ============================================================================
 // SUMMARY HELPERS
 // ============================================================================
+function updateCopyButtonsVisibility() {
+  const pairs = [
+    { textareaId: "internalSummary", wrapperAttr: "internalSummary" },
+    { textareaId: "clientSummary", wrapperAttr: "clientSummary" },
+    { textareaId: "goalNarratives", wrapperAttr: "goalNarratives" }
+  ];
+
+  pairs.forEach(({ textareaId, wrapperAttr }) => {
+    const ta = document.getElementById(textareaId);
+    const wrapper = document.querySelector(`[data-copy-wrapper="${wrapperAttr}"]`);
+    if (!wrapper || !ta) return;
+    const hasContent = (ta.value || "").trim().length > 0;
+    wrapper.style.display = hasContent ? "flex" : "none";
+  });
+}
+
 function buildInternalSummary(project, directory) {
   const clientName = project.info.clientId != null
     ? directory.clients[project.info.clientId]
