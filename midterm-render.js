@@ -229,14 +229,11 @@ function renderStep(step) {
 
   if (prevBtn) prevBtn.disabled = step === 1;
 
+  const dashboardBtn = document.getElementById("openDashboardBtn");
   if (nextBtn) {
     if (step === midterm.totalSteps) {
-      nextBtn.style.display = "inline-block";
-      nextBtn.disabled = false;
-      nextBtn.textContent = "Finish";
-      nextBtn.onclick = () => {
-        // Stay on summary; no navigation
-      };
+      nextBtn.style.display = "none";
+      nextBtn.disabled = true;
     } else {
       nextBtn.style.display = "inline-block";
       nextBtn.disabled = false;
@@ -244,6 +241,10 @@ function renderStep(step) {
         step === midterm.totalSteps - 1 ? "Finish" : "Next";
       nextBtn.onclick = goToNextStep;
     }
+  }
+  if (dashboardBtn) {
+    dashboardBtn.style.display =
+      step === midterm.totalSteps ? "inline-flex" : "none";
   }
 }
 
@@ -556,12 +557,6 @@ function renderSummaryStep(internalSummary, clientSummary) {
       </a>
     </section>
 
-    <section class="summary-section">
-      <h3>4. Project Dashboard</h3>
-      <p class="help-text">
-        See the Project’s Kickoff and Mid-Project Data Side by Side.
-      </p>
-    </section>
   `;
 }
 

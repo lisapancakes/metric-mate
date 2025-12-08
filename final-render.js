@@ -218,6 +218,7 @@ function updateFinalNav() {
     finalPrevBtn.disabled = finalFlow.currentStep === 1;
     finalPrevBtn.style.display = finalFlow.currentStep === 1 ? "none" : "inline-flex";
   }
+  const dashboardBtn = $("openDashboardBtn");
   if (finalNextBtn) {
     if (finalFlow.currentStep === finalFlow.totalSteps) {
       finalNextBtn.style.display = "none";
@@ -228,6 +229,10 @@ function updateFinalNav() {
       finalNextBtn.textContent =
         finalFlow.currentStep === finalFlow.totalSteps - 1 ? "Finish" : "Next";
     }
+  }
+  if (dashboardBtn) {
+    dashboardBtn.style.display =
+      finalFlow.currentStep === finalFlow.totalSteps ? "inline-flex" : "none";
   }
 }
 
