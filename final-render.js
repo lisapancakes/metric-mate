@@ -9,6 +9,19 @@ const finalFlow = { currentStep: 1, totalSteps: 3 };
 const finalPrevBtn = $("prevBtn");
 const finalNextBtn = $("nextBtn");
 const finalProgressBar = $("progressBar");
+const FINAL_AI_BASE =
+  window.location.protocol === "file:" ? "http://localhost:3001" : "";
+const finalAIModel = "gpt-4o-mini";
+
+function buildProjectContext() {
+  const parts = [];
+  if (finalState.projectName) parts.push(`Project: ${finalState.projectName}`);
+  if (finalState.client) parts.push(`Client: ${finalState.client}`);
+  if (finalState.pm) parts.push(`PM: ${finalState.pm}`);
+  if (finalState.designer) parts.push(`Designer: ${finalState.designer}`);
+  if (finalState.dev) parts.push(`Dev: ${finalState.dev}`);
+  return parts.join(" | ");
+}
 
 // HYDRATE FROM KICKOFF + MIDTERM
 function hydrateForm() {
@@ -96,6 +109,9 @@ function handleInput(e) {
     if (["projectName", "client", "pm", "designer", "dev"].includes(id)) {
       updateFinalMetaSummary();
     }
+    if (id === "finalClientSummary") {
+      updateFinalCopyButtonsVisibility();
+    }
   }
 
   if (t.dataset.type === "final-status") {
@@ -115,6 +131,7 @@ function handleInput(e) {
   }
 
   updateSummary();
+  updateFinalCopyButtonsVisibility();
 }
 
 // SUMMARY GENERATION
@@ -177,9 +194,15 @@ function updateSummary() {
   if (!summaryEl) return;
 
   const summaryText = buildFinalSummary();
-  summaryEl.value = summaryText;
+  summaryEl.dataset.original = summaryText;
+  if (summaryEl.dataset.aiFilled === "true") {
+    // Preserve AI-generated text
+  } else {
+    summaryEl.value = "";
+  }
 
   saveDashboardPayload(summaryText);
+  updateFinalCopyButtonsVisibility();
 }
 
 // NAVIGATION HELPERS
@@ -228,6 +251,57 @@ function goToNextFinalStep() {
   if (finalFlow.currentStep < finalFlow.totalSteps) {
     showFinalStep(finalFlow.currentStep + 1);
     window.scrollTo(0, 0);
+  }
+}
+
+async function triggerFinalAIRewrite({ btnId, textareaId, mode, placeholderFallback = "" }) {
+  const btn = $(btnId);
+  const ta = $(textareaId);
+  if (!btn || !ta) return;
+
+  const originalHTML = btn.innerHTML;
+  btn.disabled = true;
+  btn.textContent = "Creating...";
+
+  const sourceText = (ta.value && ta.value.trim()) || placeholderFallback;
+  if (!sourceText) {
+    btn.disabled = false;
+    btn.innerHTML = originalHTML;
+    alert("No content available to rewrite yet.");
+    return;
+  }
+
+  try {
+    const rewritten = await fetch(`${FINAL_AI_BASE}/api/rewrite`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        mode,
+        phase: "final",
+        text: sourceText,
+        projectContext: buildProjectContext()
+      })
+    }).then(async (res) => {
+      if (!res.ok) {
+        const errText = await res.text().catch(() => "");
+        throw new Error(`Rewrite failed: ${res.status} ${errText}`);
+      }
+      const data = await res.json();
+      if (!data || typeof data.text !== "string") {
+        throw new Error("Invalid AI response");
+      }
+      return data.text;
+    });
+
+    ta.value = rewritten;
+    ta.dataset.aiFilled = "true";
+    updateFinalCopyButtonsVisibility();
+  } catch (err) {
+    console.error("[AI rewrite final] error", err);
+    alert("AI could not generate this text. Please try again later.");
+  } finally {
+    btn.disabled = false;
+    btn.innerHTML = originalHTML;
   }
 }
 
@@ -346,6 +420,7 @@ function renderGoalsTable() {
 function initFinal() {
   const form = $("finalForm");
   const copyBtn = $("copyFinalSummaryBtn");
+  const copyClientBtn = $("copyFinalClientSummaryBtn");
 
   hydrateForm();
 
@@ -360,6 +435,8 @@ function initFinal() {
 
   updateSummary();
   showFinalStep(finalFlow.currentStep);
+  updateFinalCopyButtonsVisibility();
+  initFinalCopyChips();
 
   if (copyBtn) {
     copyBtn.addEventListener("click", () => {
@@ -368,6 +445,80 @@ function initFinal() {
       showStatus("✅ Final Summary Copied to Clipboard");
     });
   }
+
+  if (copyClientBtn) {
+    copyClientBtn.addEventListener("click", () => {
+      const text = $("finalClientSummary").value || "";
+      copyToClipboard(text);
+      showStatus("✅ Final Client Summary Copied to Clipboard");
+    });
+  }
+  initFinalCopyChips();
+  initFinalAIButtons();
+}
+
+function initFinalAIButtons() {
+  const configs = [
+    {
+      id: "final-ai-summary-btn",
+      textareaId: "finalSummary",
+      mode: "final_internal_update",
+      placeholderFallback: buildFinalSummary()
+    },
+    {
+      id: "final-ai-client-btn",
+      textareaId: "finalClientSummary",
+      mode: "final_client_email",
+      placeholderFallback: buildFinalSummary()
+    }
+  ];
+
+  configs.forEach((cfg) => {
+    const btn = $(cfg.id);
+    if (!btn || btn.dataset.aiWired === "1") return;
+    btn.dataset.aiWired = "1";
+    btn.addEventListener("click", (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      triggerFinalAIRewrite({
+        btnId: cfg.id,
+        textareaId: cfg.textareaId,
+        mode: cfg.mode,
+        placeholderFallback: cfg.placeholderFallback
+      });
+    });
+  });
+}
+
+function updateFinalCopyButtonsVisibility() {
+  const chips = document.querySelectorAll(".copy-chip");
+  chips.forEach((chip) => {
+    const targetId = chip.dataset.copyTarget;
+    const target = $(targetId);
+    if (!target) return;
+    const hasContent = (target.value || "").trim().length > 0;
+    chip.style.display = hasContent ? "inline-flex" : "none";
+  });
+}
+
+function initFinalCopyChips() {
+  const chips = document.querySelectorAll(".copy-chip");
+  chips.forEach((chip) => {
+    if (chip.dataset.copyWired === "1") return;
+    chip.dataset.copyWired = "1";
+    chip.style.display = "none";
+    chip.addEventListener("click", () => {
+      const targetId = chip.dataset.copyTarget;
+      const target = $(targetId);
+      if (!target) return;
+      const val = (target.value || "").trim();
+      if (!val) {
+        return;
+      }
+      copyToClipboard(val);
+      showStatus("✅ Text Copied to Clipboard");
+    });
+  });
 }
 
 function handleClick(e) {
@@ -397,6 +548,24 @@ function handleClick(e) {
       }
     }
     return;
+  }
+
+  if (t.id === "final-ai-summary-btn") {
+    triggerFinalAIRewrite({
+      btnId: "final-ai-summary-btn",
+      textareaId: "finalSummary",
+      mode: "final_internal_update",
+      placeholderFallback: buildFinalSummary()
+    });
+  }
+
+  if (t.id === "final-ai-client-btn") {
+    triggerFinalAIRewrite({
+      btnId: "final-ai-client-btn",
+      textareaId: "finalClientSummary",
+      mode: "final_client_email",
+      placeholderFallback: buildFinalSummary()
+    });
   }
 }
 

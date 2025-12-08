@@ -144,20 +144,43 @@ referrerpolicy="no-referrer"
 
     <!-- Final summary -->
     <section class="summary-section" data-step="3">
-      <div class="section-head">
-        <h2>Final Summary</h2>
-        <p class="help-text">Generated Automatically as You Fill in the Fields.</p>
+      <div class="summary-heading-row">
+        <div class="summary-heading-text">
+          <h2>Final Summary</h2>
+          <p class="help-text">Generated Automatically as You Fill in the Fields.</p>
+        </div>
+        <button type="button" class="btn btn-secondary btn-sm ai-action-btn" id="final-ai-summary-btn">
+          <i class="fa-solid fa-robot"></i>
+          Create Final Summary
+        </button>
       </div>
-      <textarea id="finalSummary" rows="14" readonly></textarea>
+      <div class="copy-block">
+        <textarea id="finalSummary" rows="14" readonly data-original="" placeholder="A final internal project wrap-up will appear here once generated."></textarea>
+        <button type="button" class="copy-chip" data-copy-target="finalSummary">Copy Text</button>
+      </div>
+    </section>
+
+    <!-- Final client email -->
+    <section class="summary-section" data-step="3">
+      <div class="summary-heading-row">
+        <div class="summary-heading-text">
+          <h2>Final Client Summary</h2>
+          <p class="help-text">Client-facing wrap-up email.</p>
+        </div>
+        <button type="button" class="btn btn-secondary btn-sm ai-action-btn" id="final-ai-client-btn">
+          <i class="fa-solid fa-robot"></i>
+          Create Client Email
+        </button>
+      </div>
+      <div class="copy-block">
+        <textarea id="finalClientSummary" rows="12" readonly data-original="" placeholder="A client-ready project wrap-up email will appear here once generated."></textarea>
+        <button type="button" class="copy-chip" data-copy-target="finalClientSummary">Copy Text</button>
+      </div>
     </section>
 
     <!-- Actions -->
     <section class="summary-section" data-step="3">
       <div class="form-actions" style="display:flex; gap:0.75rem; flex-wrap:wrap;">
-        <button type="button" id="copyFinalSummaryBtn" class="btn btn-secondary">
-          <i class="fa-solid fa-copy"></i>
-          Copy Final Summary
-        </button>
         <a
           id="openDashboardBtn"
           href="dashboard.html"
@@ -166,7 +189,7 @@ referrerpolicy="no-referrer"
           rel="noopener"
         >
           <i class="fa-solid fa-chart-line"></i>
-          Open Dashboard
+          View Dashboard
         </a>
       </div>
     </section>

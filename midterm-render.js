@@ -231,11 +231,18 @@ function renderStep(step) {
 
   if (nextBtn) {
     if (step === midterm.totalSteps) {
-      nextBtn.style.display = "none";
+      nextBtn.style.display = "inline-block";
+      nextBtn.disabled = false;
+      nextBtn.textContent = "Finish";
+      nextBtn.onclick = () => {
+        // Stay on summary; no navigation
+      };
     } else {
       nextBtn.style.display = "inline-block";
+      nextBtn.disabled = false;
       nextBtn.textContent =
         step === midterm.totalSteps - 1 ? "Finish" : "Next";
+      nextBtn.onclick = goToNextStep;
     }
   }
 }
@@ -487,26 +494,48 @@ function renderSummaryStep(internalSummary, clientSummary) {
     </p>
 
     <section class="summary-section">
-      <h3>1. Internal Mid-Project Summary</h3>
-      <p class="help-text">Drop This Into Asana, Slack, or Your Team Doc.</p>
-      <textarea id="internalSummary" rows="10" readonly>${internalSummary}</textarea>
-      <div class="form-actions" style="margin-top: 0.75rem;">
-        <button type="button" id="copyInternalSummary" class="btn btn-secondary">
-          <i class="fa-solid fa-copy"></i>
-          Copy Internal Summary
+      <div class="summary-heading-row">
+        <div class="summary-heading-text">
+          <h3>1. Internal Mid-Project Summary</h3>
+          <p class="help-text">Drop This Into Asana, Slack, or Your Team Doc.</p>
+        </div>
+        <button type="button" class="btn btn-secondary btn-sm ai-action-btn" id="midterm-ai-internal-btn">
+          <i class="fa-solid fa-robot"></i>
+          Create Project Update
         </button>
+      </div>
+      <div class="copy-block">
+        <textarea
+          id="internalSummary"
+          rows="10"
+          readonly
+          data-original="${internalSummary}"
+          placeholder="A mid-project internal status update will appear here once generated."
+        ></textarea>
+        <button type="button" class="copy-chip" data-copy-target="internalSummary">Copy Text</button>
       </div>
     </section>
 
     <section class="summary-section">
-      <h3>2. Client-Friendly Check-In</h3>
-      <p class="help-text">Use This in a Short Email or Slide to Align on Where Things Stand.</p>
-      <textarea id="clientSummary" rows="10" readonly>${clientSummary}</textarea>
-      <div class="form-actions" style="margin-top: 0.75rem;">
-        <button type="button" id="copyClientSummary" class="btn btn-secondary">
-          <i class="fa-solid fa-copy"></i>
-          Copy Client Summary
+      <div class="summary-heading-row">
+        <div class="summary-heading-text">
+          <h3>2. Client-Friendly Check-In</h3>
+          <p class="help-text">Use This in a Short Email or Slide to Align on Where Things Stand.</p>
+        </div>
+        <button type="button" class="btn btn-secondary btn-sm ai-action-btn" id="midterm-ai-client-btn">
+          <i class="fa-solid fa-robot"></i>
+          Create Client Email
         </button>
+      </div>
+      <div class="copy-block">
+        <textarea
+          id="clientSummary"
+          rows="10"
+          readonly
+          data-original="${clientSummary}"
+          placeholder="A client-ready mid-project update email will appear here once generated."
+        ></textarea>
+        <button type="button" class="copy-chip" data-copy-target="clientSummary">Copy Text</button>
       </div>
     </section>
 
@@ -532,16 +561,6 @@ function renderSummaryStep(internalSummary, clientSummary) {
       <p class="help-text">
         See the Project’s Kickoff and Mid-Project Data Side by Side.
       </p>
-      <div class="form-actions">
-        <button
-          type="button"
-          class="btn btn-primary"
-          onclick="openDashboardFromMidterm()"
-        >
-          <i class="fa-solid fa-chart-line"></i>
-          View Project Dashboard
-        </button>
-      </div>
     </section>
   `;
 }
@@ -717,27 +736,65 @@ function buildClientSummary() {
   return lines.join("\n");
 }
 
+function buildProjectContextForMidterm() {
+  const info = midterm.info || {};
+  const kickoff = getKickoffDataFromUrl() || {};
+  const dir = kickoff.directory || {};
+
+  const getFromDir = (list, idx, fallback = "") => {
+    if (typeof idx === "number" && Array.isArray(list)) return list[idx] || fallback;
+    return fallback;
+  };
+
+  const client = info.client || getFromDir(dir.clients, info.clientId, info.clientName || "");
+  const pm = info.pm || getFromDir(dir.pms, info.pmId, info.pmName || "");
+  const designer = info.designer || getFromDir(dir.designers, info.designerId, info.designerName || "");
+
+  return [
+    info.projectName ? `Project: ${info.projectName}` : null,
+    client ? `Client: ${client}` : null,
+    pm ? `PM: ${pm}` : null,
+    designer ? `Designer: ${designer}` : null
+  ]
+    .filter(Boolean)
+    .join(" | ");
+}
+
+async function rewriteMidtermWithAI({ mode, text }) {
+  const projectContext = buildProjectContextForMidterm();
+  const base =
+    window.location.protocol === "file:"
+      ? "http://localhost:3001"
+      : "";
+
+  const res = await fetch(`${base}/api/rewrite`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      mode,
+      phase: "midterm",
+      text,
+      projectContext
+    })
+  });
+
+  if (!res.ok) {
+    const errText = await res.text().catch(() => "");
+    throw new Error(`Rewrite failed: ${res.status} ${errText}`);
+  }
+
+  const data = await res.json();
+  if (!data || typeof data.text !== "string") {
+    throw new Error("Invalid AI response");
+  }
+  return data.text;
+}
+
 // ============================================================================
 // SUMMARY ACTIONS + CALENDAR
 // ============================================================================
 function setupSummaryActions(internalSummary, clientSummary) {
-  const internalBtn = document.getElementById("copyInternalSummary");
-  const clientBtn = document.getElementById("copyClientSummary");
   const calendarLink = document.getElementById("finalReviewCalendarLink");
-
-  if (internalBtn) {
-    internalBtn.addEventListener("click", () => {
-      copyToClipboard(internalSummary);
-      showStatus("✅ Internal Summary Copied to Clipboard");
-    });
-  }
-
-  if (clientBtn) {
-    clientBtn.addEventListener("click", () => {
-      copyToClipboard(clientSummary);
-      showStatus("✅ Client Summary Copied to Clipboard");
-    });
-  }
 
   if (calendarLink) {
     calendarLink.addEventListener("click", (e) => {
@@ -748,6 +805,40 @@ function setupSummaryActions(internalSummary, clientSummary) {
   }
 
   saveMidtermForDashboard();
+  initMidtermAIButtons();
+  updateMidtermCopyButtonsVisibility();
+  initMidtermCopyChips();
+}
+
+function updateMidtermCopyButtonsVisibility() {
+  const chips = document.querySelectorAll(".copy-chip");
+  chips.forEach((chip) => {
+    const targetId = chip.dataset.copyTarget;
+    const target = document.getElementById(targetId);
+    if (!target) return;
+    const hasContent = (target.value || "").trim().length > 0;
+    chip.style.display = hasContent ? "inline-flex" : "none";
+  });
+}
+
+function initMidtermCopyChips() {
+  const chips = document.querySelectorAll(".copy-chip");
+  chips.forEach((chip) => {
+    if (chip.dataset.copyWired === "1") return;
+    chip.dataset.copyWired = "1";
+    chip.style.display = "none";
+    chip.addEventListener("click", () => {
+      const targetId = chip.dataset.copyTarget;
+      const target = document.getElementById(targetId);
+      if (!target) return;
+      const val = (target.value || "").trim();
+      if (!val) {
+        return;
+      }
+      copyToClipboard(val);
+      showStatus("✅ Text Copied to Clipboard");
+    });
+  });
 }
 
 function buildFinalReviewCalendarUrl() {
@@ -1026,4 +1117,47 @@ function openDashboardFromMidterm() {
   }
 
   window.open("dashboard.html", "_blank", "noopener");
+}
+
+function initMidtermAIButtons() {
+  const mappings = [
+    { btnId: "midterm-ai-internal-btn", textareaId: "internalSummary", mode: "midterm_internal_update" },
+    { btnId: "midterm-ai-client-btn", textareaId: "clientSummary", mode: "midterm_client_email" }
+  ];
+
+  mappings.forEach(({ btnId, textareaId, mode }) => {
+    const btn = document.getElementById(btnId);
+    const ta = document.getElementById(textareaId);
+    if (!btn || !ta) return;
+    if (btn.dataset.aiWired === "1") return;
+    btn.dataset.aiWired = "1";
+
+    btn.addEventListener("click", async () => {
+      const originalHTML = btn.innerHTML;
+      btn.disabled = true;
+      btn.textContent = "Creating...";
+
+      const fallback = ta.dataset.original || "";
+      const sourceText = (ta.value && ta.value.trim()) || fallback;
+
+      if (!sourceText.trim()) {
+        btn.disabled = false;
+        btn.innerHTML = originalHTML;
+        alert("No content available to rewrite yet.");
+        return;
+      }
+
+    try {
+      const rewritten = await rewriteMidtermWithAI({ mode, text: sourceText });
+      ta.value = rewritten;
+      updateMidtermCopyButtonsVisibility();
+    } catch (e) {
+      console.error("[AI rewrite midterm] error", e);
+      alert("AI could not generate this text. Please try again later.");
+    } finally {
+      btn.disabled = false;
+        btn.innerHTML = originalHTML;
+      }
+    });
+  });
 }

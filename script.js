@@ -110,6 +110,19 @@ function fallbackCopy(text) {
   document.body.removeChild(textarea);
 }
 
+function showStatus(message) {
+  const statusEl = document.getElementById('copyStatus');
+  if (!statusEl) {
+    console.log(message);
+    return;
+  }
+  statusEl.textContent = message;
+  statusEl.style.display = 'block';
+  setTimeout(() => {
+    statusEl.style.display = 'none';
+  }, 2500);
+}
+
 // ============================================================================
 // INIT
 // ============================================================================
@@ -268,20 +281,24 @@ function renderStep(stepNumber) {
 
   if (nextBtn) {
     if (stepNumber === project.totalSteps) {
-      // On the summary step, we don’t show a Finish button.
-      nextBtn.style.display = 'none';
-      nextBtn.disabled = true;
+      nextBtn.style.display = 'inline-flex';
+      nextBtn.disabled = false;
+      nextBtn.textContent = 'View Dashboard';
+      nextBtn.onclick = openDashboardFromKickoff;
     } else {
       nextBtn.style.display = 'inline-flex';
       nextBtn.disabled = false;
       nextBtn.textContent =
         stepNumber === project.totalSteps - 1 ? 'Finish' : 'Next';
+      nextBtn.onclick = goToNextStep;
     }
   }
 
   // When we land on the summary step, wire up the summary buttons
   if (stepNumber === project.totalSteps) {
     setupSummaryActions();
+    initKickoffAIButtons();
+    initCopyChips();
     updateCopyButtonsVisibility();
   }
 }
@@ -609,17 +626,14 @@ function renderSummaryStep() {
           <h3>1. Internal Team Kickoff Summary</h3>
           <p class="help-text">Use this in Asana, Slack, or your internal kickoff doc.</p>
         </div>
-        <button type="button" class="btn btn-secondary btn-sm ai-action-btn" id="aiInternalSummaryBtn">
+        <button type="button" class="btn btn-secondary btn-sm ai-action-btn" id="kickoff-ai-internal-btn">
           <i class="fa-solid fa-robot"></i>
           Create Kickoff Summary
         </button>
       </div>
-      <textarea id="internalSummary" rows="10" readonly placeholder="Create Kickoff Summary with AI"></textarea>
-      <div class="form-actions" style="margin-top: 0.75rem; display:none;" data-copy-wrapper="internalSummary">
-        <button type="button" id="copyInternalSummary" class="btn btn-secondary">
-          <i class="fa-solid fa-copy"></i>
-          Copy Internal Summary
-        </button>
+      <div class="copy-block">
+        <textarea id="kickoff-internal-summary" rows="10" readonly data-original="${internalSummary}" placeholder="This internal kickoff summary will appear here once generated."></textarea>
+        <button type="button" class="copy-chip" data-copy-target="kickoff-internal-summary">Copy Text</button>
       </div>
     </section>
 
@@ -629,21 +643,18 @@ function renderSummaryStep() {
           <h3>2. Client-Friendly Summary</h3>
           <p class="help-text">Use this in a follow-up email or slide for the client to confirm project goals.</p>
         </div>
-        <button type="button" class="btn btn-secondary btn-sm ai-action-btn" id="aiClientSummaryBtn">
+        <button type="button" class="btn btn-secondary btn-sm ai-action-btn" id="kickoff-ai-client-btn">
           <i class="fa-solid fa-robot"></i>
           Create Client Email
         </button>
       </div>
-      <textarea id="clientSummary" rows="10" readonly placeholder="Create Client Email with AI"></textarea>
-      <div class="form-actions" style="margin-top: 0.75rem; display:none;" data-copy-wrapper="clientSummary">
-        <button type="button" id="copyClientSummary" class="btn btn-secondary">
-          <i class="fa-solid fa-copy"></i>
-          Copy Client Summary
-        </button>
+      <div class="copy-block">
+        <textarea id="kickoff-client-summary" rows="10" readonly data-original="${clientSummary}" placeholder="A client-ready kickoff recap email will appear here once generated."></textarea>
+        <button type="button" class="copy-chip" data-copy-target="kickoff-client-summary">Copy Text</button>
       </div>
     </section>
 
-        <section class="summary-section">
+    <section class="summary-section">
       <div class="summary-heading-row">
         <div class="summary-heading-text">
           <h3>3. Goal Narratives</h3>
@@ -651,17 +662,14 @@ function renderSummaryStep() {
             These sentences connect business, product, and user goals. Great for PM notes or future case studies.
           </p>
         </div>
-        <button type="button" class="btn btn-secondary btn-sm ai-action-btn" id="aiGoalNarrativesBtn">
+        <button type="button" class="btn btn-secondary btn-sm ai-action-btn" id="kickoff-ai-goals-btn">
           <i class="fa-solid fa-robot"></i>
           Create Goal Narratives
         </button>
       </div>
-      <textarea id="goalNarratives" rows="12" readonly placeholder="Create Goal Narratives with AI"></textarea>
-      <div class="form-actions" style="margin-top: 0.75rem; display:none;" data-copy-wrapper="goalNarratives">
-        <button type="button" id="copyGoalNarratives" class="btn btn-secondary">
-          <i class="fa-solid fa-copy"></i>
-          Copy Goal Narratives
-        </button>
+      <div class="copy-block">
+        <textarea id="kickoff-goal-narratives" rows="12" readonly data-original="${goalNarratives}" placeholder="Clear goal narratives connecting business, product, and user goals will appear here once generated."></textarea>
+        <button type="button" class="copy-chip" data-copy-target="kickoff-goal-narratives">Copy Text</button>
       </div>
     </section>
 
@@ -679,23 +687,13 @@ function renderSummaryStep() {
     </section>
 
     <section class="summary-section">
-  <h3>5. Project Dashboard</h3>
-  <p class="help-text">
+      <h3>5. Project Dashboard</h3>
+      <p class="help-text">
     Open the evolving project dashboard based on completed surveys.  
     Kickoff-only data appears now — midterm and final reviews will enrich it.
   </p>
 
-  <div class="form-actions" style="display:flex; gap:0.75rem; margin-top:1rem;">
-    <button
-      type="button"
-      class="btn btn-primary"
-      onclick="openDashboardFromKickoff()"
-    >
-      <i class="fa-solid fa-chart-line"></i>
-      View Dashboard
-    </button>
-  </div>
-</section>
+  </section>
   `;
 }
 
@@ -703,18 +701,131 @@ function renderSummaryStep() {
 // SUMMARY HELPERS
 // ============================================================================
 function updateCopyButtonsVisibility() {
-  const pairs = [
-    { textareaId: "internalSummary", wrapperAttr: "internalSummary" },
-    { textareaId: "clientSummary", wrapperAttr: "clientSummary" },
-    { textareaId: "goalNarratives", wrapperAttr: "goalNarratives" }
+  const chips = document.querySelectorAll(".copy-chip");
+  chips.forEach((chip) => {
+    const targetId = chip.dataset.copyTarget;
+    const target = document.getElementById(targetId);
+    if (!target) return;
+    const hasContent = (target.value || "").trim().length > 0;
+    chip.style.display = hasContent ? "inline-flex" : "none";
+  });
+}
+
+function buildProjectContextForKickoff() {
+  const info = project.info || {};
+  const getFromDir = (list, idx, fallback = "") => {
+    if (typeof idx === "number" && Array.isArray(list)) return list[idx] || fallback;
+    return fallback;
+  };
+
+  const client = getFromDir(directory.clients, info.clientId, info.clientName || "");
+  const pm = getFromDir(directory.pms, info.pmId, info.pmName || "");
+  const designer = getFromDir(directory.designers, info.designerId, info.designerName || "");
+
+  return [
+    info.name ? `Project: ${info.name}` : null,
+    client ? `Client: ${client}` : null,
+    pm ? `PM: ${pm}` : null,
+    designer ? `Designer: ${designer}` : null
+  ]
+    .filter(Boolean)
+    .join(" | ");
+}
+
+async function rewriteWithAI({ mode, phase, text, projectContext }) {
+  const base =
+    window.location.protocol === "file:"
+      ? "http://localhost:3001"
+      : "";
+
+  const res = await fetch(`${base}/api/rewrite`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ mode, phase, text, projectContext })
+  });
+
+  if (!res.ok) {
+    const errText = await res.text().catch(() => "");
+    throw new Error(`Rewrite failed: ${res.status} ${errText}`);
+  }
+
+  const data = await res.json();
+  if (!data || typeof data.text !== "string") {
+    throw new Error("Invalid AI response");
+  }
+  return data.text;
+}
+
+function initKickoffAIButtons() {
+  const mappings = [
+    { btnId: "kickoff-ai-internal-btn", textareaId: "kickoff-internal-summary", mode: "kickoff_internal" },
+    { btnId: "kickoff-ai-client-btn", textareaId: "kickoff-client-summary", mode: "kickoff_client_email" },
+    { btnId: "kickoff-ai-goals-btn", textareaId: "kickoff-goal-narratives", mode: "kickoff_goal_narratives" }
   ];
 
-  pairs.forEach(({ textareaId, wrapperAttr }) => {
+  const projectContext = buildProjectContextForKickoff();
+
+  mappings.forEach(({ btnId, textareaId, mode }) => {
+    const btn = document.getElementById(btnId);
     const ta = document.getElementById(textareaId);
-    const wrapper = document.querySelector(`[data-copy-wrapper="${wrapperAttr}"]`);
-    if (!wrapper || !ta) return;
-    const hasContent = (ta.value || "").trim().length > 0;
-    wrapper.style.display = hasContent ? "flex" : "none";
+    if (!btn || !ta) return;
+
+    if (btn.dataset.aiWired === "1") return;
+    btn.dataset.aiWired = "1";
+
+    btn.addEventListener("click", async () => {
+      const originalHTML = btn.innerHTML;
+      const originalText = btn.textContent;
+      btn.disabled = true;
+      btn.textContent = "Creating...";
+
+      const fallback = ta.dataset.original || "";
+      const sourceText = (ta.value && ta.value.trim()) || fallback;
+
+      if (!sourceText.trim()) {
+        btn.disabled = false;
+        btn.innerHTML = originalHTML;
+        alert("No content available to rewrite yet.");
+        return;
+      }
+
+      try {
+        const rewritten = await rewriteWithAI({
+          mode,
+          phase: "kickoff",
+          text: sourceText,
+          projectContext
+        });
+        ta.value = rewritten;
+        updateCopyButtonsVisibility();
+      } catch (e) {
+        console.error("[AI rewrite] error", e);
+        alert("AI could not generate this text. Please try again later.");
+      } finally {
+        btn.disabled = false;
+        btn.innerHTML = originalHTML || originalText;
+      }
+    });
+  });
+}
+
+function initCopyChips() {
+  const chips = document.querySelectorAll(".copy-chip");
+  chips.forEach((chip) => {
+    if (chip.dataset.copyWired === "1") return;
+    chip.dataset.copyWired = "1";
+    chip.style.display = "none";
+    chip.addEventListener("click", () => {
+      const targetId = chip.dataset.copyTarget;
+      const target = document.getElementById(targetId);
+      if (!target) return;
+      const val = (target.value || "").trim();
+      if (!val) {
+        return;
+      }
+      copyToClipboard(val);
+      showStatus("✅ Text copied to clipboard");
+    });
   });
 }
 
@@ -905,13 +1016,9 @@ function buildGoalNarratives(businessGoals, productGoals, userGoals, userPains) 
 }
 
 function setupSummaryActions() {
-  const internalBtn = document.getElementById('copyInternalSummary');
-  const clientBtn = document.getElementById('copyClientSummary');
-  const narrativeBtn = document.getElementById('copyGoalNarratives');
   const jsonBtn = document.getElementById('copyJsonBtn');
   const calendarBtn = document.getElementById('createCalendarEventBtn');
   const statusEl = document.getElementById('copyStatus');
-const chatGPTBtn = document.getElementById('copyChatGPTPromptBtn');
 
   function showStatus(message) {
     if (!statusEl) return;
@@ -924,7 +1031,7 @@ const chatGPTBtn = document.getElementById('copyChatGPTPromptBtn');
 
   if (internalBtn) {
     internalBtn.addEventListener('click', () => {
-      const textArea = document.getElementById('internalSummary');
+      const textArea = document.getElementById('kickoff-internal-summary');
       if (textArea) {
         copyToClipboard(textArea.value);
         showStatus('✅ Internal summary copied to clipboard');
@@ -934,7 +1041,7 @@ const chatGPTBtn = document.getElementById('copyChatGPTPromptBtn');
 
   if (clientBtn) {
     clientBtn.addEventListener('click', () => {
-      const textArea = document.getElementById('clientSummary');
+      const textArea = document.getElementById('kickoff-client-summary');
       if (textArea) {
         copyToClipboard(textArea.value);
         showStatus('✅ Client summary copied to clipboard');
@@ -944,7 +1051,7 @@ const chatGPTBtn = document.getElementById('copyChatGPTPromptBtn');
 
   if (narrativeBtn) {
     narrativeBtn.addEventListener('click', () => {
-      const textArea = document.getElementById('goalNarratives');
+      const textArea = document.getElementById('kickoff-goal-narratives');
       if (textArea) {
         copyToClipboard(textArea.value);
         showStatus('✅ Goal narratives copied to clipboard');
