@@ -4,6 +4,7 @@
 const project = {
   currentStep: 1,
   totalSteps: 4,
+  goalsStepVisited: false,
   info: {
     name: '',
     clientId: null,
@@ -191,6 +192,7 @@ function init() {
 // NAVIGATION
 // ============================================================================
 function goToNextStep() {
+  syncCurrentStepFromDOM();
   if (!validateCurrentStep()) return;
 
   if (project.currentStep < project.totalSteps) {
@@ -209,6 +211,7 @@ function goToNextStep() {
 }
 
 function goToPreviousStep() {
+  syncCurrentStepFromDOM();
   if (project.currentStep > 1) {
     project.currentStep--;
     renderStep(project.currentStep);
@@ -221,6 +224,16 @@ function updateProgressBar() {
   if (!progressBar) return;
   const progress = ((project.currentStep - 1) / (project.totalSteps - 1)) * 100;
   progressBar.style.width = `${progress}%`;
+}
+
+function syncCurrentStepFromDOM() {
+  const activeStep = document.querySelector('.step.active');
+  if (activeStep && activeStep.dataset.step) {
+    const parsed = parseInt(activeStep.dataset.step, 10);
+    if (!Number.isNaN(parsed)) {
+      project.currentStep = parsed;
+    }
+  }
 }
 
 // ============================================================================
@@ -241,6 +254,10 @@ function validateCurrentStep() {
       return false;
     }
   } else if (project.currentStep === 2) {
+    const onGoalsPage = !!document.getElementById('businessGoalsList');
+    if (!project.goalsStepVisited || !onGoalsPage) {
+      return true;
+    }
     const hasSelectedBusinessGoal = project.businessGoals.some(goal => goal.selected);
     if (!hasSelectedBusinessGoal) {
       alert('Please select at least one business goal');
@@ -273,18 +290,22 @@ function renderStep(stepNumber) {
   stepElement.classList.add('active');
   form.appendChild(stepElement);
 
+  if (stepNumber === 2) {
+    project.goalsStepVisited = true;
+  }
+
   // ---- Navigation buttons ----
   if (prevBtn) {
     prevBtn.disabled = stepNumber === 1;
     prevBtn.style.display = stepNumber === 1 ? 'none' : 'inline-flex';
   }
 
+  const dashboardBtn = document.getElementById('openDashboardBtn');
+
   if (nextBtn) {
     if (stepNumber === project.totalSteps) {
-      nextBtn.style.display = 'inline-flex';
-      nextBtn.disabled = false;
-      nextBtn.textContent = 'View Dashboard';
-      nextBtn.onclick = openDashboardFromKickoff;
+      nextBtn.style.display = 'none';
+      nextBtn.disabled = true;
     } else {
       nextBtn.style.display = 'inline-flex';
       nextBtn.disabled = false;
@@ -292,6 +313,11 @@ function renderStep(stepNumber) {
         stepNumber === project.totalSteps - 1 ? 'Finish' : 'Next';
       nextBtn.onclick = goToNextStep;
     }
+  }
+
+  if (dashboardBtn) {
+    dashboardBtn.style.display =
+      stepNumber === project.totalSteps ? 'inline-flex' : 'none';
   }
 
   // When we land on the summary step, wire up the summary buttons
@@ -686,14 +712,6 @@ function renderSummaryStep() {
       </div>
     </section>
 
-    <section class="summary-section">
-      <h3>5. Project Dashboard</h3>
-      <p class="help-text">
-    Open the evolving project dashboard based on completed surveys.  
-    Kickoff-only data appears now — midterm and final reviews will enrich it.
-  </p>
-
-  </section>
   `;
 }
 

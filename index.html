@@ -44,8 +44,18 @@
         </form>
 
         <div class="navigation">
-            <button id="prevBtn" class="btn btn-secondary" disabled>Previous</button>
-            <button id="nextBtn" class="btn btn-primary">Next</button>
+            <button type="button" id="prevBtn" class="btn btn-secondary" disabled>Previous</button>
+            <button
+              type="button"
+              id="openDashboardBtn"
+              class="btn btn-primary"
+              style="display:none;"
+              onclick="openDashboardFromKickoff()"
+            >
+              <i class="fa-solid fa-chart-line"></i>
+              View Dashboard
+            </button>
+            <button type="button" id="nextBtn" class="btn btn-primary">Next</button>
         </div>
     </main>
     <script src="script.js"></script>
