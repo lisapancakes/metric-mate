@@ -828,6 +828,14 @@ a.btn-primary:hover {
   text-align: center;
 }
 
+/* Generic numeric alignment helper for all tables */
+table td.numeric,
+table th.numeric,
+.dash-table td.numeric,
+.dash-table th.numeric {
+  text-align: center;
+}
+
 .dash-table th {
   font-weight: 600;
   color: var(--tl-text-primary);

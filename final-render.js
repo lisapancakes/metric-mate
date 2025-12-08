@@ -253,7 +253,7 @@ function renderGoalsTable() {
         <tr class="${g.finalStatus === "discard" || g.midtermStatus === "discard" ? "goal-row--discard" : ""}">
           <td>${g.label || ""}</td>
           <td>${titleCaseTypeFinal(g.type || "")}</td>
-          <td>${g.importance != null ? g.importance : ""}</td>
+          <td class="numeric">${g.importance != null ? g.importance : ""}</td>
           <td>${formatFinalStatus(g.midtermStatus || "")}</td>
           <td>${g.midtermNotes || ""}</td>
           <td>
