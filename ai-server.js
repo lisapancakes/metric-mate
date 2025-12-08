@@ -13,6 +13,12 @@ app.use(express.json());
 
 function getRewriteInstructions(mode, phase) {
   switch (mode) {
+    case "kickoff_internal":
+      return "Rewrite the text as a concise internal project brief for the delivery team. Summarize project context, goals, and current state. Keep it skimmable with short paragraphs and bullets. Do not invent new facts.";
+    case "kickoff_client_email":
+      return "Rewrite the text as a client-facing follow-up email after a project kickoff. Use clear, friendly language, confirm what was aligned on, and list key goals and focus areas. Do not add new promises or dates.";
+    case "kickoff_goal_narratives":
+      return "Rewrite the text as a set of short goal narratives that connect business, product, and user goals. Each narrative should be 1–3 sentences. Where appropriate, phrase them like proto user stories (As a … I want … so that …). Do not invent new goals.";
     case "brief":
       return `
 You are a senior Product Manager creating a project brief that will be pasted into an Asana project.
@@ -74,12 +80,20 @@ Where helpful, incorporate the phase ("${phase || "project"}" such as "kickoff u
 
 app.post('/api/rewrite', async (req, res) => {
   const { text, mode, phase, projectContext } = req.body || {};
+  console.log('[AI] Rewrite request', {
+    mode,
+    phase,
+    textLength: text ? text.length : 0
+  });
 
   if (!text || typeof text !== "string" || !text.trim()) {
     return res.status(400).json({ error: 'Missing "text" in request body.' });
   }
 
   const instructions = getRewriteInstructions(mode, phase);
+  if (!instructions) {
+    return res.status(400).json({ error: `Unsupported mode: ${mode}` });
+  }
 
   const inputParts = [`Original text:\n${text}`];
   if (projectContext && typeof projectContext === "string" && projectContext.trim()) {
@@ -99,8 +113,8 @@ app.post('/api/rewrite', async (req, res) => {
     const rewrittenText = response?.output_text || "";
     res.json({ text: rewrittenText });
   } catch (err) {
-    console.error("[rewrite] error:", err);
-    res.status(500).json({ error: "AI rewrite failed. Check server logs." });
+    console.error("[AI] rewrite error", err);
+    res.status(500).json({ error: "OpenAI error", details: err.message || String(err) });
   }
 });
 
