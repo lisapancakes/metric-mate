@@ -824,7 +824,8 @@ a.btn-primary:hover {
 }
 
 .dash-table .text-center,
-.dash-table th.text-center {
+.dash-table th.text-center,
+.dash-table th .text-center {
   text-align: center;
 }
 
