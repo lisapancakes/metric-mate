@@ -397,7 +397,9 @@ Plain text only, no greetings or sign-offs.`;
 - Do not mention AI, surveys, or data sources.
 - If constraints are not met, rewrite until they are.
 
-SECTION PROMPT — WHAT WE SHIPPED
+SECTION PROMPTS:
+
+1) WHAT WE SHIPPED
 First sentence must begin with:
 "Work to date has focused on"
 
@@ -420,7 +422,9 @@ Focus on completed or in-progress work, not goals or outcomes.
 - Do not mention AI, surveys, or data sources.
 - If constraints are not met, rewrite until they are.
 
-SECTION PROMPT — RESULTS & IMPACT
+SECTION PROMPTS:
+
+2) RESULTS & IMPACT
 First sentence must begin with:
 "Overall progress indicates"
 
@@ -443,7 +447,9 @@ Focus on confidence, momentum, or early signals rather than final outcomes.
 - Do not mention AI, surveys, or data sources.
 - If constraints are not met, rewrite until they are.
 
-SECTION PROMPT — BIGGEST WINS
+SECTION PROMPTS:
+
+3) BIGGEST WINS
 First sentence must begin with:
 "One of the most meaningful gains has been"
 
@@ -466,7 +472,9 @@ Focus on improvements achieved or clarity gained, without hype.
 - Do not mention AI, surveys, or data sources.
 - If constraints are not met, rewrite until they are.
 
-SECTION PROMPT — CHALLENGES
+SECTION PROMPTS:
+
+4) CHALLENGES
 First sentence must begin with:
 "The project is currently constrained by"
 
@@ -490,7 +498,9 @@ Do not suggest solutions or next steps.
 - Do not mention AI, surveys, or data sources.
 - If constraints are not met, rewrite until they are.
 
-SECTION PROMPT — KEY LEARNINGS
+SECTION PROMPTS:
+
+5) KEY LEARNINGS
 First sentence must begin with:
 "The team has learned that"
 
@@ -513,7 +523,9 @@ Focus on realizations or shifts in approach informed by experience.
 - Do not mention AI, surveys, or data sources.
 - If constraints are not met, rewrite until they are.
 
-SECTION PROMPT — NEXT STEPS
+SECTION PROMPTS:
+
+6) NEXT STEPS
 First sentence must begin with:
 "Attention will next move toward"
 
