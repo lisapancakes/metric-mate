@@ -961,15 +961,15 @@ a.btn-primary:hover {
 }
 
 .icon-ai-btn {
-  background: linear-gradient(63deg, #479BD4 16.72%, #3A74B6 83.39%);
-  color: #ffffff;
-  border-color: #3A74B6;
+  background: #f9fafb;
+  color: #3a74b6;
+  border-color: #e5e7eb;
 }
 
 .icon-copy-btn:hover,
 .icon-ai-btn:hover {
-  background: #3a74b6;
-  color: #ffffff;
+  background: #f3f4f6;
+  color: #3a74b6;
 }
 
 .dash-card p {
