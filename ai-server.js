@@ -46,6 +46,45 @@ Tone and format:
 - Do NOT invent new facts, scope, metrics, or timelines.
 `;
 
+const KICKOFF_CLIENT_EMAIL_PROMPT = `
+Rewrite the following text as a client-friendly kickoff summary email.
+
+Audience:
+- External client stakeholders
+- Non-technical, non-design audience
+
+Purpose:
+- Confirm shared understanding after project kickoff
+- Summarize what we heard and agreed on
+- Clearly outline what happens next
+
+Structure the output using ONLY the following sections and headers:
+
+Subject Line
+Greeting
+
+Project Overview
+Key Goals
+What We’ll Be Focusing On
+Next Steps
+
+Guidelines:
+- Use clear, confident, and collaborative language.
+- Frame goals and priorities as shared outcomes ("we", "our team").
+- Do NOT include internal metrics, numeric scores, ratings, or prioritization scales.
+- Do NOT mention user pain points explicitly; instead rephrase them as focus areas or opportunities.
+- Do NOT include internal process notes, risks, or uncertainty unless framed positively and constructively.
+- Do NOT list team members, roles, or internal staffing details.
+- Do NOT invent new commitments, scope, timelines, or deliverables.
+
+Tone and format:
+- Polite, friendly, and professional.
+- Optimistic and reassuring, but not salesy.
+- Use short paragraphs and light bullet points where helpful.
+- Keep the total length appropriate for an email (roughly 120–180 words).
+- Do NOT add a closing signature—assume it will be added by the sender.
+`;
+
 app.use(cors());
 app.use(express.json());
 
@@ -54,7 +93,7 @@ function getRewriteInstructions(mode, phase) {
     case "kickoff_internal":
       return INTERNAL_KICKOFF_PROMPT;
     case "kickoff_client_email":
-      return "Rewrite the text as a client-facing follow-up email after a project kickoff. Use clear, friendly language, confirm what was aligned on, and list key goals and focus areas. Do not add new promises or dates.";
+      return KICKOFF_CLIENT_EMAIL_PROMPT;
     case "kickoff_goal_narratives":
       return "Rewrite the text as a set of short goal narratives that connect business, product, and user goals. Each narrative should be 1–3 sentences. Where appropriate, phrase them like proto user stories (As a … I want … so that …). Do not invent new goals.";
     case "midterm_internal_update":
