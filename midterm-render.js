@@ -212,8 +212,12 @@ function renderStep(step) {
   } else if (step === 3) {
     stepEl.innerHTML = renderNarrativesStep();
   } else if (step === 4) {
-    internalSummary = buildInternalSummary();
-    clientSummary = buildClientSummary();
+    const internalDefault = buildInternalSummary();
+    const clientDefault = buildClientSummary();
+    if (!midtermSummaryState.internalSummary) midtermSummaryState.internalSummary = internalDefault;
+    if (!midtermSummaryState.clientSummary) midtermSummaryState.clientSummary = clientDefault;
+    internalSummary = midtermSummaryState.internalSummary || internalDefault;
+    clientSummary = midtermSummaryState.clientSummary || clientDefault;
     stepEl.innerHTML = renderSummaryStep(internalSummary, clientSummary);
   }
 
@@ -954,6 +958,12 @@ function handleInput(e) {
     case "nextSteps":
       midterm.nextSteps = val;
       break;
+    case "internalSummary":
+      midtermSummaryState.internalSummary = val;
+      break;
+    case "clientSummary":
+      midtermSummaryState.clientSummary = val;
+      break;
   }
 
   if (t.dataset.type === "goal-notes") {
@@ -1122,11 +1132,11 @@ function openDashboardFromMidterm() {
 
 function initMidtermAIButtons() {
   const mappings = [
-    { btnId: "midterm-ai-internal-btn", textareaId: "internalSummary", mode: "midterm_internal_update" },
-    { btnId: "midterm-ai-client-btn", textareaId: "clientSummary", mode: "midterm_client_email" }
+    { btnId: "midterm-ai-internal-btn", textareaId: "internalSummary", mode: "midterm_internal_update", stateKey: "internalSummary" },
+    { btnId: "midterm-ai-client-btn", textareaId: "clientSummary", mode: "midterm_client_email", stateKey: "clientSummary" }
   ];
 
-  mappings.forEach(({ btnId, textareaId, mode }) => {
+  mappings.forEach(({ btnId, textareaId, mode, stateKey }) => {
     const btn = document.getElementById(btnId);
     const ta = document.getElementById(textareaId);
     if (!btn || !ta) return;
@@ -1148,15 +1158,16 @@ function initMidtermAIButtons() {
         return;
       }
 
-    try {
-      const rewritten = await rewriteMidtermWithAI({ mode, text: sourceText });
-      ta.value = rewritten;
-      updateMidtermCopyButtonsVisibility();
-    } catch (e) {
-      console.error("[AI rewrite midterm] error", e);
-      alert("AI could not generate this text. Please try again later.");
-    } finally {
-      btn.disabled = false;
+      try {
+        const rewritten = await rewriteMidtermWithAI({ mode, text: sourceText });
+        ta.value = rewritten;
+        if (stateKey) midtermSummaryState[stateKey] = rewritten;
+        updateMidtermCopyButtonsVisibility();
+      } catch (e) {
+        console.error("[AI rewrite midterm] error", e);
+        alert("AI couldn’t generate a summary right now. Your existing summary is still there.");
+      } finally {
+        btn.disabled = false;
         btn.innerHTML = originalHTML;
       }
     });

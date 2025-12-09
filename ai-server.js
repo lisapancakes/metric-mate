@@ -8,13 +8,51 @@ import OpenAI from 'openai';
 const app = express();
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
+const INTERNAL_KICKOFF_PROMPT = `
+Rewrite the following text as a concise internal project brief for the delivery team (PM, design, engineering).
+
+First, output a **Project Information** section using exactly this header and format:
+
+Project Information
+- Project: [project name]
+- Client: [client name, only if present in the input]
+- Phase: [Kickoff, Midterm, or Final, only if present in the input]
+
+Do NOT include any team members, roles, or staffing details in Project Information or anywhere else unless they are explicitly mentioned in the input, and even then, do not list them as a team roster.
+
+After the Project Information section, structure the remainder of the brief using ONLY the following section headers, in this order:
+- Project Overview
+- Business Goals
+- Product / UX Goals
+- User Goals
+- User Pain Points
+- Current Status & Open Questions
+- Next Steps
+
+Guidelines:
+- Summarize intent and direction, not raw survey data.
+- Within each goal and pain point section, order items by relative importance, with the highest-priority items first.
+- If user pain points are present in the input, list them under **User Pain Points**, not under Current Status.
+- Use qualitative language to reflect priority or severity where helpful, but do NOT include numerical scores, ratings, or scales (for example, do NOT write “importance: 3/5” or “severity: 3/5”).
+- Only include items in "Current Status & Open Questions" if they are explicitly or implicitly mentioned in the input text.
+- Do NOT add any new section headers besides those listed above.
+- Do NOT explain what the brief is, and do NOT add concluding sentences like “This brief provides a snapshot…”.
+
+Tone and format:
+- Factual, neutral, and internal-facing.
+- Use short paragraphs and bullet points for easy scanning.
+- Limit the total length to 150–200 words.
+- If information is missing or unclear for a section, omit that section rather than guessing.
+- Do NOT invent new facts, scope, metrics, or timelines.
+`;
+
 app.use(cors());
 app.use(express.json());
 
 function getRewriteInstructions(mode, phase) {
   switch (mode) {
     case "kickoff_internal":
-      return "Rewrite the text as a concise internal project brief for the delivery team. Summarize project context, goals, and current state. Keep it skimmable with short paragraphs and bullets. Do not invent new facts.";
+      return INTERNAL_KICKOFF_PROMPT;
     case "kickoff_client_email":
       return "Rewrite the text as a client-facing follow-up email after a project kickoff. Use clear, friendly language, confirm what was aligned on, and list key goals and focus areas. Do not add new promises or dates.";
     case "kickoff_goal_narratives":

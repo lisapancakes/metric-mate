@@ -31,6 +31,11 @@ const midterm = {
   nextSteps: ""
 };
 
+const midtermSummaryState = {
+  internalSummary: "",
+  clientSummary: ""
+};
+
 // DOM refs (elements exist because script is loaded at bottom of body)
 const form = document.getElementById("surveyForm");
 const prevBtn = document.getElementById("prevBtn");

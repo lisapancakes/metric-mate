@@ -19,6 +19,10 @@ const finalState = {
 
 let finalGoals = [];
 let finalMetaExpanded = false;
+const finalSummaryState = {
+  finalSummary: "",
+  finalClientSummary: ""
+};
 
 function $(id) {
   return document.getElementById(id);

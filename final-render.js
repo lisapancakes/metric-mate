@@ -130,6 +130,13 @@ function handleInput(e) {
     return;
   }
 
+  if (id === "finalSummary") {
+    finalSummaryState.finalSummary = val;
+  }
+  if (id === "finalClientSummary") {
+    finalSummaryState.finalClientSummary = val;
+  }
+
   updateSummary();
   updateFinalCopyButtonsVisibility();
 }
@@ -194,11 +201,25 @@ function updateSummary() {
   if (!summaryEl) return;
 
   const summaryText = buildFinalSummary();
+  if (!finalSummaryState.finalSummary) finalSummaryState.finalSummary = summaryText;
   summaryEl.dataset.original = summaryText;
   if (summaryEl.dataset.aiFilled === "true") {
     // Preserve AI-generated text
   } else {
-    summaryEl.value = "";
+    summaryEl.value = finalSummaryState.finalSummary || summaryText;
+  }
+
+  const clientEl = $("finalClientSummary");
+  if (clientEl) {
+    const clientDefault = clientEl.dataset.original || "";
+    if (!finalSummaryState.finalClientSummary) {
+      finalSummaryState.finalClientSummary = clientDefault;
+    }
+    if (clientEl.dataset.aiFilled === "true") {
+      // keep AI text
+    } else {
+      clientEl.value = finalSummaryState.finalClientSummary || clientDefault || "";
+    }
   }
 
   saveDashboardPayload(summaryText);
@@ -300,6 +321,11 @@ async function triggerFinalAIRewrite({ btnId, textareaId, mode, placeholderFallb
 
     ta.value = rewritten;
     ta.dataset.aiFilled = "true";
+    if (ta.id === "finalSummary") {
+      finalSummaryState.finalSummary = rewritten;
+    } else if (ta.id === "finalClientSummary") {
+      finalSummaryState.finalClientSummary = rewritten;
+    }
     updateFinalCopyButtonsVisibility();
   } catch (err) {
     console.error("[AI rewrite final] error", err);

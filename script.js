@@ -19,6 +19,12 @@ const project = {
   userPains: []
 };
 
+const kickoffSummaryState = {
+  internalSummary: "",
+  clientSummary: "",
+  goalNarratives: ""
+};
+
 // Directory for dropdowns
 const directory = {
   clients: ['Chatsworth', 'Sabbatical Homes', 'WGAW'],
@@ -602,14 +608,22 @@ function renderSummaryStep() {
   const selectedUserGoals = project.userGoals.filter(g => g.selected);
   const selectedUserPains = project.userPains.filter(p => p.selected);
 
-  const internalSummary = buildInternalSummary(project, directory);
-  const clientSummary = buildClientSummary(project, directory);
-  const goalNarratives = buildGoalNarratives(
+  const internalSummaryDefault = buildInternalSummary(project, directory);
+  const clientSummaryDefault = buildClientSummary(project, directory);
+  const goalNarrativesDefault = buildGoalNarratives(
     selectedBusinessGoals,
     selectedProductGoals,
     selectedUserGoals,
     selectedUserPains
   );
+
+  if (!kickoffSummaryState.internalSummary) kickoffSummaryState.internalSummary = internalSummaryDefault;
+  if (!kickoffSummaryState.clientSummary) kickoffSummaryState.clientSummary = clientSummaryDefault;
+  if (!kickoffSummaryState.goalNarratives) kickoffSummaryState.goalNarratives = goalNarrativesDefault;
+
+  const internalSummary = kickoffSummaryState.internalSummary || internalSummaryDefault;
+  const clientSummary = kickoffSummaryState.clientSummary || clientSummaryDefault;
+  const goalNarratives = kickoffSummaryState.goalNarratives || goalNarrativesDefault;
 
   return `
     <h2>Review & Share</h2>
@@ -747,14 +761,14 @@ async function rewriteWithAI({ mode, phase, text, projectContext }) {
 
 function initKickoffAIButtons() {
   const mappings = [
-    { btnId: "kickoff-ai-internal-btn", textareaId: "kickoff-internal-summary", mode: "kickoff_internal" },
-    { btnId: "kickoff-ai-client-btn", textareaId: "kickoff-client-summary", mode: "kickoff_client_email" },
-    { btnId: "kickoff-ai-goals-btn", textareaId: "kickoff-goal-narratives", mode: "kickoff_goal_narratives" }
+    { btnId: "kickoff-ai-internal-btn", textareaId: "kickoff-internal-summary", mode: "kickoff_internal", stateKey: "internalSummary" },
+    { btnId: "kickoff-ai-client-btn", textareaId: "kickoff-client-summary", mode: "kickoff_client_email", stateKey: "clientSummary" },
+    { btnId: "kickoff-ai-goals-btn", textareaId: "kickoff-goal-narratives", mode: "kickoff_goal_narratives", stateKey: "goalNarratives" }
   ];
 
   const projectContext = buildProjectContextForKickoff();
 
-  mappings.forEach(({ btnId, textareaId, mode }) => {
+  mappings.forEach(({ btnId, textareaId, mode, stateKey }) => {
     const btn = document.getElementById(btnId);
     const ta = document.getElementById(textareaId);
     if (!btn || !ta) return;
@@ -787,10 +801,12 @@ function initKickoffAIButtons() {
         });
         ta.value = rewritten;
         ta.dataset.aiFilled = "true";
+        ta.dataset.original = ta.dataset.original || rewritten;
+        if (stateKey) kickoffSummaryState[stateKey] = rewritten;
         updateCopyButtonsVisibility();
       } catch (e) {
         console.error("[AI rewrite] error", e);
-        alert("AI could not generate this text. Please try again later.");
+        alert("AI couldn’t generate a summary right now. Your existing summary is still there.");
       } finally {
         btn.disabled = false;
         btn.innerHTML = originalHTML || originalText;
