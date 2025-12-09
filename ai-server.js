@@ -55,8 +55,9 @@ Audience:
 
 Purpose:
 - Confirm shared understanding after project kickoff
-- Summarize what we heard and agreed on
-- Clearly outline what happens next
+- Reflect back the goals we captured together
+- Clearly outline the challenges/pain points we’ll be addressing
+- Explain what happens next
 
 Structure the output using ONLY the following sections and headers:
 
@@ -64,24 +65,23 @@ Subject Line
 Greeting
 
 Project Overview
-Key Goals
-What We’ll Be Focusing On
+Goals & Focus Areas
+User Challenges & Pain Points
 Next Steps
 
 Guidelines:
-- Use clear, confident, and collaborative language.
-- Frame goals and priorities as shared outcomes ("we", "our team").
+- Include all stated goals (business, product/UX, and user goals). You may group related goals together, but do not omit any.
+- Include all stated user pain points, phrased clearly and constructively so the client feels understood rather than blamed.
+- Use clear, confident, and collaborative language, framing goals and challenges as shared work ("we", "our team").
 - Do NOT include internal metrics, numeric scores, ratings, or prioritization scales.
-- Do NOT mention user pain points explicitly; instead rephrase them as focus areas or opportunities.
-- Do NOT include internal process notes, risks, or uncertainty unless framed positively and constructively.
-- Do NOT list team members, roles, or internal staffing details.
-- Do NOT invent new commitments, scope, timelines, or deliverables.
+- Do NOT include internal process notes, internal risks, or staffing details.
+- Do NOT invent new commitments, scope, timelines, or deliverables that are not present in the input.
 
 Tone and format:
 - Polite, friendly, and professional.
-- Optimistic and reassuring, but not salesy.
+- Empathetic when describing user challenges (“We heard that users often…”).
 - Use short paragraphs and light bullet points where helpful.
-- Keep the total length appropriate for an email (roughly 120–180 words).
+- Keep the total length appropriate for an email (roughly 150–200 words).
 - Do NOT add a closing signature—assume it will be added by the sender.
 `;
 
