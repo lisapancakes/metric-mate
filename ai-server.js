@@ -47,72 +47,88 @@ Tone and format:
 `;
 
 const KICKOFF_CLIENT_EMAIL_PROMPT = `
-Rewrite the following text as a client-friendly kickoff summary email.
+Rewrite the following text as a client-facing kickoff summary email.
 
 Audience:
 - External client stakeholders
 - Non-technical, non-design audience
 
 Purpose:
-- Confirm shared understanding after project kickoff
-- Reflect back the goals we captured together
-- Clearly outline the challenges/pain points we’ll be addressing
-- Explain what happens next
+- Confirm shared understanding after the kickoff
+- Reflect back ALL goals and ALL user challenges discussed
+- Clearly communicate what happens next
 
-Structure the output using ONLY the following sections and headers:
+Structure the email using the sections below. You may adjust wording slightly for flow, but do NOT omit any sections:
 
 Subject Line
+ 
 Greeting
 
-Project Overview
-Goals & Focus Areas
-User Challenges & Pain Points
-Next Steps
+Project Overview  
+Briefly summarize the purpose of the project and what we aligned on during the kickoff.
 
-Guidelines:
-- Include all stated goals (business, product/UX, and user goals). You may group related goals together, but do not omit any.
-- Include all stated user pain points, phrased clearly and constructively so the client feels understood rather than blamed.
-- Use clear, confident, and collaborative language, framing goals and challenges as shared work ("we", "our team").
-- Do NOT include internal metrics, numeric scores, ratings, or prioritization scales.
-- Do NOT include internal process notes, internal risks, or staffing details.
-- Do NOT invent new commitments, scope, timelines, or deliverables that are not present in the input.
+Goals & Focus Areas  
+Reflect ALL goals captured in the kickoff, including:
+- Business goals
+- Product / UX goals
+- User goals  
+You may group or rephrase them for clarity, but do NOT omit any.
+
+User Challenges & Pain Points  
+Reflect ALL user pain points discussed.  
+Phrase them empathetically and constructively (for example: “We heard that users often…”), and frame them as opportunities to improve the experience.
+
+Next Steps  
+List 2–4 clear, high-level next steps that outline how the team will move forward.  
+Next steps should feel concrete and reassuring, but should not introduce new scope or timelines beyond what was discussed.
+
+Rules:
+- Do NOT include numeric scores, ratings, or prioritization scales.
+- Do NOT include internal-only process details, tools, or risks.
+- Do NOT invent new commitments, features, or timelines.
+- Names and signatures are allowed only if present in the input text.
 
 Tone and format:
-- Polite, friendly, and professional.
-- Empathetic when describing user challenges (“We heard that users often…”).
-- Use short paragraphs and light bullet points where helpful.
-- Keep the total length appropriate for an email (roughly 150–200 words).
-- Do NOT add a closing signature—assume it will be added by the sender.
+- Friendly, professional, and confident.
+- Collaborative and reassuring (“we”, “our team”, “working together”).
+- Use short paragraphs and bullet points for clarity.
+- Clear and reassuring, not salesy.
+- Use short paragraphs and bullet points where helpful.
+- Keep total length appropriate for an email (roughly 150–220 words).
 `;
 
 const KICKOFF_GOAL_NARRATIVES_PROMPT = `
-Rewrite the following text as a concise internal “Goal Narratives” section for the project kickoff.
+Rewrite the following text as concise kickoff user stories.
 
 Audience:
 - Internal delivery team (PM, design, engineering)
 
 Purpose:
-- Translate discrete goals into a clear, narrative description of what we are aiming to achieve with this project.
-- Help the team quickly recall the “why” behind the work.
+- Translate kickoff goals and pain points into clear, actionable user stories
+- Create shared clarity on who we are building for and why
 
-Structure the output using ONLY the following section headers, in this order:
+Structure the output using ONLY the following sections and headers, in this order:
 
-Business Goals
-Product / UX Goals
-User Goals
+Business User Stories  
+Product / UX User Stories  
+End User Stories  
 
 Guidelines:
-- Summarize intent and outcomes, not raw survey data.
-- Within each section, group related goals together into short, readable paragraphs or bullet lists.
-- Order goals by relative importance, with the highest-priority goals first.
-- Do NOT include numerical scores, ratings, or scales (e.g., 1–5, "3/5", "severity").
-- Do NOT invent new goals, metrics, scope, or timelines.
-- Do NOT restate every checkbox verbatim; combine and simplify where helpful.
+- Use standard user story format:
+  “As a [role], I want [capability], so that [outcome].”
+- Each story should focus on a single intent or outcome.
+- Include ALL goals and relevant pain points from the input.
+- Pain points should be reflected as motivations in the “so that” clause, not as a separate section.
+- Group related stories together within each section.
+- Order stories by relative importance, highest priority first.
+- Keep stories concise and readable.
+- Do NOT include numerical scores, ratings, or metrics.
+- Do NOT invent new roles, scope, or requirements not present in the input.
 
 Tone and format:
-- Factual, neutral, and internal-facing.
-- Use short paragraphs and bullets for easy scanning.
-- Keep the total length to roughly 120–180 words.
+- Clear, practical, and delivery-oriented.
+- Use numbered or bulleted lists for easy scanning.
+- Keep total length to roughly 120–180 words.
 `;
 
 app.use(cors());
