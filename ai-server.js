@@ -182,9 +182,96 @@ Keep it concise and easy to scan.
 Do not invent metrics, timelines, or commitments.
 `;
     case "final_internal_update":
-      return "You are a project management assistant writing a final wrap-up note for the project’s Asana card. Using the project context, final review goals table, and narrative answers, write a concise internal summary. Tone: honest, reflective, internal. Start with a 1–2 sentence overview of outcomes vs original goals. Add a “Goal outcomes” section grouped by Business / Product / User; for each key goal mention final status and important notes provided. Add a “Biggest wins” section with 3–5 bullets. Add a “Challenges / misses” section with 2–5 bullets from the input only. Add a “Key learnings & recommendations” section with 3–5 bullets paraphrasing provided learnings; don’t invent new ones. Keep under 280 words. Plain text only.";
+      return `Rewrite the project data and survey responses as a clear **final internal project summary** for the delivery team.
+
+### Goals for the output
+- Audience: internal PMs, designers, engineers, and leadership.
+- Tone: honest, concise, and neutral (not salesy).
+- Style: American English, skimmable, and suitable for internal tools like Asana, Confluence, or team docs.
+
+### Structure
+1. **Project Information**
+- List on separate lines: Project, Client, PM, Product Designer, and Lead Developer (if available).
+
+2. **Final Outcome**
+- 1–2 short sentences summarizing how the project concluded overall.
+- If an overall health or progress score exists, translate it into plain language (e.g., “Overall health: 4/5 — generally on track with a few follow-up items”).
+- Do not invent scores or outcomes.
+
+3. **What We Delivered**
+- Bullet list of the main features, improvements, or deliverables that were actually shipped.
+
+4. **Goals & Results**
+- Group goals by type and clearly communicate which were met, partially met, or not met.
+- Use the following sub-sections in this order:
+  - **Business Goals**
+  - **Product / UX Goals**
+  - **User Goals**
+- Mention importance or rating values only when they help explain outcomes. Do not invent numbers.
+
+5. **User Pain Points & Insights**
+- Summarize the most meaningful user pain points and what the team learned by the end of the project.
+
+6. **Risks / Issues to Watch**
+- Bullet list of any remaining risks, technical debt, or unresolved concerns.
+
+7. **Recommended Next Steps**
+- Bullet list of clear, actionable follow-ups (e.g., “Plan Phase 2 for X”, “Run usability testing for Y”).
+
+### Formatting rules
+- Use clean Markdown headings (\`\`##\`\`).
+- Headings should be followed immediately by content (no extra blank line before bullets).
+- Do not invent facts, features, or metrics. If data is missing or unclear, omit it.`;
     case "final_client_email":
-      return "You are a PM writing a final recap email at the end of the project. Using the final review inputs, draft a client-facing email that summarizes what was delivered, highlights impact and wins, and mentions agreed next steps. Tone: appreciative, clear, confident, no hype. Start with a “Subject:” line. Open with a brief thank-you and 1–2 sentence summary of the project outcome. Include 3–6 bullets for major releases or changes shipped and key improvements for users or the business (only if present). Briefly acknowledge limitations or “not in scope” items only if explicitly in the input. Finish with 2–4 “Next steps / follow-ups” bullets based on provided notes. Do not promise anything not already mentioned. Keep under 250 words. Plain text email only.";
+      return `Write a **final client-facing wrap-up email** summarizing how the project ended.
+
+### Goals for the output
+- Audience: client stakeholders.
+- Tone: warm, professional, and honest.
+- Style: American English, easy to skim in an email.
+
+### Content & structure
+1. **Subject line**
+- Use a clear subject such as:
+  - “Final Project Wrap-Up – [Project Name]”
+  - “Project Summary and Next Steps – [Project Name]”
+
+2. **Greeting**
+- Start with a friendly greeting using the client name from input (e.g., “Hi Chatsworth Team,”).
+
+3. **Opening paragraph**
+- 2–3 sentences thanking the client for the collaboration and framing this as the final project summary.
+
+4. **What We Delivered**
+- Bullet list of the most important, client-visible outcomes or improvements.
+- Avoid internal or technical implementation details.
+
+5. **Impact on Goals & Users**
+- Briefly explain how the project addressed:
+  - Business goals
+  - Product / UX improvements
+  - User needs
+- Translate any ratings or scores into plain language. Do not display raw numbers unless provided as final metrics.
+
+6. **Remaining Items / Next Steps**
+- Short bullet list of recommended follow-up work or Phase 2 opportunities.
+- Frame constructively (e.g., “We recommend…”, “A potential next step would be…”).
+
+7. **Closing and Signature**
+- Close with a positive, forward-looking statement.
+- Always use this fixed signature:
+  - `Best,`
+  - `Josh`
+  - `The Thinklogic Team`
+
+### Formatting rules
+- Use bold section labels inside the email body (not headings), for example:
+  - **What We Delivered:**
+  - **Impact on Goals & Users:**
+  - **Next Steps:**
+- Do not insert blank lines between labels and their bullet lists.
+- Do not reference surveys, forms, or internal tooling.
+- Do not invent features, outcomes, or commitments.`;
     case "brief":
       return `
 You are a senior Product Manager creating a project brief that will be pasted into an Asana project.
