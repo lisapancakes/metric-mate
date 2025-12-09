@@ -85,6 +85,36 @@ Tone and format:
 - Do NOT add a closing signature—assume it will be added by the sender.
 `;
 
+const KICKOFF_GOAL_NARRATIVES_PROMPT = `
+Rewrite the following text as a concise internal “Goal Narratives” section for the project kickoff.
+
+Audience:
+- Internal delivery team (PM, design, engineering)
+
+Purpose:
+- Translate discrete goals into a clear, narrative description of what we are aiming to achieve with this project.
+- Help the team quickly recall the “why” behind the work.
+
+Structure the output using ONLY the following section headers, in this order:
+
+Business Goals
+Product / UX Goals
+User Goals
+
+Guidelines:
+- Summarize intent and outcomes, not raw survey data.
+- Within each section, group related goals together into short, readable paragraphs or bullet lists.
+- Order goals by relative importance, with the highest-priority goals first.
+- Do NOT include numerical scores, ratings, or scales (e.g., 1–5, "3/5", "severity").
+- Do NOT invent new goals, metrics, scope, or timelines.
+- Do NOT restate every checkbox verbatim; combine and simplify where helpful.
+
+Tone and format:
+- Factual, neutral, and internal-facing.
+- Use short paragraphs and bullets for easy scanning.
+- Keep the total length to roughly 120–180 words.
+`;
+
 app.use(cors());
 app.use(express.json());
 
@@ -95,7 +125,7 @@ function getRewriteInstructions(mode, phase) {
     case "kickoff_client_email":
       return KICKOFF_CLIENT_EMAIL_PROMPT;
     case "kickoff_goal_narratives":
-      return "Rewrite the text as a set of short goal narratives that connect business, product, and user goals. Each narrative should be 1–3 sentences. Where appropriate, phrase them like proto user stories (As a … I want … so that …). Do not invent new goals.";
+      return KICKOFF_GOAL_NARRATIVES_PROMPT;
     case "midterm_internal_update":
       return "Rewrite the text as a concise internal mid-project update for Asana. Start with a one-line overview of health and progress vs plan, then status by goal (Business/Product/User), then risks/issues (only those provided), and next steps until final review. Do not invent new facts or risks.";
     case "midterm_client_email":
