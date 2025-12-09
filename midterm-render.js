@@ -122,15 +122,15 @@ function initMidterm() {
 
   // Wire up navigation
   if (prevBtn) prevBtn.addEventListener("click", goToPreviousStep);
-  if (nextBtn) nextBtn.addEventListener("click", goToNextStep);
+  if (nextBtn) {
+    nextBtn.onclick = (e) => {
+      e.preventDefault();
+      goToNextStep();
+    };
+  }
 
   // Form events
   if (form) {
-    form.addEventListener("submit", (e) => {
-      e.preventDefault();
-      goToNextStep();
-    });
-
     form.addEventListener("change", handleChange);
     form.addEventListener("input", handleInput);
     form.addEventListener("click", handleClick);
@@ -243,7 +243,10 @@ function renderStep(step) {
       nextBtn.disabled = false;
       nextBtn.textContent =
         step === midterm.totalSteps - 1 ? "Finish" : "Next";
-      nextBtn.onclick = goToNextStep;
+      nextBtn.onclick = (e) => {
+        e.preventDefault();
+        goToNextStep();
+      };
     }
   }
   if (dashboardBtn) {

@@ -700,16 +700,72 @@ a.btn-primary:hover {
 .dashboard-header h1 {
   font-size: 1.5rem;
   font-weight: 600;
-  margin-bottom: 1.5rem;
+  margin-bottom: 1rem;
   text-align: left;
 }
 
 .dashboard-subtitle {
   font-size: 1.1rem;
   font-weight: 600;
-  margin-top: -0.75rem;
-  margin-bottom: 1rem;
   color: #111827;
+  display: inline-flex;
+  align-items: center;
+}
+
+.dashboard-title-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 0.85rem;
+  flex-wrap: wrap;
+}
+
+.dashboard-title-group {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.dashboard-title-divider {
+  display: inline-flex;
+  align-items: center;
+}
+
+.project-status-chip {
+  display: inline-flex;
+  align-items: center;
+  height: 28px;
+  padding: 0 0.65rem;
+  border-radius: 999px;
+  font-size: 0.85rem;
+  font-weight: 500;
+  line-height: 1;
+  border: 1px solid transparent;
+}
+
+.project-status-chip.chip-primary {
+  background: #e0e7ff;
+  color: #1d4ed8;
+  border-color: #c7d2fe;
+}
+
+.project-status-chip.chip-info {
+  background: #dbeafe;
+  color: #1d4ed8;
+  border-color: #bfdbfe;
+}
+
+.project-status-chip.chip-success {
+  background: #d1fae5;
+  color: #065f46;
+  border-color: #a7f3d0;
+}
+
+.project-status-chip.chip-muted {
+  background: #fef3c7;
+  color: #92400e;
+  border-color: #fde68a;
 }
 
 .dashboard-top-grid {
@@ -839,6 +895,79 @@ a.btn-primary:hover {
 .dash-card h3 {
   margin: 0;
   font-size: 1rem;
+}
+
+.dash-card-heading {
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+}
+
+.dash-card-heading-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+
+.dash-actions {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.dash-card-heading .ai-helper,
+.ai-helper {
+  font-size: 0.82rem;
+  color: #6b7280;
+  margin: 0.1rem 0 0.35rem;
+}
+
+.icon-copy-btn,
+.icon-ai-btn {
+  border: 1px solid #e5e7eb;
+  background: #f9fafb;
+  color: #4b5563;
+  border-radius: 8px;
+  width: 32px;
+  height: 32px;
+  justify-content: center;
+  font-size: 0.85rem;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 0;
+}
+
+.icon-revert-btn {
+  border: 1px solid #e5e7eb;
+  background: #f9fafb;
+  color: #4b5563;
+  border-radius: 8px;
+  width: 32px;
+  height: 32px;
+  justify-content: center;
+  font-size: 0.85rem;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 0;
+}
+
+.icon-svg {
+  width: 14px;
+  height: 14px;
+  fill: currentColor;
+}
+
+.icon-ai-btn {
+  background: #eef2ff;
+  color: #4338ca;
+}
+
+.icon-copy-btn:hover,
+.icon-ai-btn:hover {
+  background: #f3f4f6;
 }
 
 .dash-card p {

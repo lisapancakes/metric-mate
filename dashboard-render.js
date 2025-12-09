@@ -16,6 +16,9 @@ function renderDashboard(rawData) {
   const titleEl = document.getElementById("dashboardProjectTitle");
   const statusListEl = document.getElementById("statusList");
   const metaListEl = document.getElementById("metaList");
+  const clientTitleEl = document.getElementById("dashboardClientTitle");
+  const titleDividerEl = document.querySelector(".dashboard-title-divider");
+  const projectStatusChip = document.getElementById("projectStatusChip");
 
   const dashOutcomes = document.getElementById("dashOutcomes");
   const dashResults = document.getElementById("dashResults");
@@ -25,6 +28,30 @@ function renderDashboard(rawData) {
   const dashNextSteps = document.getElementById("dashNextSteps");
   const dashSummaryText = document.getElementById("dashSummaryText");
   const summaryCard = dashSummaryText ? dashSummaryText.closest(".dash-card") : null;
+  const aiHelpers = {
+    outcomes: document.querySelector('[data-ai-helper-for="dashOutcomes"]'),
+    results: document.querySelector('[data-ai-helper-for="dashResults"]'),
+    wins: document.querySelector('[data-ai-helper-for="dashWins"]'),
+    challenges: document.querySelector('[data-ai-helper-for="dashChallenges"]'),
+    learnings: document.querySelector('[data-ai-helper-for="dashLearnings"]'),
+    nextSteps: document.querySelector('[data-ai-helper-for="dashNextSteps"]')
+  };
+  const originalSections = {
+    outcomes: "",
+    results: "",
+    wins: "",
+    challenges: "",
+    learnings: "",
+    nextSteps: ""
+  };
+  const aiGeneratedState = {
+    outcomes: false,
+    results: false,
+    wins: false,
+    challenges: false,
+    learnings: false,
+    nextSteps: false
+  };
 
   if (app) app.innerHTML = "";
 
@@ -94,6 +121,187 @@ function renderDashboard(rawData) {
   // --- Header: title, meta, dates ---
   if (titleEl) {
     titleEl.textContent = project.name || "Untitled Project";
+  }
+  if (clientTitleEl) {
+    clientTitleEl.textContent = project.client || "";
+    clientTitleEl.style.display = project.client ? "inline-flex" : "none";
+  }
+  if (titleDividerEl) {
+    titleDividerEl.style.display = project.client ? "inline-flex" : "none";
+  }
+  if (projectStatusChip) {
+    let chipText = "Kickoff In Progress";
+    let chipClass = "chip-muted";
+    if (hasFinal) {
+      chipText = "Completed";
+      chipClass = "chip-success";
+    } else if (hasMidterm) {
+      chipText = "Midterm Completed";
+      chipClass = "chip-info";
+    } else if (kickoff) {
+      chipText = "Kickoff Completed";
+      chipClass = "chip-primary";
+    }
+    projectStatusChip.textContent = chipText;
+    projectStatusChip.className = `project-status-chip ${chipClass}`;
+    projectStatusChip.style.display = "inline-flex";
+  }
+
+  function helperKeyForTarget(targetId) {
+    switch (targetId) {
+      case "dashOutcomes":
+        return "outcomes";
+      case "dashResults":
+        return "results";
+      case "dashWins":
+        return "wins";
+      case "dashChallenges":
+        return "challenges";
+      case "dashLearnings":
+        return "learnings";
+      case "dashNextSteps":
+        return "nextSteps";
+      default:
+        return null;
+    }
+  }
+
+  function modeForTarget(targetId) {
+    switch (targetId) {
+      case "dashOutcomes":
+        return "dashboard_outcomes_card";
+      case "dashResults":
+        return "dashboard_results_card";
+      case "dashWins":
+        return "dashboard_wins_card";
+      case "dashChallenges":
+        return "dashboard_challenges_card";
+      case "dashLearnings":
+        return "dashboard_learnings_card";
+      case "dashNextSteps":
+        return "dashboard_nextsteps_card";
+      default:
+        return null;
+    }
+  }
+
+  function setAIHelper(key, generated) {
+    const helperEl = aiHelpers[key];
+    if (!helperEl) return;
+    const isGenerated = generated !== undefined ? generated : aiGeneratedState[key];
+    helperEl.textContent = isGenerated ? "AI-generated draft · editable" : "AI draft not generated";
+  }
+
+  function recordOriginal(key, value) {
+    if (!key) return;
+    if (originalSections[key]) return;
+    originalSections[key] = value || "";
+  }
+
+  function wireCopyButtons() {
+    const copyButtons = document.querySelectorAll(".icon-copy-btn");
+    copyButtons.forEach((btn) => {
+      if (btn.dataset.copyWired === "1") return;
+      btn.dataset.copyWired = "1";
+      const targetId = btn.dataset.copyTarget;
+      btn.addEventListener("click", () => {
+        const target = document.getElementById(targetId);
+        if (!target) return;
+        const val = (target.textContent || "").trim();
+        if (!val) return;
+        const prev = btn.innerHTML;
+        const onCopied = () => {
+          btn.innerHTML = '<i class="fa-regular fa-copy"></i> Copied';
+          setTimeout(() => (btn.innerHTML = prev), 900);
+        };
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+          navigator.clipboard.writeText(val).then(onCopied).catch(() => {});
+        }
+      });
+    });
+  }
+
+  function wireRevertButtons() {
+    const revertButtons = document.querySelectorAll(".icon-revert-btn");
+    revertButtons.forEach((btn) => {
+      if (btn.dataset.revertWired === "1") return;
+      btn.dataset.revertWired = "1";
+      const targetId = btn.dataset.revertTarget;
+      btn.addEventListener("click", () => {
+        const key = helperKeyForTarget(targetId);
+        const target = document.getElementById(targetId);
+        if (!key || !target) return;
+        if (originalSections[key]) {
+          target.textContent = originalSections[key];
+          aiGeneratedState[key] = false;
+          setAIHelper(key, false);
+        }
+      });
+    });
+  }
+
+  async function rewriteDashboardSection(targetId) {
+    const target = document.getElementById(targetId);
+    const btn = document.querySelector(`.icon-ai-btn[data-ai-target="${targetId}"]`);
+    if (!target || !btn) return;
+
+    const helperKey = helperKeyForTarget(targetId);
+    const mode = modeForTarget(targetId);
+    if (!mode) return;
+    const original = btn.innerHTML;
+    btn.disabled = true;
+    btn.innerHTML = '<i class="fa-solid fa-robot"></i> …';
+
+    const sourceText = (target.textContent || "").trim();
+    if (!sourceText) {
+      alert("No content to rewrite yet.");
+      btn.disabled = false;
+      btn.innerHTML = original;
+      return;
+    }
+    if (helperKey) {
+      recordOriginal(helperKey, sourceText);
+    }
+
+    try {
+      const base = window.location.protocol === "file:" ? "http://localhost:3001" : "";
+      const res = await fetch(`${base}/api/rewrite`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          mode,
+          phase: "dashboard",
+          text: sourceText,
+          projectContext: ""
+        })
+      });
+      if (!res.ok) throw new Error(`AI rewrite failed: ${res.status}`);
+      const json = await res.json();
+      if (!json || typeof json.text !== "string") throw new Error("Invalid AI response");
+      target.textContent = json.text.trim();
+      if (helperKey) {
+        aiGeneratedState[helperKey] = true;
+        setAIHelper(helperKey, true);
+      }
+    } catch (err) {
+      console.error("AI rewrite failed", err);
+      alert("AI could not generate this text. Please try again later.");
+    } finally {
+      btn.disabled = false;
+      btn.innerHTML = original;
+    }
+  }
+
+  function wireAIButtons() {
+    const aiButtons = document.querySelectorAll(".icon-ai-btn");
+    aiButtons.forEach((btn) => {
+      if (btn.dataset.aiWired === "1") return;
+      btn.dataset.aiWired = "1";
+      btn.addEventListener("click", () => {
+        const targetId = btn.dataset.aiTarget;
+        rewriteDashboardSection(targetId);
+      });
+    });
   }
 
   // Status list with traffic lights
@@ -288,30 +496,58 @@ function renderDashboard(rawData) {
 
   // If we have final data, show that (full project view)
   if (hasFinal) {
+    const completedFinalGoals = goals.filter(g => (g.finalStatus || "").toLowerCase() === "completed");
+    const highestImportance = completedFinalGoals.reduce(
+      (max, g) => (g.importance != null && !Number.isNaN(Number(g.importance)) ? Math.max(max, Number(g.importance)) : max),
+      -Infinity
+    );
+    const topCompletedGoals =
+      highestImportance === -Infinity
+        ? []
+        : completedFinalGoals.filter(g => Number(g.importance) === highestImportance);
+
     if (summaryCard) summaryCard.style.display = "block";
     if (dashOutcomes) {
-      dashOutcomes.textContent = (final.outcomes && final.outcomes.trim()) || "No Final Outcomes Captured Yet.";
+      dashOutcomes.textContent =
+        completedFinalGoals.length
+          ? completedFinalGoals.map(g => g.label).join(" • ")
+          : (final.outcomes && final.outcomes.trim()) || "No final outcomes provided";
+      recordOriginal("outcomes", dashOutcomes.textContent);
     }
     if (dashResults) {
-      dashResults.textContent = (final.results && final.results.trim()) || "No Final Results Captured Yet.";
+      dashResults.textContent = (final.results && final.results.trim()) || "No final results provided";
+      recordOriginal("results", dashResults.textContent);
     }
     if (dashWins) {
-      dashWins.textContent = (final.wins && final.wins.trim()) || "No Biggest Wins Captured Yet.";
+      dashWins.textContent =
+        topCompletedGoals.length
+          ? topCompletedGoals.map(g => g.label).join(" • ")
+          : (final.wins && final.wins.trim()) || "No wins provided";
+      recordOriginal("wins", dashWins.textContent);
     }
     if (dashChallenges) {
-      dashChallenges.textContent = (final.challenges && final.challenges.trim()) || "No Final Challenges Captured Yet.";
+      dashChallenges.textContent = (final.challenges && final.challenges.trim()) || "No challenges provided";
+      recordOriginal("challenges", dashChallenges.textContent);
     }
     if (dashLearnings) {
-      dashLearnings.textContent = (final.learnings && final.learnings.trim()) || "No Final Learnings Captured Yet.";
+      dashLearnings.textContent = (final.learnings && final.learnings.trim()) || "No learnings provided";
+      recordOriginal("learnings", dashLearnings.textContent);
     }
     if (dashNextSteps) {
-      dashNextSteps.textContent = (final.nextSteps && final.nextSteps.trim()) || "No Final Next Steps Captured Yet.";
+      dashNextSteps.textContent = (final.nextSteps && final.nextSteps.trim()) || "No next steps provided";
+      recordOriginal("nextSteps", dashNextSteps.textContent);
     }
     if (dashSummaryText) {
       dashSummaryText.textContent =
         (finalSummary && finalSummary.trim()) ||
-        "No Final Summary Captured Yet. Complete the Final Review Survey to Generate One.";
+        "No final summary provided";
     }
+    ["outcomes", "results", "wins", "challenges", "learnings", "nextSteps"].forEach(k =>
+      setAIHelper(k, aiGeneratedState[k])
+    );
+    wireCopyButtons();
+    wireAIButtons();
+    wireRevertButtons();
     return;
   }
 
@@ -319,24 +555,53 @@ function renderDashboard(rawData) {
   if (hasMidterm) {
     if (summaryCard) summaryCard.style.display = "none";
 
+    const midtermCompleted = Array.isArray(midterm.goalStatuses)
+      ? midterm.goalStatuses.filter(r => (r.status || "").toLowerCase() === "completed")
+      : [];
+
     if (dashOutcomes) {
-      dashOutcomes.textContent =
-        midterm.healthScore != null
-          ? `Project Health: ${midterm.healthScore}/5`
-          : "No Data Provided During Midterm.";
+      if (midtermCompleted.length) {
+        dashOutcomes.textContent = midtermCompleted.map(g => g.label).join(" • ");
+      } else {
+        dashOutcomes.textContent =
+          midterm.healthScore != null
+            ? `Project Health: ${midterm.healthScore}/5`
+            : "No midterm data provided";
+      }
+      recordOriginal("outcomes", dashOutcomes.textContent);
+      setAIHelper("outcomes", aiGeneratedState.outcomes);
     }
 
     if (dashResults) {
       dashResults.textContent =
         midterm.progressScore != null
           ? `Progress Confidence: ${midterm.progressScore}/5`
-          : "No Data Provided During Midterm.";
+          : "No midterm data provided";
+      recordOriginal("results", dashResults.textContent);
+      setAIHelper("results", aiGeneratedState.results);
     }
 
     if (dashWins) {
-      dashWins.textContent =
-        (midterm.wins && midterm.wins.trim()) ||
-        "No Data Provided During Midterm.";
+      const highestMidImp = midtermCompleted.reduce(
+        (max, g) =>
+          g.importance != null && !Number.isNaN(Number(g.importance))
+            ? Math.max(max, Number(g.importance))
+            : max,
+        -Infinity
+      );
+      const topMidGoals =
+        highestMidImp === -Infinity
+          ? []
+          : midtermCompleted.filter(g => Number(g.importance) === highestMidImp);
+      if (topMidGoals.length) {
+        dashWins.textContent = topMidGoals.map(g => g.label).join(" • ");
+      } else {
+        dashWins.textContent =
+          (midterm.wins && midterm.wins.trim()) ||
+          "No midterm data provided";
+      }
+      recordOriginal("wins", dashWins.textContent);
+      setAIHelper("wins", aiGeneratedState.wins);
     }
 
     if (dashChallenges) {
@@ -350,21 +615,30 @@ function renderDashboard(rawData) {
       } else if (typeof midterm.risks === "string" && midterm.risks.trim()) {
         dashChallenges.textContent = midterm.risks.trim();
       } else {
-        dashChallenges.textContent = "No Data Provided During Midterm.";
+        dashChallenges.textContent = "No midterm data provided";
       }
+      recordOriginal("challenges", dashChallenges.textContent);
+      setAIHelper("challenges", aiGeneratedState.challenges);
     }
 
     if (dashLearnings) {
       dashLearnings.textContent =
         (midterm.learnings && midterm.learnings.trim()) ||
-        "No Data Provided During Midterm.";
+        "No midterm data provided";
+      recordOriginal("learnings", dashLearnings.textContent);
+      setAIHelper("learnings", aiGeneratedState.learnings);
     }
 
     if (dashNextSteps) {
       dashNextSteps.textContent =
         (midterm.nextSteps && midterm.nextSteps.trim()) ||
-        "No Data Provided During Midterm.";
+        "No midterm data provided";
+      recordOriginal("nextSteps", dashNextSteps.textContent);
+      setAIHelper("nextSteps", aiGeneratedState.nextSteps);
     }
+
+    wireCopyButtons();
+    wireAIButtons();
 
     // Kickoff baseline placeholders suppressed in midterm view
     return;
@@ -513,4 +787,13 @@ function renderDashboard(rawData) {
     dashSummaryText.textContent =
       "Kickoff-Only View: Final Narrative Summary Will Appear Here Once the Final Review Survey Is Completed.";
   }
+
+  setAIHelper("outcomes", aiGeneratedState.outcomes);
+  setAIHelper("results", aiGeneratedState.results);
+  setAIHelper("wins", aiGeneratedState.wins);
+  setAIHelper("challenges", aiGeneratedState.challenges);
+  setAIHelper("learnings", aiGeneratedState.learnings);
+  setAIHelper("nextSteps", aiGeneratedState.nextSteps);
+  wireCopyButtons();
+  wireAIButtons();
 }

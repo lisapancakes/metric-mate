@@ -323,6 +323,206 @@ Focus on impact, decisions, and results.
 Do NOT invent metrics or outcomes.
 Do NOT over-market — keep it credible and grounded.
 `;
+    case "dashboard_summary":
+      return `You are summarizing structured project survey data for an internal project dashboard.
+
+Using ONLY the information provided below:
+
+Write a clear, concise summary in 2–3 short sentences.
+
+Be factual and neutral.
+
+Do NOT invent outcomes, metrics, timelines, or tools.
+
+If information is missing, stay general or state “not specified.”
+
+Do NOT include headings, bullet points, greetings, or sign-offs.
+
+Do NOT reference surveys, AI, or source materials.
+
+The output must be suitable for an internal project status review and fully editable by humans.`;
+    case "dashboard_delivery":
+      return `Summarize what was delivered in this project phase in 2–3 short sentences.
+
+Use only the provided data. Be factual and neutral.
+Highlight shipped work or completed goals. If delivery is unclear, stay general.
+Do not invent metrics, tools, timelines, or outcomes.
+Plain text only, no greetings or sign-offs.`;
+    case "dashboard_results":
+      return `Summarize results and impact in 2–3 short sentences.
+
+Use only the provided data. Focus on outcomes or confidence/health signals.
+If results are not specified, say they are not specified and keep it general.
+Do not invent metrics, tools, timelines, or outcomes.
+Plain text only, no greetings or sign-offs.`;
+    case "dashboard_wins":
+      return `Summarize the biggest wins or highlights in 2–3 short sentences.
+
+Use only the provided data. Emphasize positive outcomes or completed high-importance goals.
+If wins are not specified, keep it general and note that wins were limited or not specified.
+Do not invent metrics, tools, timelines, or outcomes.
+Plain text only, no greetings or sign-offs.`;
+    case "dashboard_challenges":
+      return `Summarize current challenges, blockers, or risks in 2–3 short sentences.
+
+Use only the provided data. Be factual and neutral.
+If challenges are not specified, state that they are not specified.
+Do not invent metrics, tools, timelines, or outcomes.
+Plain text only, no greetings or sign-offs.`;
+    case "dashboard_learnings":
+      return `Summarize key learnings or insights in 2–3 short sentences.
+
+Use only the provided data. Mention adjustments or observations if available.
+If learnings are not specified, state that they are not specified.
+Do not invent metrics, tools, timelines, or outcomes.
+Plain text only, no greetings or sign-offs.`;
+    case "dashboard_next_steps":
+      return `Summarize near-term next steps or recommendations in 2–3 short sentences.
+
+Use only the provided data. Keep the tone neutral and action-oriented.
+If next steps are not specified, state that they are not specified.
+Do not invent metrics, tools, timelines, or outcomes.
+Plain text only, no greetings or sign-offs.`;
+    case "dashboard_outcomes_card":
+      return `GLOBAL RULES (apply to all sections):
+- Write exactly 2 or 3 complete sentences.
+- Each sentence must be 12–18 words.
+- Do not exceed 50 total words.
+- Use only the provided survey data.
+- Do not invent metrics, tools, timelines, or outcomes.
+- Write in neutral, internal-facing language.
+- Do not include headings, labels, lists, or formatting.
+- Do not reuse or quote phrasing from the input verbatim.
+- Paraphrase all input into narrative project-summary language.
+- Do not mention AI, surveys, or data sources.
+- If constraints are not met, rewrite until they are.
+
+SECTION PROMPT — WHAT WE SHIPPED
+First sentence must begin with:
+"Work to date has focused on"
+
+Prompt:
+Write a brief narrative summary describing what has been delivered or implemented so far.
+Focus on completed or in-progress work, not goals or outcomes.
+
+{SURVEY_DATA}`;
+    case "dashboard_results_card":
+      return `GLOBAL RULES (apply to all sections):
+- Write exactly 2 or 3 complete sentences.
+- Each sentence must be 12–18 words.
+- Do not exceed 50 total words.
+- Use only the provided survey data.
+- Do not invent metrics, tools, timelines, or outcomes.
+- Write in neutral, internal-facing language.
+- Do not include headings, labels, lists, or formatting.
+- Do not reuse or quote phrasing from the input verbatim.
+- Paraphrase all input into narrative project-summary language.
+- Do not mention AI, surveys, or data sources.
+- If constraints are not met, rewrite until they are.
+
+SECTION PROMPT — RESULTS & IMPACT
+First sentence must begin with:
+"Overall progress indicates"
+
+Prompt:
+Write a brief narrative summary describing results or impact observed so far.
+Focus on confidence, momentum, or early signals rather than final outcomes.
+
+{SURVEY_DATA}`;
+    case "dashboard_wins_card":
+      return `GLOBAL RULES (apply to all sections):
+- Write exactly 2 or 3 complete sentences.
+- Each sentence must be 12–18 words.
+- Do not exceed 50 total words.
+- Use only the provided survey data.
+- Do not invent metrics, tools, timelines, or outcomes.
+- Write in neutral, internal-facing language.
+- Do not include headings, labels, lists, or formatting.
+- Do not reuse or quote phrasing from the input verbatim.
+- Paraphrase all input into narrative project-summary language.
+- Do not mention AI, surveys, or data sources.
+- If constraints are not met, rewrite until they are.
+
+SECTION PROMPT — BIGGEST WINS
+First sentence must begin with:
+"One of the most meaningful gains has been"
+
+Prompt:
+Write a brief narrative summary highlighting the biggest wins or positive moments so far.
+Focus on improvements achieved or clarity gained, without hype.
+
+{SURVEY_DATA}`;
+    case "dashboard_challenges_card":
+      return `GLOBAL RULES (apply to all sections):
+- Write exactly 2 or 3 complete sentences.
+- Each sentence must be 12–18 words.
+- Do not exceed 50 total words.
+- Use only the provided survey data.
+- Do not invent metrics, tools, timelines, or outcomes.
+- Write in neutral, internal-facing language.
+- Do not include headings, labels, lists, or formatting.
+- Do not reuse or quote phrasing from the input verbatim.
+- Paraphrase all input into narrative project-summary language.
+- Do not mention AI, surveys, or data sources.
+- If constraints are not met, rewrite until they are.
+
+SECTION PROMPT — CHALLENGES
+First sentence must begin with:
+"The project is currently constrained by"
+
+Prompt:
+Write a brief narrative summary of key challenges affecting the project.
+Focus on risks, delays, constraints, or dependencies.
+Do not suggest solutions or next steps.
+
+{SURVEY_DATA}`;
+    case "dashboard_learnings_card":
+      return `GLOBAL RULES (apply to all sections):
+- Write exactly 2 or 3 complete sentences.
+- Each sentence must be 12–18 words.
+- Do not exceed 50 total words.
+- Use only the provided survey data.
+- Do not invent metrics, tools, timelines, or outcomes.
+- Write in neutral, internal-facing language.
+- Do not include headings, labels, lists, or formatting.
+- Do not reuse or quote phrasing from the input verbatim.
+- Paraphrase all input into narrative project-summary language.
+- Do not mention AI, surveys, or data sources.
+- If constraints are not met, rewrite until they are.
+
+SECTION PROMPT — KEY LEARNINGS
+First sentence must begin with:
+"The team has learned that"
+
+Prompt:
+Write a brief narrative summary of key learnings or insights gained so far.
+Focus on realizations or shifts in approach informed by experience.
+
+{SURVEY_DATA}`;
+    case "dashboard_nextsteps_card":
+      return `GLOBAL RULES (apply to all sections):
+- Write exactly 2 or 3 complete sentences.
+- Each sentence must be 12–18 words.
+- Do not exceed 50 total words.
+- Use only the provided survey data.
+- Do not invent metrics, tools, timelines, or outcomes.
+- Write in neutral, internal-facing language.
+- Do not include headings, labels, lists, or formatting.
+- Do not reuse or quote phrasing from the input verbatim.
+- Paraphrase all input into narrative project-summary language.
+- Do not mention AI, surveys, or data sources.
+- If constraints are not met, rewrite until they are.
+
+SECTION PROMPT — NEXT STEPS
+First sentence must begin with:
+"Attention will next move toward"
+
+Prompt:
+Write a brief narrative summary outlining the most immediate next steps.
+Focus on near-term actions already identified.
+Do not introduce long-term strategy or speculation.
+
+{SURVEY_DATA}`;
     default:
       return null;
   }
