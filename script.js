@@ -703,11 +703,6 @@ function updateCopyButtonsVisibility() {
 
 function buildProjectContextForKickoff() {
   const info = project.info || {};
-  const getFromDir = (list, idx, fallback = "") => {
-    if (typeof idx === "number" && Array.isArray(list)) return list[idx] || fallback;
-    return fallback;
-  };
-
   const client = getFromDir(directory.clients, info.clientId, info.clientName || "");
   const pm = getFromDir(directory.pms, info.pmId, info.pmName || "");
   const designer = getFromDir(directory.designers, info.designerId, info.designerName || "");
@@ -744,6 +739,97 @@ async function rewriteWithAI({ mode, phase, text, projectContext }) {
     throw new Error("Invalid AI response");
   }
   return data.text;
+}
+
+function getFromDir(list, idx, fallback = "") {
+  if (typeof idx === "number" && Array.isArray(list)) return list[idx] || fallback;
+  return fallback;
+}
+
+function getKickoffNames() {
+  const info = project.info || {};
+  const client =
+    getFromDir(directory.clients, info.clientId, info.clientName || "") ||
+    "there";
+  const pm =
+    getFromDir(directory.pms, info.pmId, info.pmName || "") ||
+    "The Team";
+  return { client, pm };
+}
+
+function buildKickoffClientEmailWithWrapper(bodyText) {
+  const { client, pm } = getKickoffNames();
+  const pmLower = pm.toLowerCase();
+  const greeting = `Hi ${client} Team,`;
+  const signature = `Best,\n${pm} & the Thinklogic Team`;
+
+  const cleanedLines = (bodyText || "")
+    .split("\n")
+    .map((line) => line.trim())
+    .filter((t) => {
+      if (!t) return false;
+      const lower = t.toLowerCase();
+      if (lower.startsWith("subject:")) return false;
+      if (lower.startsWith("hi ")) return false;
+      if (lower.startsWith("hello")) return false;
+      if (lower.startsWith("dear")) return false;
+      if (t.includes("[Client") || t.includes("[client")) return false;
+      if (t.includes("[Your") || t.includes("[your")) return false;
+      if (lower.startsWith("best")) return false;
+      if (lower.startsWith("best regards")) return false;
+      if (lower.startsWith("kind regards")) return false;
+      if (lower.includes("project manager")) return false;
+      if (pmLower && (lower === pmLower || lower.startsWith(pmLower))) return false;
+      if (lower.includes("thinklogic team")) return false;
+      return true;
+    })
+    .map((t) => t.replace(/^#+\s*/, "")); // strip markdown headings like ### Heading
+
+  // Normalize spacing for an email-ready body
+  const formatted = [];
+  let isFirst = true;
+  let prevWasBlank = false;
+
+  cleanedLines.forEach((line, idx) => {
+    const isHeading = /^\*\*.+\*\*:/.test(line);
+    const isBullet = /^[-•]/.test(line);
+
+    // Add a blank line before headings (including the first) for readability
+    if (isHeading && !prevWasBlank) {
+      formatted.push("");
+      prevWasBlank = true;
+    }
+
+    if (isHeading && /^\*\*next steps/i.test(line)) {
+      if (!prevWasBlank) formatted.push("");
+    }
+
+    formatted.push(line);
+    isFirst = false;
+    prevWasBlank = line === "";
+
+    const next = cleanedLines[idx + 1];
+    const nextIsHeading = next ? /^\*\*.+\*\*:/.test(next) : false;
+    const nextIsBullet = next ? /^[-•]/.test(next) : false;
+
+    if (isBullet && !nextIsBullet && next) {
+      formatted.push("");
+      prevWasBlank = true;
+    }
+    if (!isBullet && !isHeading && nextIsHeading) {
+      formatted.push("");
+      prevWasBlank = true;
+    }
+  });
+
+  const collapsed = [];
+  formatted.forEach((line) => {
+    if (line === "" && collapsed[collapsed.length - 1] === "") return;
+    collapsed.push(line);
+  });
+
+  const body = collapsed.join("\n").trim();
+  return `${greeting}\n\n${body}\n\n${signature}`;
 }
 
 function initKickoffAIButtons() {
@@ -786,10 +872,14 @@ function initKickoffAIButtons() {
           text: sourceText,
           projectContext
         });
-        ta.value = rewritten;
+        const finalText =
+          mode === "kickoff_client_email"
+            ? buildKickoffClientEmailWithWrapper(rewritten)
+            : rewritten;
+        ta.value = finalText;
         ta.dataset.aiFilled = "true";
-        ta.dataset.original = ta.dataset.original || rewritten;
-        if (stateKey) kickoffSummaryState[stateKey] = rewritten;
+        ta.dataset.original = ta.dataset.original || finalText;
+        if (stateKey) kickoffSummaryState[stateKey] = finalText;
         updateCopyButtonsVisibility();
       } catch (e) {
         console.error("[AI rewrite] error", e);

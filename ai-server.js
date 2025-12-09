@@ -223,55 +223,55 @@ Do not invent metrics, timelines, or commitments.
 - Headings should be followed immediately by content (no extra blank line before bullets).
 - Do not invent facts, features, or metrics. If data is missing or unclear, omit it.`;
     case "final_client_email":
-      return `Write a **final client-facing wrap-up email** summarizing how the project ended.
+      return `Write the BODY of a final client-facing project wrap-up email based ONLY on the provided project information and survey data.
 
-### Goals for the output
-- Audience: client stakeholders.
-- Tone: warm, professional, and honest.
-- Style: American English, easy to skim in an email.
+IMPORTANT:
+- Do NOT include a subject line.
+- Do NOT include a greeting.
+- Do NOT include a closing or signature.
+- Do NOT write “Subject:” anywhere.
+- The text you return will be inserted between the greeting and signature by the app.
 
-### Content & structure
-1. **Subject line**
-- Use a clear subject such as:
-  - “Final Project Wrap-Up – [Project Name]”
-  - “Project Summary and Next Steps – [Project Name]”
+GOALS
+- Summarize where the project ended.
+- Highlight what was worked on or delivered (only if present in the input).
+- Suggest reasonable next steps.
+- Use clear, honest, professional language suitable for a client.
 
-2. **Greeting**
-- Start with a friendly greeting using the client name from input (e.g., “Hi Chatsworth Team,”).
+STRUCTURE
 
-3. **Opening paragraph**
-- 2–3 sentences thanking the client for the collaboration and framing this as the final project summary.
+1. Opening paragraph
+- 2–3 sentences that:
+  - Acknowledge the collaboration.
+  - Briefly summarize what this phase focused on.
+  - Accurately reflect the outcome (progress, groundwork, or completion), based only on the input.
 
-4. **What We Delivered**
-- Bullet list of the most important, client-visible outcomes or improvements.
-- Avoid internal or technical implementation details.
+2. **What We Worked On:**
+- A short bullet list describing key focus areas or delivered items.
+- Use activity-based or outcome-based language ONLY if supported by the input (e.g., clarifying goals, identifying user pain points, implementing specific improvements).
+- Do NOT invent features, performance improvements, or success claims.
 
-5. **Impact on Goals & Users**
-- Briefly explain how the project addressed:
-  - Business goals
-  - Product / UX improvements
-  - User needs
-- Translate any ratings or scores into plain language. Do not display raw numbers unless provided as final metrics.
+3. **Where We Landed:**
+- One short paragraph that explains the project state at the end:
+  - What is now in place or clarified.
+  - Which goals were fully met, partially met, or still open (if the input makes that clear).
+- Avoid saying “we met all objectives” unless explicitly supported by the data.
 
-6. **Remaining Items / Next Steps**
-- Short bullet list of recommended follow-up work or Phase 2 opportunities.
-- Frame constructively (e.g., “We recommend…”, “A potential next step would be…”).
+4. **Next Steps / Recommendations:**
+- Bullet list of realistic, optional next steps or future opportunities.
+- Frame them as recommendations (e.g., “We recommend…”, “A potential next step could be…”).
 
-7. **Closing and Signature**
-- Close with a positive, forward-looking statement.
-- Always use this fixed signature:
-  - `Best,`
-  - `Josh`
-  - `The Thinklogic Team`
+FORMATTING RULES
+- Plain text only (no HTML).
+- Use line breaks between paragraphs and sections.
+- For bold section labels with bullets, use this pattern:
 
-### Formatting rules
-- Use bold section labels inside the email body (not headings), for example:
-  - **What We Delivered:**
-  - **Impact on Goals & Users:**
-  - **Next Steps:**
-- Do not insert blank lines between labels and their bullet lists.
-- Do not reference surveys, forms, or internal tooling.
-- Do not invent features, outcomes, or commitments.`;
+**What We Worked On:**
+- First bullet
+- Second bullet
+
+(no blank line between the label and the bullet list)
+- Do not reference surveys, forms, or internal tools.`;
     case "brief":
       return `
 You are a senior Product Manager creating a project brief that will be pasted into an Asana project.

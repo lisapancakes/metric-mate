@@ -730,6 +730,101 @@ async function rewriteMidtermWithAI({ mode, text }) {
   return data.text;
 }
 
+function formatMidtermClientEmail(aiText) {
+  const kickoff = getKickoffDataFromUrl() || {};
+  const info = kickoff.info || {};
+  const dir = kickoff.directory || {};
+
+  const client =
+    info.client ||
+    (typeof info.clientId === "number" && Array.isArray(dir.clients)
+      ? dir.clients[info.clientId]
+      : "") ||
+    "there";
+
+  const pm =
+    info.pm ||
+    (typeof info.pmId === "number" && Array.isArray(dir.pms)
+      ? dir.pms[info.pmId]
+      : "") ||
+    "The Team";
+
+  const pmLower = pm.toLowerCase();
+
+  const cleanedLines = (aiText || "")
+    .split("\n")
+    .map((line) => line.trim())
+    .filter((t) => {
+      if (!t) return false;
+      const lower = t.toLowerCase();
+      if (lower.startsWith("subject:")) return false;
+      if (/^(hi|hello|dear)\b/i.test(t)) return false;
+      if (t.includes("[Client") || t.includes("[client")) return false;
+      if (t.includes("[Your") || t.includes("[your")) return false;
+      if (/^(best|best regards|kind regards|regards|sincerely|thanks|thank you|cheers)/i.test(t)) return false;
+      if (pmLower && (lower === pmLower || lower.startsWith(pmLower))) return false;
+      if (lower.includes("thinklogic team")) return false;
+      if (lower.includes("project manager")) return false;
+      return true;
+    })
+    .map((t) => t.replace(/^#+\s*/, "")); // strip markdown headings like ### Heading
+
+  const formatted = [];
+  let isFirst = true;
+  let prevWasBlank = false;
+
+  cleanedLines.forEach((line, idx) => {
+    const isHeading = /^\*\*.+\*\*:/.test(line);
+    const isBullet = /^[-•]/.test(line);
+
+    // Add a blank line before headings (including the first) for readability
+    if (isHeading && !prevWasBlank) {
+      formatted.push("");
+      prevWasBlank = true;
+    }
+
+    if (isHeading && /^\*\*next steps/i.test(line)) {
+      if (!prevWasBlank) formatted.push("");
+    }
+
+    formatted.push(line);
+    isFirst = false;
+    prevWasBlank = line === "";
+
+    const next = cleanedLines[idx + 1];
+    const nextIsHeading = next ? /^\*\*.+\*\*:/.test(next) : false;
+    const nextIsBullet = next ? /^[-•]/.test(next) : false;
+
+    if (isBullet && !nextIsBullet && next) {
+      formatted.push("");
+      prevWasBlank = true;
+    }
+    if (!isBullet && !isHeading && nextIsHeading) {
+      formatted.push("");
+      prevWasBlank = true;
+    }
+  });
+
+  const collapsed = [];
+  formatted.forEach((line) => {
+    if (line === "" && collapsed[collapsed.length - 1] === "") return;
+    collapsed.push(line);
+  });
+
+  const body = collapsed.join("\n").trim();
+
+  const parts = [];
+  parts.push(`Hi ${client} Team,`);
+  if (body) {
+    parts.push("");
+    parts.push(body);
+  }
+  parts.push("");
+  parts.push(`Best,\n${pm} & the Thinklogic Team`);
+
+  return parts.join("\n");
+}
+
 // ============================================================================
 // SUMMARY ACTIONS + CALENDAR
 // ============================================================================
@@ -748,74 +843,6 @@ function setupSummaryActions(internalSummary, clientSummary) {
   initMidtermAIButtons();
   updateMidtermCopyButtonsVisibility();
   initMidtermCopyChips();
-}
-
-function buildMidtermEmailWithWrapper(bodyText) {
-  const greeting = "Hi Chatsworth Team,";
-  const signature = "Best,\nJosh\nThe Thinklogic Team";
-
-  const rawLines = (bodyText || "").split("\n");
-
-  const filteredLines = rawLines
-    .map((line) => line.trim())
-    .filter((t) => {
-      if (!t) return false;
-      if (t.startsWith("Subject:")) return false;
-      if (t.startsWith("Hi ")) return false;
-      if (t.includes("[Client")) return false;
-      if (t.includes("[Your")) return false;
-      if (t.startsWith("Best,")) return false;
-      if (t.toLowerCase().startsWith("best regards")) return false;
-      if (t.toLowerCase().startsWith("kind regards")) return false;
-      if (t.toLowerCase() === "josh") return false;
-      if (t.toLowerCase().includes("thinklogic team")) return false;
-      return true;
-    });
-
-  const signatureRegex = /(best regards|kind regards|sincerely|thanks|thank you|cheers|regards|best,? $|best,?$)/i;
-  const sigIndex = filteredLines.findIndex((l) => signatureRegex.test(l.toLowerCase()));
-  const truncatedLines = sigIndex >= 0 ? filteredLines.slice(0, sigIndex) : filteredLines;
-
-  const isSectionHeading = (txt) =>
-    /^(\*\*)?\s*(project overview|progress overview|progress|what's going well|whats going well|key updates|goals|focus|focus areas|focus areas & open questions|next steps?|next milestones?|milestones)/i.test(
-      txt.toLowerCase()
-    );
-
-  // Rebuild with enforced spacing rules
-  const sections = [];
-  let current = null;
-
-  truncatedLines.forEach((line) => {
-    if (isSectionHeading(line)) {
-      if (current) sections.push(current);
-      current = { heading: line, body: [] };
-    } else {
-      if (!current) {
-        current = { heading: null, body: [] };
-      }
-      current.body.push(line);
-    }
-  });
-  if (current) sections.push(current);
-
-  const formatted = [];
-  sections.forEach((sec, idx) => {
-    if (idx > 0) formatted.push(""); // blank line before each heading except first
-    if (sec.heading) formatted.push(sec.heading);
-    if (sec.body.length) {
-      // no blank line between heading and body
-      formatted.push(...sec.body);
-    }
-    if (idx < sections.length - 1 && sec.body.length) {
-      formatted.push(""); // blank line after section content
-    }
-  });
-
-  // Collapse any accidental double blanks
-  const normalized = formatted.filter((line, idx, arr) => !(line === "" && idx > 0 && arr[idx - 1] === ""));
-  const bodyWithSpacing = normalized.join("\n").trim();
-
-  return `${greeting}\n\n${bodyWithSpacing}\n\n${signature}`;
 }
 
 function buildMidtermAIInputText(userText = "") {
@@ -1247,7 +1274,7 @@ function initMidtermAIButtons() {
         const rewritten = await rewriteMidtermWithAI({ mode, text: sourceText });
         const finalText =
           mode === "midterm_client_email"
-            ? buildMidtermEmailWithWrapper(rewritten)
+            ? formatMidtermClientEmail(rewritten)
             : rewritten;
         ta.value = finalText;
         if (stateKey) midtermSummaryState[stateKey] = finalText;

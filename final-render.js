@@ -13,6 +13,96 @@ const FINAL_AI_BASE =
   window.location.protocol === "file:" ? "http://localhost:3001" : "";
 const finalAIModel = "gpt-4o-mini";
 
+function formatFinalClientEmail(aiText) {
+  const client =
+    finalState.client && finalState.client.trim() ? finalState.client.trim() : "there";
+  const pmName = finalState.pm && finalState.pm.trim() ? finalState.pm.trim() : "";
+  const pmLower = pmName.toLowerCase();
+
+  const cleanedLines = (aiText || "")
+    .split("\n")
+    .map((l) => l.trim())
+    .filter((t) => {
+      if (!t) return false;
+      const lower = t.toLowerCase();
+      if (lower.startsWith("subject:")) return false;
+      if (/^(hi|hello|dear)\b/i.test(t)) return false;
+      if (t.includes("[Client") || t.includes("[client")) return false;
+      if (t.includes("[Your") || t.includes("[your")) return false;
+      if (/^(best|best regards|kind regards|regards|sincerely|thanks|thank you|cheers)/i.test(t)) return false;
+      if (pmLower && (lower === pmLower || lower.startsWith(pmLower))) return false;
+      if (lower.includes("thinklogic team")) return false;
+      if (lower.includes("project manager")) return false;
+      return true;
+    })
+    .map((t) => t.replace(/^#+\s*/, "")); // strip markdown headings like ### Heading
+
+  // Normalize spacing for an email-ready body:
+  const formattedBodyLines = [];
+  let isFirst = true;
+  let prevWasBlank = false;
+
+  cleanedLines.forEach((line, idx) => {
+    const isHeading = /^\*\*.+\*\*:/.test(line);
+    const isBullet = /^[-•]/.test(line);
+
+    // Ensure blank line before headings (including the first) for readability
+    if (isHeading && !prevWasBlank) {
+      formattedBodyLines.push("");
+      prevWasBlank = true;
+    }
+
+    // Extra spacing before "Next Steps" heading
+    // Extra spacing before "Next Steps" heading: force a blank line before it
+    if (isHeading && /^\*\*next steps/i.test(line)) {
+      if (!prevWasBlank) formattedBodyLines.push("");
+    }
+
+    formattedBodyLines.push(line);
+    isFirst = false;
+    prevWasBlank = line === "";
+
+    const next = cleanedLines[idx + 1];
+    const nextIsHeading = next ? /^\*\*.+\*\*:/.test(next) : false;
+    const nextIsBullet = next ? /^[-•]/.test(next) : false;
+
+    // If current block ends (heading + bullets) and next is heading or paragraph, insert blank line
+    if (isBullet && !nextIsBullet && next) {
+      formattedBodyLines.push("");
+      prevWasBlank = true;
+    }
+    if (!isBullet && !isHeading && nextIsHeading) {
+      formattedBodyLines.push("");
+      prevWasBlank = true;
+    }
+  });
+
+  // Collapse accidental multiple blanks
+  const collapsed = [];
+  formattedBodyLines.forEach((line) => {
+    if (line === "" && collapsed[collapsed.length - 1] === "") return;
+    collapsed.push(line);
+  });
+
+  const body = collapsed.join("\n").trim();
+
+  const signature =
+    pmName && pmName.trim()
+      ? `Best,\n${pmName} & the Thinklogic Team`
+      : `Best,\nThe Thinklogic Team`;
+
+  const parts = [];
+  parts.push(`Hi ${client} Team,`);
+  if (body) {
+    parts.push("");
+    parts.push(body);
+  }
+  parts.push("");
+  parts.push(signature);
+
+  return parts.join("\n");
+}
+
 function buildProjectContext() {
   const parts = [];
   if (finalState.projectName) parts.push(`Project: ${finalState.projectName}`);
@@ -201,24 +291,30 @@ function updateSummary() {
   if (!summaryEl) return;
 
   const summaryText = buildFinalSummary();
-  if (!finalSummaryState.finalSummary) finalSummaryState.finalSummary = summaryText;
+  if (!finalSummaryState.finalSummary) finalSummaryState.finalSummary = "";
   summaryEl.dataset.original = summaryText;
   if (summaryEl.dataset.aiFilled === "true") {
     // Preserve AI-generated text
   } else {
-    summaryEl.value = finalSummaryState.finalSummary || summaryText;
+    summaryEl.value = finalSummaryState.finalSummary || "";
   }
 
   const clientEl = $("finalClientSummary");
   if (clientEl) {
     const clientDefault = clientEl.dataset.original || "";
     if (!finalSummaryState.finalClientSummary) {
-      finalSummaryState.finalClientSummary = clientDefault;
+      finalSummaryState.finalClientSummary = "";
     }
     if (clientEl.dataset.aiFilled === "true") {
       // keep AI text
     } else {
-      clientEl.value = finalSummaryState.finalClientSummary || clientDefault || "";
+      const currentVal = finalSummaryState.finalClientSummary || "";
+      const needsWrap = currentVal && !/^Hi\s+.+\sTeam,/.test(currentVal);
+      const wrapped = needsWrap ? formatFinalClientEmail(currentVal) : currentVal;
+      if (needsWrap) {
+        finalSummaryState.finalClientSummary = wrapped;
+      }
+      clientEl.value = wrapped;
     }
   }
 
@@ -319,12 +415,16 @@ async function triggerFinalAIRewrite({ btnId, textareaId, mode, placeholderFallb
       return data.text;
     });
 
-    ta.value = rewritten;
+    const finalText =
+      mode === "final_client_email"
+        ? formatFinalClientEmail(rewritten)
+        : rewritten;
+    ta.value = finalText;
     ta.dataset.aiFilled = "true";
     if (ta.id === "finalSummary") {
-      finalSummaryState.finalSummary = rewritten;
+      finalSummaryState.finalSummary = finalText;
     } else if (ta.id === "finalClientSummary") {
-      finalSummaryState.finalClientSummary = rewritten;
+      finalSummaryState.finalClientSummary = finalText;
     }
     updateFinalCopyButtonsVisibility();
   } catch (err) {
