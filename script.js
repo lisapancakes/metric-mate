@@ -179,7 +179,6 @@ function init() {
 
   // Navigation buttons
   if (prevBtn) prevBtn.addEventListener('click', goToPreviousStep);
-  if (nextBtn) nextBtn.addEventListener('click', goToNextStep);
 
   // Form events
   if (form) {
@@ -202,7 +201,6 @@ function init() {
 // NAVIGATION
 // ============================================================================
 function goToNextStep() {
-  syncCurrentStepFromDOM();
   if (!validateCurrentStep()) return;
 
   if (project.currentStep < project.totalSteps) {
@@ -221,7 +219,6 @@ function goToNextStep() {
 }
 
 function goToPreviousStep() {
-  syncCurrentStepFromDOM();
   if (project.currentStep > 1) {
     project.currentStep--;
     renderStep(project.currentStep);
@@ -234,16 +231,6 @@ function updateProgressBar() {
   if (!progressBar) return;
   const progress = ((project.currentStep - 1) / (project.totalSteps - 1)) * 100;
   progressBar.style.width = `${progress}%`;
-}
-
-function syncCurrentStepFromDOM() {
-  const activeStep = document.querySelector('.step.active');
-  if (activeStep && activeStep.dataset.step) {
-    const parsed = parseInt(activeStep.dataset.step, 10);
-    if (!Number.isNaN(parsed)) {
-      project.currentStep = parsed;
-    }
-  }
 }
 
 // ============================================================================
