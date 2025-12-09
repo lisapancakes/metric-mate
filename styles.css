@@ -475,6 +475,12 @@ textarea::placeholder {
   gap: 0.15rem;
 }
 
+/* Align final summary h3 spacing with kickoff/midterm */
+.no-summary-h3-margin h3 {
+  margin-top: 0;
+  margin-bottom: 0.35rem; /* match .step h3 (≈5.6px) */
+}
+
 /* Default helper text spacing inside summary sections */
 .summary-section .help-text {
   margin: 0 0 12px;

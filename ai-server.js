@@ -126,9 +126,61 @@ function getRewriteInstructions(mode, phase) {
     case "kickoff_goal_narratives":
       return KICKOFF_GOAL_NARRATIVES_PROMPT;
     case "midterm_internal_update":
-      return "Rewrite the text as a concise internal mid-project update for Asana. Start with a one-line overview of health and progress vs plan, then status by goal (Business/Product/User), then risks/issues (only those provided), and next steps until final review. Do not invent new facts or risks.";
+      return `Rewrite the following text as a concise internal midterm project update.
+
+Audience:
+- Internal delivery team (PM, design, engineering)
+
+Purpose:
+- Summarize progress since kickoff
+- Describe current project health in narrative terms
+- Highlight risks, concerns, or changes
+- Align on what needs attention next
+
+Structure the output using ONLY the following section headers, in this order:
+
+Project Health Summary
+Progress Since Kickoff
+What’s Going Well
+Risks & Areas to Watch
+Decisions or Open Questions
+Next Steps
+
+Guidelines:
+- Describe project health qualitatively (for example: "on track", "needs attention") instead of using numeric scores or status labels.
+- Focus on changes and movement since kickoff; do NOT just restate kickoff goals.
+- Do NOT include goal status labels such as "Not Started", "In Progress", or "Done".
+- Do NOT include team member names or roles.
+- Do NOT include numeric scores, ratings, or made-up metrics.
+- If there are no risks in the input, omit the Risks section rather than adding placeholder text.
+
+Tone and format:
+- Clear, neutral, and delivery-focused.
+- Use short paragraphs and bullet points for easy scanning.
+- Total length roughly 150–200 words.
+`;
     case "midterm_client_email":
-      return "Rewrite the text as a client-facing mid-project check-in email. Include a subject line, short greeting and overview, bullets for key updates (delivered, in progress, notable signals), call out risks only if provided, and end with next milestones plus invitation for questions. Keep it concise, plain text, no new promises.";
+      return `Rewrite the following text as the BODY of a client-facing mid-project update.
+
+Instructions:
+- Do NOT include a subject line.
+- Do NOT include a greeting.
+- Do NOT include a signature.
+- Focus only on the content of the update.
+
+The body should:
+- Summarize progress since kickoff in clear, plain language.
+- Highlight what’s going well and what the team is focusing on.
+- Mention challenges constructively, if any.
+- End without a closing or sign-off.
+
+Tone:
+- Professional, collaborative, and clear.
+- Appropriate for a client email body.
+
+Keep it concise and easy to scan.
+Do not invent metrics, timelines, or commitments.
+`;
     case "final_internal_update":
       return "You are a project management assistant writing a final wrap-up note for the project’s Asana card. Using the project context, final review goals table, and narrative answers, write a concise internal summary. Tone: honest, reflective, internal. Start with a 1–2 sentence overview of outcomes vs original goals. Add a “Goal outcomes” section grouped by Business / Product / User; for each key goal mention final status and important notes provided. Add a “Biggest wins” section with 3–5 bullets. Add a “Challenges / misses” section with 2–5 bullets from the input only. Add a “Key learnings & recommendations” section with 3–5 bullets paraphrasing provided learnings; don’t invent new ones. Keep under 280 words. Plain text only.";
     case "final_client_email":
@@ -185,10 +237,7 @@ Do NOT invent metrics or outcomes.
 Do NOT over-market — keep it credible and grounded.
 `;
     default:
-      return `
-Rewrite the text to be clearer, more concise, and polished without changing factual information.
-Where helpful, incorporate the phase ("${phase || "project"}" such as "kickoff update", "mid-project update", "final review") into the wording.
-`;
+      return null;
   }
 }
 

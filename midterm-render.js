@@ -697,70 +697,11 @@ function buildClientSummary() {
   if (midterm.healthScore != null) {
     lines.push(`• Overall Health: ${midterm.healthScore}/5`);
   }
-  if (midterm.progressScore != null) {
-    lines.push(`• Progress vs. Plan: ${midterm.progressScore}/5`);
-  }
-  if (midterm.goalStatuses.length) {
-    lines.push("");
-    lines.push("Status by Goal:");
-    midterm.goalStatuses.forEach((g) => {
-      lines.push(
-        `• [${titleCaseType(g.type)}] ${g.label}: ${formatStatusLabel(g.status)}${g.notes ? ` — ${g.notes}` : ""}`
-      );
-    });
-  }
-  if (midterm.wins.trim()) {
-    lines.push("");
-    lines.push("Biggest Wins:");
-    lines.push(midterm.wins.trim());
-  }
-  if (midterm.learnings.trim()) {
-    lines.push("");
-    lines.push("Key Learnings:");
-    lines.push(midterm.learnings.trim());
-  }
-  if (midterm.nextSteps.trim()) {
-    lines.push("");
-    lines.push("Next Steps:");
-    lines.push(midterm.nextSteps.trim());
-  }
-  lines.push("");
-  lines.push(
-    "If Anything Here Feels Off or Needs Adjustment, We’re Happy to Recalibrate Together."
-  );
-  lines.push("");
-  lines.push("Best,");
-  lines.push("The Thinklogic Team");
-
   return lines.join("\n");
 }
 
-function buildProjectContextForMidterm() {
-  const info = midterm.info || {};
-  const kickoff = getKickoffDataFromUrl() || {};
-  const dir = kickoff.directory || {};
-
-  const getFromDir = (list, idx, fallback = "") => {
-    if (typeof idx === "number" && Array.isArray(list)) return list[idx] || fallback;
-    return fallback;
-  };
-
-  const client = info.client || getFromDir(dir.clients, info.clientId, info.clientName || "");
-  const pm = info.pm || getFromDir(dir.pms, info.pmId, info.pmName || "");
-  const designer = info.designer || getFromDir(dir.designers, info.designerId, info.designerName || "");
-
-  return [
-    info.projectName ? `Project: ${info.projectName}` : null,
-    client ? `Client: ${client}` : null,
-    pm ? `PM: ${pm}` : null,
-    designer ? `Designer: ${designer}` : null
-  ]
-    .filter(Boolean)
-    .join(" | ");
-}
-
 async function rewriteMidtermWithAI({ mode, text }) {
-  const projectContext = buildProjectContextForMidterm();
+  const aiInput = buildMidtermAIInputText(text || "");
   const base =
     window.location.protocol === "file:"
       ? "http://localhost:3001"
@@ -772,8 +713,8 @@ async function rewriteMidtermWithAI({ mode, text }) {
     body: JSON.stringify({
       mode,
       phase: "midterm",
-      text,
-      projectContext
+      text: aiInput,
+      projectContext: ""
     })
   });
 
@@ -807,6 +748,150 @@ function setupSummaryActions(internalSummary, clientSummary) {
   initMidtermAIButtons();
   updateMidtermCopyButtonsVisibility();
   initMidtermCopyChips();
+}
+
+function buildMidtermEmailWithWrapper(bodyText) {
+  const greeting = "Hi Chatsworth Team,";
+  const signature = "Best,\nJosh\nThe Thinklogic Team";
+
+  const rawLines = (bodyText || "").split("\n");
+
+  const filteredLines = rawLines
+    .map((line) => line.trim())
+    .filter((t) => {
+      if (!t) return false;
+      if (t.startsWith("Subject:")) return false;
+      if (t.startsWith("Hi ")) return false;
+      if (t.includes("[Client")) return false;
+      if (t.includes("[Your")) return false;
+      if (t.startsWith("Best,")) return false;
+      if (t.toLowerCase().startsWith("best regards")) return false;
+      if (t.toLowerCase().startsWith("kind regards")) return false;
+      if (t.toLowerCase() === "josh") return false;
+      if (t.toLowerCase().includes("thinklogic team")) return false;
+      return true;
+    });
+
+  const signatureRegex = /(best regards|kind regards|sincerely|thanks|thank you|cheers|regards|best,? $|best,?$)/i;
+  const sigIndex = filteredLines.findIndex((l) => signatureRegex.test(l.toLowerCase()));
+  const truncatedLines = sigIndex >= 0 ? filteredLines.slice(0, sigIndex) : filteredLines;
+
+  const isSectionHeading = (txt) =>
+    /^(\*\*)?\s*(project overview|progress overview|progress|what's going well|whats going well|key updates|goals|focus|focus areas|focus areas & open questions|next steps?|next milestones?|milestones)/i.test(
+      txt.toLowerCase()
+    );
+
+  // Rebuild with enforced spacing rules
+  const sections = [];
+  let current = null;
+
+  truncatedLines.forEach((line) => {
+    if (isSectionHeading(line)) {
+      if (current) sections.push(current);
+      current = { heading: line, body: [] };
+    } else {
+      if (!current) {
+        current = { heading: null, body: [] };
+      }
+      current.body.push(line);
+    }
+  });
+  if (current) sections.push(current);
+
+  const formatted = [];
+  sections.forEach((sec, idx) => {
+    if (idx > 0) formatted.push(""); // blank line before each heading except first
+    if (sec.heading) formatted.push(sec.heading);
+    if (sec.body.length) {
+      // no blank line between heading and body
+      formatted.push(...sec.body);
+    }
+    if (idx < sections.length - 1 && sec.body.length) {
+      formatted.push(""); // blank line after section content
+    }
+  });
+
+  // Collapse any accidental double blanks
+  const normalized = formatted.filter((line, idx, arr) => !(line === "" && idx > 0 && arr[idx - 1] === ""));
+  const bodyWithSpacing = normalized.join("\n").trim();
+
+  return `${greeting}\n\n${bodyWithSpacing}\n\n${signature}`;
+}
+
+function buildMidtermAIInputText(userText = "") {
+  const lines = [];
+
+  if (midterm.info.projectName) {
+    lines.push(`Project: ${midterm.info.projectName}`);
+  }
+
+  const typeOrder = ["business", "product", "user", "pain"];
+  const groupedGoals = { business: [], product: [], user: [], pain: [] };
+  (midterm.goalStatuses || []).forEach((g) => {
+    if (g && g.label && groupedGoals[g.type]) {
+      groupedGoals[g.type].push(g.label);
+    }
+  });
+
+  typeOrder.forEach((type) => {
+    const title =
+      type === "business"
+        ? "Business Goals"
+        : type === "product"
+          ? "Product / UX Goals"
+          : type === "user"
+            ? "User Goals"
+            : "User Pain Points";
+    if (groupedGoals[type] && groupedGoals[type].length) {
+      lines.push(`${title}:`);
+      groupedGoals[type].forEach((label) => lines.push(`- ${label}`));
+    }
+  });
+
+  const notedGoals = (midterm.goalStatuses || []).filter(
+    (g) => g && g.notes && g.notes.trim()
+  );
+  if (notedGoals.length) {
+    lines.push("Goal notes (midterm updates):");
+    notedGoals.forEach((g) => {
+      lines.push(`- ${g.label}: ${g.notes.trim()}`);
+    });
+  }
+
+  if (midterm.wins && midterm.wins.trim()) {
+    lines.push("Wins / Signals:");
+    lines.push(midterm.wins.trim());
+  }
+
+  if (midterm.learnings && midterm.learnings.trim()) {
+    lines.push("Key Learnings:");
+    lines.push(midterm.learnings.trim());
+  }
+
+  const risksWithContent = (midterm.risks || []).filter(
+    (r) => r && (r.selected || r.label || r.notes)
+  );
+  if (risksWithContent.length) {
+    lines.push("Risks / Issues:");
+    risksWithContent.forEach((r) => {
+      const parts = [];
+      if (r.label) parts.push(r.label);
+      if (r.notes) parts.push(r.notes);
+      if (parts.length) lines.push(`- ${parts.join(" — ")}`);
+    });
+  }
+
+  if (midterm.nextSteps && midterm.nextSteps.trim()) {
+    lines.push("Next Steps (raw notes):");
+    lines.push(midterm.nextSteps.trim());
+  }
+
+  if (userText && userText.trim()) {
+    lines.push("User-provided notes:");
+    lines.push(userText.trim());
+  }
+
+  return lines.join("\n");
 }
 
 function updateMidtermCopyButtonsVisibility() {
@@ -1160,8 +1245,12 @@ function initMidtermAIButtons() {
 
       try {
         const rewritten = await rewriteMidtermWithAI({ mode, text: sourceText });
-        ta.value = rewritten;
-        if (stateKey) midtermSummaryState[stateKey] = rewritten;
+        const finalText =
+          mode === "midterm_client_email"
+            ? buildMidtermEmailWithWrapper(rewritten)
+            : rewritten;
+        ta.value = finalText;
+        if (stateKey) midtermSummaryState[stateKey] = finalText;
         updateMidtermCopyButtonsVisibility();
       } catch (e) {
         console.error("[AI rewrite midterm] error", e);
