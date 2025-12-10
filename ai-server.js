@@ -397,6 +397,13 @@ Plain text only, no greetings or sign-offs.`;
 - Do not mention AI, surveys, or data sources.
 - If constraints are not met, rewrite until they are.
 
+CRITICAL RULES:
+- Do not introduce suggestions, advice, or future-oriented language unless explicitly asked.
+- Do not include instructions, requests, or meta commentary.
+- Use past tense for completed work.
+- Use present tense only for ongoing conditions.
+- Never include quoted phrases from the input.
+
 SECTION PROMPTS:
 
 1) WHAT WE SHIPPED
@@ -421,6 +428,13 @@ Focus on completed or in-progress work, not goals or outcomes.
 - Paraphrase all input into narrative project-summary language.
 - Do not mention AI, surveys, or data sources.
 - If constraints are not met, rewrite until they are.
+
+CRITICAL RULES:
+- Do not introduce suggestions, advice, or future-oriented language unless explicitly asked.
+- Do not include instructions, requests, or meta commentary.
+- Use past tense for completed work.
+- Use present tense only for ongoing conditions.
+- Never include quoted phrases from the input.
 
 SECTION PROMPTS:
 
@@ -447,6 +461,13 @@ Focus on confidence, momentum, or early signals rather than final outcomes.
 - Do not mention AI, surveys, or data sources.
 - If constraints are not met, rewrite until they are.
 
+CRITICAL RULES:
+- Do not introduce suggestions, advice, or future-oriented language unless explicitly asked.
+- Do not include instructions, requests, or meta commentary.
+- Use past tense for completed work.
+- Use present tense only for ongoing conditions.
+- Never include quoted phrases from the input.
+
 SECTION PROMPTS:
 
 3) BIGGEST WINS
@@ -471,6 +492,13 @@ Focus on improvements achieved or clarity gained, without hype.
 - Paraphrase all input into narrative project-summary language.
 - Do not mention AI, surveys, or data sources.
 - If constraints are not met, rewrite until they are.
+
+CRITICAL RULES:
+- Do not introduce suggestions, advice, or future-oriented language unless explicitly asked.
+- Do not include instructions, requests, or meta commentary.
+- Use past tense for completed work.
+- Use present tense only for ongoing conditions.
+- Never include quoted phrases from the input.
 
 SECTION PROMPTS:
 
@@ -498,6 +526,13 @@ Do not suggest solutions or next steps.
 - Do not mention AI, surveys, or data sources.
 - If constraints are not met, rewrite until they are.
 
+CRITICAL RULES:
+- Do not introduce suggestions, advice, or future-oriented language unless explicitly asked.
+- Do not include instructions, requests, or meta commentary.
+- Use past tense for completed work.
+- Use present tense only for ongoing conditions.
+- Never include quoted phrases from the input.
+
 SECTION PROMPTS:
 
 5) KEY LEARNINGS
@@ -522,6 +557,13 @@ Focus on realizations or shifts in approach informed by experience.
 - Paraphrase all input into narrative project-summary language.
 - Do not mention AI, surveys, or data sources.
 - If constraints are not met, rewrite until they are.
+
+CRITICAL RULES:
+- Do not introduce suggestions, advice, or future-oriented language unless explicitly asked.
+- Do not include instructions, requests, or meta commentary.
+- Use past tense for completed work.
+- Use present tense only for ongoing conditions.
+- Never include quoted phrases from the input.
 
 SECTION PROMPTS:
 
