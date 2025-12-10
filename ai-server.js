@@ -501,36 +501,20 @@ Length:
 
 {SURVEY_DATA}`;
     case "dashboard_nextsteps_card":
-      return `GLOBAL RULES (apply to all sections):
-- Write exactly 2 or 3 complete sentences.
-- Each sentence must be 12–18 words.
-- Do not exceed 50 total words.
-- Use only the provided survey data.
-- Do not invent metrics, tools, timelines, or outcomes.
-- Write in neutral, internal-facing language.
-- Do not include headings, labels, lists, or formatting.
-- Do not reuse or quote phrasing from the input verbatim.
-- Paraphrase all input into narrative project-summary language.
-- Do not mention AI, surveys, or data sources.
-- If constraints are not met, rewrite until they are.
+      return `Write a brief internal summary of immediate next steps already defined.
 
-CRITICAL RULES:
-- Do not introduce suggestions, advice, or future-oriented language unless explicitly asked.
-- Do not include instructions, requests, or meta commentary.
-- Use past tense for completed work.
-- Use present tense only for ongoing conditions.
-- Never include quoted phrases from the input.
+The first sentence must begin with:
+"Near-term priorities include"
 
-SECTION PROMPTS:
+Only restate actions explicitly present in the data.
+Do not introduce new suggestions or requests.
 
-6) NEXT STEPS
-First sentence must begin with:
-"Attention will next move toward"
+Tense:
+- Future-oriented but factual.
 
-Prompt:
-Write a brief narrative summary outlining the most immediate next steps.
-Focus on near-term actions already identified.
-Do not introduce long-term strategy or speculation.
+Length:
+- Exactly 2 sentences
+- 12–18 words per sentence
 
 {SURVEY_DATA}`;
     default:
