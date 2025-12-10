@@ -87,6 +87,8 @@ function renderDashboard(rawData) {
   const finalSummary = data.finalSummary || "";
   const project = data.project || {};
   const goals = Array.isArray(data.goals) ? data.goals : [];
+  let derivedProgressSignal = null;
+  let derivedGoalMovement = null;
 
   console.log("[dashboard-render] kickoff object:", kickoff);
   console.log("[dashboard-render] project object:", project);
@@ -179,7 +181,7 @@ function renderDashboard(rawData) {
       case "dashLearnings":
         return "dashboard_learnings_card";
       case "dashNextSteps":
-        return "dashboard_nextsteps_card";
+        return null;
       default:
         return null;
     }
@@ -189,7 +191,7 @@ function renderDashboard(rawData) {
     const helperEl = aiHelpers[key];
     if (!helperEl) return;
     const isGenerated = generated !== undefined ? generated : aiGeneratedState[key];
-    helperEl.textContent = isGenerated ? "AI-generated draft · editable" : "AI draft not generated";
+    helperEl.textContent = isGenerated ? "AI-generated · revert or regenerate" : "AI draft not generated";
   }
 
   function recordOriginal(key, value) {
@@ -342,10 +344,88 @@ function renderDashboard(rawData) {
     return `Goal status summary: ${completed} completed, ${inProgress} in progress, ${notStarted} not started (${total} total).`;
   }
 
+  function buildResultsAIInput() {
+    const rating =
+      midterm && midterm.progressScore != null
+        ? Number(midterm.progressScore)
+        : null;
+    const goalSource = hasFinal
+      ? goals
+      : Array.isArray(midterm.goalStatuses)
+        ? midterm.goalStatuses
+        : midterm.goals || [];
+
+    if (rating == null || !Array.isArray(goalSource) || goalSource.length === 0) {
+      return null;
+    }
+
+    let completed = 0;
+    let inProgress = 0;
+    let total = 0;
+    goalSource.forEach((g) => {
+      const status = normalizeGoalStatus(g.finalStatus || g.status || g.midtermStatus);
+      if (status) total += 1;
+      if (status === "completed") completed += 1;
+      else if (status === "in progress") inProgress += 1;
+    });
+    if (total === 0) return null;
+    const notStarted = Math.max(total - (completed + inProgress), 0);
+
+    const progressDirection =
+      rating <= 2 ? "behind plan" : rating === 3 ? "generally on track" : "ahead of plan";
+
+    let goalMovement = "most goals are still underway";
+    if (completed === 0) {
+      goalMovement = "most goals are still underway";
+    } else if (completed < total) {
+      goalMovement = "several goals have been completed while others progress";
+    } else {
+      goalMovement = "all goals have been completed";
+    }
+
+    derivedProgressSignal = progressDirection;
+    derivedGoalMovement = goalMovement;
+    return `${progressDirection}\n${goalMovement}`;
+  }
+
   function setSectionContent(targetId, text) {
     const target = document.getElementById(targetId);
     if (!target) return;
     applyContent(targetId, target, text || "");
+  }
+
+  const addressedStatuses = new Set(["addressed", "partially addressed", "completed"]);
+  function isAddressedStatus(status = "") {
+    const val = status.toString().trim().toLowerCase();
+    if (!val) return false;
+    if (addressedStatuses.has(val)) return true;
+    // simple normalization for status with spaces/dashes
+    if (val.replace(/[\s-]+/g, " ") === "partially addressed") return true;
+    return false;
+  }
+
+  function getAddressedPain(list = [], statusKey = "status") {
+    return list
+      .filter((item) => (item.type || item.category || "").toLowerCase() === "pain")
+      .filter((item) => isAddressedStatus(item[statusKey]))
+      .map((item) => item.label || item.description || "")
+      .filter(Boolean);
+  }
+
+  function getDecisions() {
+    const candidates = [];
+    if (Array.isArray(data.decisions)) candidates.push(...data.decisions);
+    if (Array.isArray(final.decisions)) candidates.push(...final.decisions);
+    if (Array.isArray(midterm.decisions)) candidates.push(...midterm.decisions);
+    return candidates
+      .map((d) => {
+        const title = d.title || d.label || "";
+        const desc = d.description || d.notes || "";
+        if (!title && !desc) return null;
+        const summary = desc ? `${title ? title + " — " : ""}${desc}` : title;
+        return summary.trim();
+      })
+      .filter(Boolean);
   }
 
   function wireCopyButtons() {
@@ -403,8 +483,18 @@ function renderDashboard(rawData) {
     btn.innerHTML = '<i class="fa-solid fa-robot"></i> …';
 
     const sourceText = (target.textContent || "").trim();
-    if (!sourceText) {
-      alert("No content to rewrite yet.");
+    const isResults = targetId === "dashResults";
+    const builtSource = isResults ? buildResultsAIInput() : sourceText;
+    if ((isResults && !builtSource) || (!isResults && !sourceText)) {
+      if (isResults) {
+        const fallback =
+          "Overall progress is generally on track. Several goals have been completed, with others actively in progress.";
+        applyContent(targetId, target, fallback, { forceText: true });
+        aiGeneratedState[helperKey] = false;
+        setAIHelper(helperKey, false);
+      } else {
+        alert("No content to rewrite yet.");
+      }
       btn.disabled = false;
       btn.innerHTML = original;
       return;
@@ -421,7 +511,7 @@ function renderDashboard(rawData) {
         body: JSON.stringify({
           mode,
           phase: "dashboard",
-          text: sourceText,
+          text: builtSource,
           projectContext: ""
         })
       });
@@ -657,7 +747,7 @@ function renderDashboard(rawData) {
   // If we have final data, show that (full project view)
   if (hasFinal) {
     const completedFinalGoals = goals.filter(g => (g.finalStatus || "").toLowerCase() === "completed");
-    const completedFinalPain = completedFinalGoals.filter(g => (g.type || "").toLowerCase() === "pain");
+    const completedFinalPain = getAddressedPain(goals, "finalStatus");
     const highestImportance = completedFinalGoals.reduce(
       (max, g) => (g.importance != null && !Number.isNaN(Number(g.importance)) ? Math.max(max, Number(g.importance)) : max),
       -Infinity
@@ -688,8 +778,8 @@ function renderDashboard(rawData) {
       setSectionContent(
         "dashPain",
         completedFinalPain.length
-          ? completedFinalPain.map(g => g.label).join(" • ")
-          : "No pain points addressed yet."
+          ? completedFinalPain.join(" • ")
+          : "No pain points marked as addressed yet."
       );
       recordOriginal("pain", dashPain.textContent);
     }
@@ -708,9 +798,10 @@ function renderDashboard(rawData) {
       recordOriginal("learnings", dashLearnings.textContent);
     }
     if (dashNextSteps) {
+      const decisions = getDecisions();
       setSectionContent(
         "dashNextSteps",
-        (final.nextSteps && final.nextSteps.trim()) || "No next steps provided"
+        decisions.length ? decisions.join(" • ") : "No key decisions documented yet."
       );
       recordOriginal("nextSteps", dashNextSteps.textContent);
     }
@@ -737,6 +828,10 @@ function renderDashboard(rawData) {
       : [];
     const midtermCompletedPain = midtermCompleted.filter(
       g => (g.type || "").toLowerCase() === "pain"
+    );
+    const midtermAddressedPain = getAddressedPain(
+      Array.isArray(midterm.goalStatuses) ? midterm.goalStatuses : midterm.goals || [],
+      "status"
     );
 
     if (dashOutcomes) {
@@ -771,9 +866,9 @@ function renderDashboard(rawData) {
     if (dashPain) {
       setSectionContent(
         "dashPain",
-        midtermCompletedPain.length
-          ? midtermCompletedPain.map(g => g.label).join(" • ")
-          : "No pain points addressed yet."
+        midtermAddressedPain.length
+          ? midtermAddressedPain.join(" • ")
+          : "No pain points marked as addressed yet."
       );
       recordOriginal("pain", dashPain.textContent);
       setAIHelper("pain", aiGeneratedState.pain);
@@ -810,13 +905,12 @@ function renderDashboard(rawData) {
     }
 
     if (dashNextSteps) {
+      const decisions = getDecisions();
       setSectionContent(
         "dashNextSteps",
-        (midterm.nextSteps && midterm.nextSteps.trim()) ||
-          "No midterm data provided"
+        decisions.length ? decisions.join(" • ") : "No key decisions documented yet."
       );
       recordOriginal("nextSteps", dashNextSteps.textContent);
-      setAIHelper("nextSteps", aiGeneratedState.nextSteps);
     }
 
     wireCopyButtons();
@@ -940,11 +1034,12 @@ function renderDashboard(rawData) {
   }
 
   if (dashPain) {
+    const addressedKickoffPain = getAddressedPain(selectedUserPains, "status");
     setSectionContent(
       "dashPain",
-      selectedUserPains.length
-        ? selectedUserPains.map(p => p.label).join(" • ")
-        : "No pain points captured yet."
+      addressedKickoffPain.length
+        ? addressedKickoffPain.join(" • ")
+        : "No pain points marked as addressed yet."
     );
     recordOriginal("pain", dashPain.textContent);
   }
@@ -952,26 +1047,25 @@ function renderDashboard(rawData) {
   // Results & Impact → product / experience goals baseline
   if (dashResults) {
     setSectionContent("dashResults", "Not captured yet.");
-  }
-
-  // Biggest Wins → user goals we want to enable
-  if (dashWins) {
-    setSectionContent("dashWins", "Not captured yet.");
+    recordOriginal("results", dashResults.textContent);
   }
 
   // Challenges → user pains
   if (dashChallenges) {
     setSectionContent("dashChallenges", "Not captured yet.");
+    recordOriginal("challenges", dashChallenges.textContent);
   }
 
   // Key Learnings → explanation
   if (dashLearnings) {
     setSectionContent("dashLearnings", "Not captured yet.");
+    recordOriginal("learnings", dashLearnings.textContent);
   }
 
   // Next Steps → explanation
   if (dashNextSteps) {
     setSectionContent("dashNextSteps", "Not captured yet.");
+    recordOriginal("nextSteps", dashNextSteps.textContent);
   }
 
   // Full Final Summary → placeholder

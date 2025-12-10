@@ -384,61 +384,39 @@ If next steps are not specified, state that they are not specified.
 Do not invent metrics, tools, timelines, or outcomes.
 Plain text only, no greetings or sign-offs.`;
     case "dashboard_results_card":
-      return `Write a brief internal summary describing project results and impact to date.
+      return `Write a brief internal Results & Impact summary.
 
-Primary input:
-- Overall Progress vs. Plan rating (1–5, behind to ahead)
+Rules (absolute):
+- Do not mention numbers, scores, ratings, or dashboards.
+- Do not repeat input text verbatim.
+- Do not include meta or reporting language.
+- Translate inputs into plain professional language.
+- Do not use labels, headings, or category names (e.g., “Progress Direction,” “Goal Movement”) in the output.
+- Write in natural sentences, as if summarizing for a stakeholder update.
+- Do not start sentences with labels, headings, or meta phrases; begin sentences naturally, as if written by a project lead.
 
-Supporting input:
-- Current goal status counts (completed, in progress, not started)
+Structure:
+- Exactly 2 sentences.
+- Sentence 1 explains overall progress direction.
+- Sentence 2 explains evidence based on goal movement.
 
-The first sentence must begin with:
-"Overall progress indicates"
+Tone:
+- Neutral, confident, internal.
 
-Translate the progress rating into plain language without using numbers.
-In the second sentence, reference factual progress by summarizing current goal status.
-Do not list individual goals or invent outcomes.
-
-Tense:
-- Present tense only.
-
-Length:
-- Exactly 2 sentences
-- Each sentence must be 12–18 words.
-
-{SURVEY_DATA}`;
+INPUT:
+{PROGRESS_DIRECTION}
+{GOAL_MOVEMENT}`;
     case "dashboard_challenges_card":
-      return `Write a brief internal summary of current challenges affecting the project.
-
-The first sentence must begin with:
-"The project is currently constrained by"
-
-Describe constraints, delays, or risks.
-Do not suggest actions or resolutions.
-
-Tense:
-- Present tense only.
-
-Length:
-- Exactly 2 sentences
-- 12–18 words per sentence
+      return `Write 1–2 sentences summarizing the main challenges and constraints affecting this project.
+Use present tense, describe only existing or recent issues, and do not suggest solutions or future actions.
+Do not include any future plans, promises, or "we will" language.
+Do not reference dashboards, updates, communications, or future documentation.
 
 {SURVEY_DATA}`;
     case "dashboard_learnings_card":
-      return `Write a brief internal summary of key learnings identified so far.
-
-The first sentence must begin with:
-"The team identified that"
-
-Focus on realizations or shifts already made.
-Do not restate work or challenges.
-
-Tense:
-- Past tense only.
-
-Length:
-- Exactly 2 sentences
-- 12–18 words per sentence
+      return `Write 1–2 concise sentences summarizing key learnings from this project.
+Focus on realizations, shifts in approach, or decisions informed by experience.
+Use past tense, neutral internal tone, and do not restate goals or challenges.
 
 {SURVEY_DATA}`;
     case "dashboard_nextsteps_card":
