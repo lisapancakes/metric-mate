@@ -1020,6 +1020,12 @@ a.btn-primary:hover {
   grid-column: 1 / -1;
 }
 
+.dashboard-footer-action {
+  margin-top: 2rem;
+  display: flex;
+  justify-content: center;
+}
+
 .dash-table {
   width: 100%;
   border-collapse: collapse;

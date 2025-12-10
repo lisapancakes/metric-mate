@@ -87,6 +87,14 @@ function renderDashboard(rawData) {
   const finalSummary = data.finalSummary || "";
   const project = data.project || {};
   const goals = Array.isArray(data.goals) ? data.goals : [];
+  const projectPayloadBase = {
+    clientName: project.client || "",
+    title: project.name || "",
+    serviceCategories: project.serviceCategories || [],
+    techCategories: project.techCategories || [],
+    toolsUsed: project.toolsUsed || [],
+    goalCategories: project.goalCategories || []
+  };
   let derivedProgressSignal = null;
   let derivedGoalMovement = null;
 
@@ -148,6 +156,26 @@ function renderDashboard(rawData) {
     projectStatusChip.className = `project-status-chip ${chipClass}`;
     projectStatusChip.style.display = "inline-flex";
   }
+
+  // Kickoff selections (shared across all modes)
+  function getKickoffArray(propName) {
+    if (!kickoff) return [];
+    if (Array.isArray(kickoff[propName])) return kickoff[propName];
+    if (kickoff.goals && Array.isArray(kickoff.goals[propName])) {
+      return kickoff.goals[propName];
+    }
+    return [];
+  }
+
+  const kickoffBusinessGoals = getKickoffArray("businessGoals");
+  const kickoffProductGoals = getKickoffArray("productGoals");
+  const kickoffUserGoals = getKickoffArray("userGoals");
+  const kickoffUserPains = getKickoffArray("userPains");
+
+  const selectedBusinessGoals = kickoffBusinessGoals.filter(g => g.selected);
+  const selectedProductGoals = kickoffProductGoals.filter(g => g.selected);
+  const selectedUserGoals = kickoffUserGoals.filter(g => g.selected);
+  const selectedUserPains = kickoffUserPains.filter(p => p.selected);
 
   function helperKeyForTarget(targetId) {
     switch (targetId) {
@@ -426,6 +454,103 @@ function renderDashboard(rawData) {
         return summary.trim();
       })
       .filter(Boolean);
+  }
+
+  // Build prefilled Google Form URL for case study intake
+  function getCaseStudyPrefilledUrl(projectPayload, finalDashboard) {
+    const FORM_URL = "https://docs.google.com/forms/d/e/1FAIpQLSfPvvxah0MGvF6FVn4lId73mkAYEM2R0Ijf5U38fd6m0xyFcQ/viewform";
+    const params = new URLSearchParams();
+
+    const safeJoin = (arr = []) => arr.filter(Boolean);
+    const goalsCompleted = safeJoin(finalDashboard.goalsCompleted || []);
+    const painPoints = safeJoin(finalDashboard.originalPainPoints || []);
+    const decisions = safeJoin(finalDashboard.keyDecisions || []);
+    const learningsText = (finalDashboard.keyLearningsText || "").trim();
+
+    if (projectPayload.clientName) params.set("entry.1009657372", projectPayload.clientName);
+    if (projectPayload.title) params.set("entry.1888520839", projectPayload.title);
+
+    // Project goals (completed only) into Other option
+    if (goalsCompleted.length) {
+      params.append("entry.607934051", "__other_option__");
+      params.set(
+        "entry.607934051.other_option_response",
+        goalsCompleted.map((g) => `• ${g}`).join("\n")
+      );
+    }
+
+    const challengesBlockParts = [];
+    if (painPoints.length) {
+      challengesBlockParts.push("Pain points:");
+      challengesBlockParts.push(...painPoints.map((p) => `• ${p}`));
+    }
+    if (challengesBlockParts.length) {
+      params.set("entry.2146709131", challengesBlockParts.join("\n"));
+    }
+
+    const didLines = [];
+    if (goalsCompleted.length) {
+      didLines.push("What We Did:");
+      didLines.push(...goalsCompleted.map((g) => `• ${g}`));
+    }
+    if (decisions.length) {
+      if (didLines.length && didLines[didLines.length - 1] !== "") didLines.push("");
+      didLines.push(...decisions.map((d) => `• ${d}`));
+    }
+    if (didLines.length) {
+      params.set("entry.1962619986", didLines.join("\n"));
+    }
+
+    if (finalDashboard.resultsImpactText) {
+      params.set("entry.391970403", finalDashboard.resultsImpactText);
+    }
+
+    const highlights = [];
+    if (goalsCompleted.length) {
+      highlights.push(...goalsCompleted.slice(0, 3).map((g) => `• ${g}`));
+    }
+    if (learningsText) {
+      const firstLearning = learningsText.split(/[\n\.]/).find((s) => s.trim());
+      if (firstLearning) highlights.push(`• ${firstLearning.trim()}`);
+    }
+    if (highlights.length) {
+      params.set("entry.1162619322", `Highlights:\n${highlights.join("\n")}`);
+    }
+
+    if (Array.isArray(projectPayload.serviceCategories)) {
+      projectPayload.serviceCategories.filter(Boolean).forEach((cat) => {
+        params.append("entry.948935355", cat);
+      });
+    }
+    if (Array.isArray(projectPayload.techCategories)) {
+      projectPayload.techCategories.filter(Boolean).forEach((tech) => {
+        params.append("entry.411878623", tech);
+      });
+    }
+    if (Array.isArray(projectPayload.toolsUsed)) {
+      projectPayload.toolsUsed.filter(Boolean).forEach((tool) => {
+        params.append("entry.159720233", tool);
+      });
+    }
+
+    const otherHighlights = decisions.slice(0, 2).map((d) => `• ${d}`);
+    if (otherHighlights.length) {
+      params.set("entry.840332325", otherHighlights.join("\n"));
+    }
+
+    return `${FORM_URL}?${params.toString()}`;
+  }
+
+  function setCaseStudyButton(projectPayload, finalPayload) {
+    const btn = document.getElementById("openCaseStudyBtn");
+    if (!btn) return;
+    btn.onclick = (event) => {
+      event.preventDefault();
+      const url = getCaseStudyPrefilledUrl(projectPayload, finalPayload);
+      if (url) {
+        window.open(url, "_blank", "noopener");
+      }
+    };
   }
 
   function wireCopyButtons() {
@@ -816,6 +941,18 @@ function renderDashboard(rawData) {
     wireCopyButtons();
     wireAIButtons();
     wireRevertButtons();
+
+    const finalDashboardPayload = {
+      quickSummary: "",
+      goalsCompleted: completedFinalGoals.map(g => g.label || ""),
+      painPointsAddressed: completedFinalPain,
+      originalPainPoints: selectedUserPains.map(p => p.label || ""),
+      challengesText: dashChallenges ? dashChallenges.textContent : "",
+      resultsImpactText: dashResults ? dashResults.textContent : "",
+      keyLearningsText: dashLearnings ? dashLearnings.textContent : "",
+      keyDecisions: getDecisions()
+    };
+    setCaseStudyButton(projectPayloadBase, finalDashboardPayload);
     return;
   }
 
@@ -915,6 +1052,19 @@ function renderDashboard(rawData) {
 
     wireCopyButtons();
     wireAIButtons();
+    wireRevertButtons();
+
+    const midtermDashboardPayload = {
+      quickSummary: dashResults ? dashResults.textContent : "",
+      goalsCompleted: midtermCompleted.map(g => g.label || ""),
+      painPointsAddressed: midtermAddressedPain,
+      originalPainPoints: selectedUserPains.map(p => p.label || ""),
+      challengesText: dashChallenges ? dashChallenges.textContent : "",
+      resultsImpactText: dashResults ? dashResults.textContent : "",
+      keyLearningsText: dashLearnings ? dashLearnings.textContent : "",
+      keyDecisions: getDecisions()
+    };
+    setCaseStudyButton(projectPayloadBase, midtermDashboardPayload);
 
     // Kickoff baseline placeholders suppressed in midterm view
     return;
@@ -934,31 +1084,6 @@ function renderDashboard(rawData) {
   kickoffCards.forEach(card => {
     card.style.display = "none";
   });
-
-  // Helper to safely pull an array from kickoff (supports a couple of shapes)
-  function getKickoffArray(propName) {
-    if (!kickoff) return [];
-    if (Array.isArray(kickoff[propName])) return kickoff[propName];
-
-    if (kickoff.goals && Array.isArray(kickoff.goals[propName])) {
-      return kickoff.goals[propName];
-    }
-
-    return [];
-  }
-
-  const kickoffBusinessGoals = getKickoffArray("businessGoals");
-  const kickoffProductGoals = getKickoffArray("productGoals");
-  const kickoffUserGoals = getKickoffArray("userGoals");
-  const kickoffUserPains = getKickoffArray("userPains");
-
-  const selectedBusinessGoals = kickoffBusinessGoals.filter(g => g.selected);
-  const selectedProductGoals = kickoffProductGoals.filter(g => g.selected);
-  const selectedUserGoals = kickoffUserGoals.filter(g => g.selected);
-  const selectedUserPains = kickoffUserPains.filter(p => p.selected);
-  console.log("SELECTED PRODUCT GOALS:", selectedProductGoals);
-  console.log("SELECTED USER GOALS:", selectedUserGoals);
-  console.log("SELECTED USER PAINS:", selectedUserPains);
 
   // Render selected goals into the kickoff card table (full-width)
   if (dashGoalsTable) {
@@ -1082,4 +1207,17 @@ function renderDashboard(rawData) {
   setAIHelper("nextSteps", aiGeneratedState.nextSteps);
   wireCopyButtons();
   wireAIButtons();
+  wireRevertButtons();
+
+  const kickoffPayload = {
+    quickSummary: "",
+    goalsCompleted: [],
+    painPointsAddressed: [],
+    originalPainPoints: selectedUserPains.map(p => p.label || ""),
+    challengesText: dashChallenges ? dashChallenges.textContent : "",
+    resultsImpactText: dashResults ? dashResults.textContent : "",
+    keyLearningsText: dashLearnings ? dashLearnings.textContent : "",
+    keyDecisions: getDecisions()
+  };
+  setCaseStudyButton(projectPayloadBase, kickoffPayload);
 }
