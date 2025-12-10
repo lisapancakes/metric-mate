@@ -383,87 +383,28 @@ Use only the provided data. Keep the tone neutral and action-oriented.
 If next steps are not specified, state that they are not specified.
 Do not invent metrics, tools, timelines, or outcomes.
 Plain text only, no greetings or sign-offs.`;
-    case "dashboard_outcomes_card":
-      return `GLOBAL RULES (apply to all sections):
-- Write exactly 2 or 3 complete sentences.
-- Each sentence must be 12–18 words.
-- Do not exceed 50 total words.
-- Use only the provided survey data.
-- Do not invent metrics, tools, timelines, or outcomes.
-- Write in neutral, internal-facing language.
-- Do not include headings, labels, lists, or formatting.
-- Do not reuse or quote phrasing from the input verbatim.
-- Paraphrase all input into narrative project-summary language.
-- Do not mention AI, surveys, or data sources.
-- If constraints are not met, rewrite until they are.
-
-CRITICAL RULES:
-- Do not introduce suggestions, advice, or future-oriented language unless explicitly asked.
-- Do not include instructions, requests, or meta commentary.
-- Use past tense for completed work.
-- Use present tense only for ongoing conditions.
-- Never include quoted phrases from the input.
-
-SECTION PROMPTS:
-
-1) WHAT WE SHIPPED
-First sentence must begin with:
-"Work to date has focused on"
-
-Prompt:
-Write a brief narrative summary describing what has been delivered or implemented so far.
-Focus on completed or in-progress work, not goals or outcomes.
-
-{SURVEY_DATA}`;
     case "dashboard_results_card":
-      return `Write a brief internal summary describing observed results or project impact so far.
+      return `Write a brief internal summary describing project results and impact to date.
+
+Primary input:
+- Overall Progress vs. Plan rating (1–5, behind to ahead)
+
+Supporting input:
+- Current goal status counts (completed, in progress, not started)
 
 The first sentence must begin with:
 "Overall progress indicates"
 
-Describe confidence, momentum, or early signals without converting scores directly.
-Do not invent outcomes or metrics.
-Use neutral language and paraphrase fully.
+Translate the progress rating into plain language without using numbers.
+In the second sentence, reference factual progress by summarizing current goal status.
+Do not list individual goals or invent outcomes.
 
 Tense:
-- Use present tense for current state.
+- Present tense only.
 
 Length:
 - Exactly 2 sentences
-- 12–18 words per sentence
-- Max 36 words total
-
-{SURVEY_DATA}`;
-    case "dashboard_wins_card":
-      return `GLOBAL RULES (apply to all sections):
-- Write exactly 2 or 3 complete sentences.
 - Each sentence must be 12–18 words.
-- Do not exceed 50 total words.
-- Use only the provided survey data.
-- Do not invent metrics, tools, timelines, or outcomes.
-- Write in neutral, internal-facing language.
-- Do not include headings, labels, lists, or formatting.
-- Do not reuse or quote phrasing from the input verbatim.
-- Paraphrase all input into narrative project-summary language.
-- Do not mention AI, surveys, or data sources.
-- If constraints are not met, rewrite until they are.
-
-CRITICAL RULES:
-- Do not introduce suggestions, advice, or future-oriented language unless explicitly asked.
-- Do not include instructions, requests, or meta commentary.
-- Use past tense for completed work.
-- Use present tense only for ongoing conditions.
-- Never include quoted phrases from the input.
-
-SECTION PROMPTS:
-
-3) BIGGEST WINS
-First sentence must begin with:
-"One of the most meaningful gains has been"
-
-Prompt:
-Write a brief narrative summary highlighting the biggest wins or positive moments so far.
-Focus on improvements achieved or clarity gained, without hype.
 
 {SURVEY_DATA}`;
     case "dashboard_challenges_card":

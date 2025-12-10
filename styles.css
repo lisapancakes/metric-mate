@@ -456,6 +456,11 @@ textarea::placeholder {
   padding-bottom: 24px; /* more space before the footer/navigation */
 }
 
+.summary-section h2,
+.summary-section h3 {
+  font-weight: 600;
+}
+
 /* Heading + AI button row */
 .summary-heading-row {
   display: flex;
@@ -999,6 +1004,16 @@ a.btn-primary:hover {
   font-size: 0.9rem;
   line-height: 1.5;
   color: #111827;
+}
+
+.dash-list {
+  margin: 0;
+  padding-left: 1.1rem;
+  color: #111827;
+}
+
+.dash-list li {
+  margin-bottom: 0.25rem;
 }
 
 .dash-summary-full {

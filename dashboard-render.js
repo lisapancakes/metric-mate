@@ -22,7 +22,7 @@ function renderDashboard(rawData) {
 
   const dashOutcomes = document.getElementById("dashOutcomes");
   const dashResults = document.getElementById("dashResults");
-  const dashWins = document.getElementById("dashWins");
+  const dashPain = document.getElementById("dashPain");
   const dashChallenges = document.getElementById("dashChallenges");
   const dashLearnings = document.getElementById("dashLearnings");
   const dashNextSteps = document.getElementById("dashNextSteps");
@@ -31,7 +31,7 @@ function renderDashboard(rawData) {
   const aiHelpers = {
     outcomes: document.querySelector('[data-ai-helper-for="dashOutcomes"]'),
     results: document.querySelector('[data-ai-helper-for="dashResults"]'),
-    wins: document.querySelector('[data-ai-helper-for="dashWins"]'),
+    pain: document.querySelector('[data-ai-helper-for="dashPain"]'),
     challenges: document.querySelector('[data-ai-helper-for="dashChallenges"]'),
     learnings: document.querySelector('[data-ai-helper-for="dashLearnings"]'),
     nextSteps: document.querySelector('[data-ai-helper-for="dashNextSteps"]')
@@ -39,7 +39,7 @@ function renderDashboard(rawData) {
   const originalSections = {
     outcomes: "",
     results: "",
-    wins: "",
+    pain: "",
     challenges: "",
     learnings: "",
     nextSteps: ""
@@ -47,7 +47,7 @@ function renderDashboard(rawData) {
   const aiGeneratedState = {
     outcomes: false,
     results: false,
-    wins: false,
+    pain: false,
     challenges: false,
     learnings: false,
     nextSteps: false
@@ -151,10 +151,10 @@ function renderDashboard(rawData) {
     switch (targetId) {
       case "dashOutcomes":
         return "outcomes";
+      case "dashPain":
+        return "pain";
       case "dashResults":
         return "results";
-      case "dashWins":
-        return "wins";
       case "dashChallenges":
         return "challenges";
       case "dashLearnings":
@@ -169,11 +169,11 @@ function renderDashboard(rawData) {
   function modeForTarget(targetId) {
     switch (targetId) {
       case "dashOutcomes":
-        return "dashboard_outcomes_card";
+        return null;
       case "dashResults":
         return "dashboard_results_card";
       case "dashWins":
-        return "dashboard_wins_card";
+        return null;
       case "dashChallenges":
         return "dashboard_challenges_card";
       case "dashLearnings":
@@ -196,6 +196,156 @@ function renderDashboard(rawData) {
     if (!key) return;
     if (originalSections[key]) return;
     originalSections[key] = value || "";
+  }
+
+  const listTargets = new Set([
+    "dashOutcomes",
+    "dashResults",
+    "dashPain",
+    "dashChallenges",
+    "dashLearnings",
+    "dashNextSteps"
+  ]);
+  const pastTenseTargets = new Set(["dashOutcomes"]);
+
+  function escapeHTML(str = "") {
+    return str
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;")
+      .replace(/'/g, "&#39;");
+  }
+
+  function toPastTense(item = "") {
+    const trimmed = item.trim();
+    if (!trimmed) return "";
+    const replacements = {
+      improve: "Improved",
+      improved: "Improved",
+      increase: "Increased",
+      increased: "Increased",
+      clarify: "Clarified",
+      clarified: "Clarified",
+      define: "Defined",
+      defined: "Defined",
+      introduce: "Introduced",
+      introduced: "Introduced",
+      add: "Added",
+      added: "Added",
+      build: "Built",
+      built: "Built",
+      create: "Created",
+      created: "Created",
+      implement: "Implemented",
+      implemented: "Implemented",
+      launch: "Launched",
+      launched: "Launched",
+      ship: "Shipped",
+      shipped: "Shipped",
+      deliver: "Delivered",
+      delivered: "Delivered",
+      streamline: "Streamlined",
+      streamlined: "Streamlined",
+      align: "Aligned",
+      aligned: "Aligned",
+      organize: "Organized",
+      organized: "Organized",
+      simplify: "Simplified",
+      simplified: "Simplified",
+      refactor: "Refactored",
+      refactored: "Refactored",
+      update: "Updated",
+      updated: "Updated",
+      revise: "Revised",
+      revised: "Revised"
+    };
+    const words = trimmed.split(/\s+/);
+    const first = words[0].toLowerCase();
+    if (replacements[first]) {
+      words[0] = replacements[first];
+      return words.join(" ");
+    }
+    return trimmed;
+  }
+
+  function toListItems(text = "") {
+    const fragments = [];
+    const normalized = text.replace(/\r/g, "").replace(/•/g, "\n");
+    const lines = normalized.split(/\n+/);
+    lines.forEach((line) => {
+      const cleanedLine = line.trim().replace(/^[•*-\s]+/, "");
+      if (!cleanedLine) return;
+      const parts = cleanedLine.split(/(?<=[.!?])\s+/);
+      parts.forEach((part) => {
+        const item = part.trim().replace(/^[•*-\s]+/, "");
+        if (item) fragments.push(item);
+      });
+    });
+    return fragments.length ? fragments : [text.trim()].filter(Boolean);
+  }
+
+  function applyContent(targetId, targetEl, text, opts = {}) {
+    const key = helperKeyForTarget(targetId);
+    const forceText = opts.forceText === true;
+    const shouldList =
+      listTargets.has(targetId) && !forceText && !(key && aiGeneratedState[key]);
+
+    if (shouldList) {
+      const items = toListItems(text);
+      targetEl.innerHTML = `<ul class="dash-list">${items
+        .map((itm) => {
+          const pastItem = pastTenseTargets.has(targetId) ? toPastTense(itm) : itm;
+          return `<li>${escapeHTML(pastItem)}</li>`;
+        })
+        .join("")}</ul>`;
+    } else {
+      targetEl.textContent = text;
+    }
+  }
+
+  function cleanAIText(text = "") {
+    let cleaned = text.replace(/\*\*/g, ""); // drop bold markers
+    cleaned = cleaned.replace(/^(?:revised|rewritten|updated)\s*text[:\-]?\s*/i, ""); // drop leading labels
+    cleaned = cleaned.replace(/^dashboard update[:\-]?\s*/i, ""); // drop dashboard update prefixes
+    cleaned = cleaned.replace(/^dashboard summary[:\-]?\s*/i, ""); // drop dashboard summary prefixes
+    cleaned = cleaned.replace(/\b(kickoff update:|final review:)\s*/gi, ""); // drop phase labels
+    cleaned = cleaned.replace(/^[\s*•\-–]+/gm, ""); // drop leading list markers
+    cleaned = cleaned.replace(/\n+/g, " "); // flatten lines
+    cleaned = cleaned.replace(/\s+/g, " ").trim();
+    return cleaned;
+  }
+
+  function normalizeGoalStatus(raw) {
+    const val = (raw || "").toString().trim().toLowerCase();
+    if (!val) return "";
+    if (["complete", "completed", "done", "achieved"].includes(val)) return "completed";
+    if (["in progress", "in-progress", "inprogress", "working"].includes(val)) return "in progress";
+    if (["not started", "not-started", "notstarted", "pending", "planned"].includes(val)) return "not started";
+    return "";
+  }
+
+  function buildGoalStatusSummary(goals) {
+    if (!Array.isArray(goals) || !goals.length) return "";
+    const total = goals.length;
+    let completed = 0;
+    let inProgress = 0;
+    let notStarted = 0;
+
+    goals.forEach((g) => {
+      const status = normalizeGoalStatus(g.finalStatus || g.status || g.midtermStatus);
+      if (status === "completed") completed += 1;
+      else if (status === "in progress") inProgress += 1;
+      else if (status === "not started") notStarted += 1;
+    });
+
+    return `Goal status summary: ${completed} completed, ${inProgress} in progress, ${notStarted} not started (${total} total).`;
+  }
+
+  function setSectionContent(targetId, text) {
+    const target = document.getElementById(targetId);
+    if (!target) return;
+    applyContent(targetId, target, text || "");
   }
 
   function wireCopyButtons() {
@@ -232,7 +382,7 @@ function renderDashboard(rawData) {
         const target = document.getElementById(targetId);
         if (!key || !target) return;
         if (originalSections[key]) {
-          target.textContent = originalSections[key];
+          applyContent(targetId, target, originalSections[key]);
           aiGeneratedState[key] = false;
           setAIHelper(key, false);
         }
@@ -278,11 +428,12 @@ function renderDashboard(rawData) {
       if (!res.ok) throw new Error(`AI rewrite failed: ${res.status}`);
       const json = await res.json();
       if (!json || typeof json.text !== "string") throw new Error("Invalid AI response");
-      target.textContent = json.text.trim();
       if (helperKey) {
         aiGeneratedState[helperKey] = true;
         setAIHelper(helperKey, true);
       }
+      const cleaned = cleanAIText(json.text);
+      applyContent(targetId, target, cleaned, { forceText: true });
     } catch (err) {
       console.error("AI rewrite failed", err);
       alert("AI could not generate this text. Please try again later.");
@@ -299,8 +450,17 @@ function renderDashboard(rawData) {
       btn.dataset.aiWired = "1";
       btn.addEventListener("click", () => {
         const targetId = btn.dataset.aiTarget;
+        const mode = modeForTarget(targetId);
+        if (!mode) {
+          btn.style.display = "none";
+          return;
+        }
         rewriteDashboardSection(targetId);
       });
+      const mode = modeForTarget(btn.dataset.aiTarget);
+      if (!mode) {
+        btn.style.display = "none";
+      }
     });
   }
 
@@ -497,6 +657,7 @@ function renderDashboard(rawData) {
   // If we have final data, show that (full project view)
   if (hasFinal) {
     const completedFinalGoals = goals.filter(g => (g.finalStatus || "").toLowerCase() === "completed");
+    const completedFinalPain = completedFinalGoals.filter(g => (g.type || "").toLowerCase() === "pain");
     const highestImportance = completedFinalGoals.reduce(
       (max, g) => (g.importance != null && !Number.isNaN(Number(g.importance)) ? Math.max(max, Number(g.importance)) : max),
       -Infinity
@@ -508,33 +669,49 @@ function renderDashboard(rawData) {
 
     if (summaryCard) summaryCard.style.display = "block";
     if (dashOutcomes) {
-      dashOutcomes.textContent =
+      setSectionContent(
+        "dashOutcomes",
         completedFinalGoals.length
           ? completedFinalGoals.map(g => g.label).join(" • ")
-          : (final.outcomes && final.outcomes.trim()) || "No final outcomes provided";
+          : (final.outcomes && final.outcomes.trim()) || "No final outcomes provided"
+      );
       recordOriginal("outcomes", dashOutcomes.textContent);
     }
     if (dashResults) {
-      dashResults.textContent = (final.results && final.results.trim()) || "No final results provided";
+      const statusSummary = buildGoalStatusSummary(finalGoalsList);
+      const resultsText = (final.results && final.results.trim()) || "No final results provided";
+      const combined = statusSummary ? `${resultsText}\n${statusSummary}` : resultsText;
+      setSectionContent("dashResults", combined);
       recordOriginal("results", dashResults.textContent);
     }
-    if (dashWins) {
-      dashWins.textContent =
-        topCompletedGoals.length
-          ? topCompletedGoals.map(g => g.label).join(" • ")
-          : (final.wins && final.wins.trim()) || "No wins provided";
-      recordOriginal("wins", dashWins.textContent);
+    if (dashPain) {
+      setSectionContent(
+        "dashPain",
+        completedFinalPain.length
+          ? completedFinalPain.map(g => g.label).join(" • ")
+          : "No pain points addressed yet."
+      );
+      recordOriginal("pain", dashPain.textContent);
     }
     if (dashChallenges) {
-      dashChallenges.textContent = (final.challenges && final.challenges.trim()) || "No challenges provided";
+      setSectionContent(
+        "dashChallenges",
+        (final.challenges && final.challenges.trim()) || "No challenges provided"
+      );
       recordOriginal("challenges", dashChallenges.textContent);
     }
     if (dashLearnings) {
-      dashLearnings.textContent = (final.learnings && final.learnings.trim()) || "No learnings provided";
+      setSectionContent(
+        "dashLearnings",
+        (final.learnings && final.learnings.trim()) || "No learnings provided"
+      );
       recordOriginal("learnings", dashLearnings.textContent);
     }
     if (dashNextSteps) {
-      dashNextSteps.textContent = (final.nextSteps && final.nextSteps.trim()) || "No next steps provided";
+      setSectionContent(
+        "dashNextSteps",
+        (final.nextSteps && final.nextSteps.trim()) || "No next steps provided"
+      );
       recordOriginal("nextSteps", dashNextSteps.textContent);
     }
     if (dashSummaryText) {
@@ -542,7 +719,7 @@ function renderDashboard(rawData) {
         (finalSummary && finalSummary.trim()) ||
         "No final summary provided";
     }
-    ["outcomes", "results", "wins", "challenges", "learnings", "nextSteps"].forEach(k =>
+    ["outcomes", "pain", "results", "challenges", "learnings", "nextSteps"].forEach(k =>
       setAIHelper(k, aiGeneratedState[k])
     );
     wireCopyButtons();
@@ -558,50 +735,48 @@ function renderDashboard(rawData) {
     const midtermCompleted = Array.isArray(midterm.goalStatuses)
       ? midterm.goalStatuses.filter(r => (r.status || "").toLowerCase() === "completed")
       : [];
+    const midtermCompletedPain = midtermCompleted.filter(
+      g => (g.type || "").toLowerCase() === "pain"
+    );
 
     if (dashOutcomes) {
-      if (midtermCompleted.length) {
-        dashOutcomes.textContent = midtermCompleted.map(g => g.label).join(" • ");
-      } else {
-        dashOutcomes.textContent =
-          midterm.healthScore != null
-            ? `Project Health: ${midterm.healthScore}/5`
-            : "No midterm data provided";
-      }
+      setSectionContent(
+        "dashOutcomes",
+        midtermCompleted.length
+          ? midtermCompleted.map(g => g.label).join(" • ")
+          : (
+              midterm.healthScore != null
+                ? `Project Health: ${midterm.healthScore}/5`
+                : "No midterm data provided"
+            )
+      );
       recordOriginal("outcomes", dashOutcomes.textContent);
       setAIHelper("outcomes", aiGeneratedState.outcomes);
     }
 
     if (dashResults) {
-      dashResults.textContent =
+      const statusSummary = buildGoalStatusSummary(
+        Array.isArray(midterm.goalStatuses) ? midterm.goalStatuses : midterm.goals || []
+      );
+      const progressText =
         midterm.progressScore != null
           ? `Progress Confidence: ${midterm.progressScore}/5`
           : "No midterm data provided";
+      const combined = statusSummary ? `${progressText}\n${statusSummary}` : progressText;
+      setSectionContent("dashResults", combined);
       recordOriginal("results", dashResults.textContent);
       setAIHelper("results", aiGeneratedState.results);
     }
 
-    if (dashWins) {
-      const highestMidImp = midtermCompleted.reduce(
-        (max, g) =>
-          g.importance != null && !Number.isNaN(Number(g.importance))
-            ? Math.max(max, Number(g.importance))
-            : max,
-        -Infinity
+    if (dashPain) {
+      setSectionContent(
+        "dashPain",
+        midtermCompletedPain.length
+          ? midtermCompletedPain.map(g => g.label).join(" • ")
+          : "No pain points addressed yet."
       );
-      const topMidGoals =
-        highestMidImp === -Infinity
-          ? []
-          : midtermCompleted.filter(g => Number(g.importance) === highestMidImp);
-      if (topMidGoals.length) {
-        dashWins.textContent = topMidGoals.map(g => g.label).join(" • ");
-      } else {
-        dashWins.textContent =
-          (midterm.wins && midterm.wins.trim()) ||
-          "No midterm data provided";
-      }
-      recordOriginal("wins", dashWins.textContent);
-      setAIHelper("wins", aiGeneratedState.wins);
+      recordOriginal("pain", dashPain.textContent);
+      setAIHelper("pain", aiGeneratedState.pain);
     }
 
     if (dashChallenges) {
@@ -609,30 +784,37 @@ function renderDashboard(rawData) {
         ? midterm.risks.filter(r => (r.selected ?? true) && (r.label || r.notes))
         : [];
       if (risksList.length) {
-        dashChallenges.textContent = risksList
-          .map(r => `${r.label || ""}${r.notes ? ` — ${r.notes}` : ""}`)
-          .join(" • ");
+        setSectionContent(
+          "dashChallenges",
+          risksList
+            .map(r => `${r.label || ""}${r.notes ? ` — ${r.notes}` : ""}`)
+            .join(" • ")
+        );
       } else if (typeof midterm.risks === "string" && midterm.risks.trim()) {
-        dashChallenges.textContent = midterm.risks.trim();
+        setSectionContent("dashChallenges", midterm.risks.trim());
       } else {
-        dashChallenges.textContent = "No midterm data provided";
+        setSectionContent("dashChallenges", "No midterm data provided");
       }
       recordOriginal("challenges", dashChallenges.textContent);
       setAIHelper("challenges", aiGeneratedState.challenges);
     }
 
     if (dashLearnings) {
-      dashLearnings.textContent =
+      setSectionContent(
+        "dashLearnings",
         (midterm.learnings && midterm.learnings.trim()) ||
-        "No midterm data provided";
+          "No midterm data provided"
+      );
       recordOriginal("learnings", dashLearnings.textContent);
       setAIHelper("learnings", aiGeneratedState.learnings);
     }
 
     if (dashNextSteps) {
-      dashNextSteps.textContent =
+      setSectionContent(
+        "dashNextSteps",
         (midterm.nextSteps && midterm.nextSteps.trim()) ||
-        "No midterm data provided";
+          "No midterm data provided"
+      );
       recordOriginal("nextSteps", dashNextSteps.textContent);
       setAIHelper("nextSteps", aiGeneratedState.nextSteps);
     }
@@ -754,32 +936,42 @@ function renderDashboard(rawData) {
 
   // What we shipped → baseline business goals
   if (dashOutcomes) {
-    dashOutcomes.textContent = "Not captured yet.";
+    setSectionContent("dashOutcomes", "Not captured yet.");
+  }
+
+  if (dashPain) {
+    setSectionContent(
+      "dashPain",
+      selectedUserPains.length
+        ? selectedUserPains.map(p => p.label).join(" • ")
+        : "No pain points captured yet."
+    );
+    recordOriginal("pain", dashPain.textContent);
   }
 
   // Results & Impact → product / experience goals baseline
   if (dashResults) {
-    dashResults.textContent = "Not captured yet.";
+    setSectionContent("dashResults", "Not captured yet.");
   }
 
   // Biggest Wins → user goals we want to enable
   if (dashWins) {
-    dashWins.textContent = "Not captured yet.";
+    setSectionContent("dashWins", "Not captured yet.");
   }
 
   // Challenges → user pains
   if (dashChallenges) {
-    dashChallenges.textContent = "Not captured yet.";
+    setSectionContent("dashChallenges", "Not captured yet.");
   }
 
   // Key Learnings → explanation
   if (dashLearnings) {
-    dashLearnings.textContent = "Not captured yet.";
+    setSectionContent("dashLearnings", "Not captured yet.");
   }
 
   // Next Steps → explanation
   if (dashNextSteps) {
-    dashNextSteps.textContent = "Not captured yet.";
+    setSectionContent("dashNextSteps", "Not captured yet.");
   }
 
   // Full Final Summary → placeholder
@@ -789,8 +981,8 @@ function renderDashboard(rawData) {
   }
 
   setAIHelper("outcomes", aiGeneratedState.outcomes);
+  setAIHelper("pain", aiGeneratedState.pain);
   setAIHelper("results", aiGeneratedState.results);
-  setAIHelper("wins", aiGeneratedState.wins);
   setAIHelper("challenges", aiGeneratedState.challenges);
   setAIHelper("learnings", aiGeneratedState.learnings);
   setAIHelper("nextSteps", aiGeneratedState.nextSteps);
