@@ -416,35 +416,22 @@ Focus on completed or in-progress work, not goals or outcomes.
 
 {SURVEY_DATA}`;
     case "dashboard_results_card":
-      return `GLOBAL RULES (apply to all sections):
-- Write exactly 2 or 3 complete sentences.
-- Each sentence must be 12–18 words.
-- Do not exceed 50 total words.
-- Use only the provided survey data.
-- Do not invent metrics, tools, timelines, or outcomes.
-- Write in neutral, internal-facing language.
-- Do not include headings, labels, lists, or formatting.
-- Do not reuse or quote phrasing from the input verbatim.
-- Paraphrase all input into narrative project-summary language.
-- Do not mention AI, surveys, or data sources.
-- If constraints are not met, rewrite until they are.
+      return `Write a brief internal summary describing observed results or project impact so far.
 
-CRITICAL RULES:
-- Do not introduce suggestions, advice, or future-oriented language unless explicitly asked.
-- Do not include instructions, requests, or meta commentary.
-- Use past tense for completed work.
-- Use present tense only for ongoing conditions.
-- Never include quoted phrases from the input.
-
-SECTION PROMPTS:
-
-2) RESULTS & IMPACT
-First sentence must begin with:
+The first sentence must begin with:
 "Overall progress indicates"
 
-Prompt:
-Write a brief narrative summary describing results or impact observed so far.
-Focus on confidence, momentum, or early signals rather than final outcomes.
+Describe confidence, momentum, or early signals without converting scores directly.
+Do not invent outcomes or metrics.
+Use neutral language and paraphrase fully.
+
+Tense:
+- Use present tense for current state.
+
+Length:
+- Exactly 2 sentences
+- 12–18 words per sentence
+- Max 36 words total
 
 {SURVEY_DATA}`;
     case "dashboard_wins_card":
@@ -480,68 +467,37 @@ Focus on improvements achieved or clarity gained, without hype.
 
 {SURVEY_DATA}`;
     case "dashboard_challenges_card":
-      return `GLOBAL RULES (apply to all sections):
-- Write exactly 2 or 3 complete sentences.
-- Each sentence must be 12–18 words.
-- Do not exceed 50 total words.
-- Use only the provided survey data.
-- Do not invent metrics, tools, timelines, or outcomes.
-- Write in neutral, internal-facing language.
-- Do not include headings, labels, lists, or formatting.
-- Do not reuse or quote phrasing from the input verbatim.
-- Paraphrase all input into narrative project-summary language.
-- Do not mention AI, surveys, or data sources.
-- If constraints are not met, rewrite until they are.
+      return `Write a brief internal summary of current challenges affecting the project.
 
-CRITICAL RULES:
-- Do not introduce suggestions, advice, or future-oriented language unless explicitly asked.
-- Do not include instructions, requests, or meta commentary.
-- Use past tense for completed work.
-- Use present tense only for ongoing conditions.
-- Never include quoted phrases from the input.
-
-SECTION PROMPTS:
-
-4) CHALLENGES
-First sentence must begin with:
+The first sentence must begin with:
 "The project is currently constrained by"
 
-Prompt:
-Write a brief narrative summary of key challenges affecting the project.
-Focus on risks, delays, constraints, or dependencies.
-Do not suggest solutions or next steps.
+Describe constraints, delays, or risks.
+Do not suggest actions or resolutions.
+
+Tense:
+- Present tense only.
+
+Length:
+- Exactly 2 sentences
+- 12–18 words per sentence
 
 {SURVEY_DATA}`;
     case "dashboard_learnings_card":
-      return `GLOBAL RULES (apply to all sections):
-- Write exactly 2 or 3 complete sentences.
-- Each sentence must be 12–18 words.
-- Do not exceed 50 total words.
-- Use only the provided survey data.
-- Do not invent metrics, tools, timelines, or outcomes.
-- Write in neutral, internal-facing language.
-- Do not include headings, labels, lists, or formatting.
-- Do not reuse or quote phrasing from the input verbatim.
-- Paraphrase all input into narrative project-summary language.
-- Do not mention AI, surveys, or data sources.
-- If constraints are not met, rewrite until they are.
+      return `Write a brief internal summary of key learnings identified so far.
 
-CRITICAL RULES:
-- Do not introduce suggestions, advice, or future-oriented language unless explicitly asked.
-- Do not include instructions, requests, or meta commentary.
-- Use past tense for completed work.
-- Use present tense only for ongoing conditions.
-- Never include quoted phrases from the input.
+The first sentence must begin with:
+"The team identified that"
 
-SECTION PROMPTS:
+Focus on realizations or shifts already made.
+Do not restate work or challenges.
 
-5) KEY LEARNINGS
-First sentence must begin with:
-"The team has learned that"
+Tense:
+- Past tense only.
 
-Prompt:
-Write a brief narrative summary of key learnings or insights gained so far.
-Focus on realizations or shifts in approach informed by experience.
+Length:
+- Exactly 2 sentences
+- 12–18 words per sentence
 
 {SURVEY_DATA}`;
     case "dashboard_nextsteps_card":
