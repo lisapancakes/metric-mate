@@ -1098,34 +1098,34 @@ function renderDashboard(rawData) {
 
   // If we have final data, show that (full project view)
   if (hasFinal) {
-    const completedFinalGoals = goals.filter(g => (g.finalStatus || "").toLowerCase() === "completed");
     const completedFinalPain = getAddressedPain(goals, "finalStatus");
-    const highestImportance = completedFinalGoals.reduce(
-      (max, g) => (g.importance != null && !Number.isNaN(Number(g.importance)) ? Math.max(max, Number(g.importance)) : max),
-      -Infinity
-    );
-    const topCompletedGoals =
-      highestImportance === -Infinity
-        ? []
-        : completedFinalGoals.filter(g => Number(g.importance) === highestImportance);
 
     if (summaryCard) summaryCard.style.display = "block";
     if (dashOutcomes) {
-      if (completedFinalGoals.length) {
-        dashOutcomes.innerHTML = completedFinalGoals
+      const typeLabel = (t) => {
+        const val = (t || "").toLowerCase();
+        if (val === "business") return "Business";
+        if (val === "product") return "Product";
+        if (val === "user") return "User";
+        if (val === "pain") return "Pain point";
+        return "Goal";
+      };
+      const activeGoals = finalGoalsList.filter((g) => getCanonicalStatus(g) !== "discard");
+      const completedGoals = activeGoals
+        .filter((g) => getCanonicalStatus(g) === "completed")
+        .sort((a, b) => (Number(b.importance) || 0) - (Number(a.importance) || 0));
+
+      const heading = "<div><strong>Completed goals:</strong></div>";
+      if (completedGoals.length) {
+        const listHtml = completedGoals
           .map((g) => {
-            const note = g.completionNote && g.completionNote.trim();
-            return `
-              <div class="completed-goal">
-                <div class="goal-label">${g.label}</div>
-                ${note ? `<div class="goal-note">Note: ${note}</div>` : ""}
-              </div>
-            `;
+            const label = g.label || g.goal || "";
+            return `<li>${escapeHTML(label)} (${typeLabel(g.type)})</li>`;
           })
           .join("");
+        dashOutcomes.innerHTML = `${heading}<ul class="dash-list">${listHtml}</ul>`;
       } else {
-        dashOutcomes.textContent =
-          (final.outcomes && final.outcomes.trim()) || "No final outcomes provided";
+        dashOutcomes.innerHTML = `${heading}<ul class="dash-list"><li>None completed yet</li></ul>`;
       }
       recordOriginal("outcomes", dashOutcomes.textContent || dashOutcomes.innerText || "");
       setCardVisibilityForContent("dashOutcomes");
