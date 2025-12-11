@@ -21,6 +21,7 @@ function renderDashboard(rawData) {
   const projectStatusChip = document.getElementById("projectStatusChip");
   const projectSummaryEl = document.getElementById("dashboardProjectSummary");
   const caseStudyBtn = document.getElementById("openCaseStudyBtn");
+  const caseStudyCard = document.getElementById("caseStudyCard");
 
   const dashOutcomes = document.getElementById("dashOutcomes");
   const dashResults = document.getElementById("dashResults");
@@ -1254,6 +1255,7 @@ function renderDashboard(rawData) {
     };
     setCaseStudyButton(projectPayloadBase, finalDashboardPayload);
     if (caseStudyBtn) caseStudyBtn.style.display = "inline-flex";
+    if (caseStudyCard) caseStudyCard.style.display = "block";
     return;
   }
 
@@ -1382,6 +1384,7 @@ function renderDashboard(rawData) {
     };
     setCaseStudyButton(projectPayloadBase, midtermDashboardPayload);
     if (caseStudyBtn) caseStudyBtn.style.display = "none";
+    if (caseStudyCard) caseStudyCard.style.display = "none";
 
     // Kickoff baseline placeholders suppressed in midterm view
     return;
@@ -1397,6 +1400,7 @@ function renderDashboard(rawData) {
     setGoalsCompletedTitle(0);
     setPainPointsTitle(0);
     setChallengesTitle(0);
+    if (caseStudyCard) caseStudyCard.style.display = "none";
     const keyDecisionsCard = document.getElementById("dashNextSteps")
       ? document.getElementById("dashNextSteps").closest(".dash-card")
       : null;

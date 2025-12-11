@@ -1067,10 +1067,6 @@ a.btn-primary:hover {
   justify-content: center;
 }
 
-#openCaseStudyBtn {
-  display: none;
-}
-
 .dash-table {
   width: 100%;
   border-collapse: collapse;
