@@ -1115,7 +1115,6 @@ function renderDashboard(rawData) {
         .filter((g) => getCanonicalStatus(g) === "completed")
         .sort((a, b) => (Number(b.importance) || 0) - (Number(a.importance) || 0));
 
-      const heading = "<div><strong>Completed goals:</strong></div>";
       if (completedGoals.length) {
         const listHtml = completedGoals
           .map((g) => {
@@ -1123,9 +1122,9 @@ function renderDashboard(rawData) {
             return `<li>${escapeHTML(label)} (${typeLabel(g.type)})</li>`;
           })
           .join("");
-        dashOutcomes.innerHTML = `${heading}<ul class="dash-list">${listHtml}</ul>`;
+        dashOutcomes.innerHTML = `<ul class="dash-list">${listHtml}</ul>`;
       } else {
-        dashOutcomes.innerHTML = `${heading}<ul class="dash-list"><li>None completed yet</li></ul>`;
+        dashOutcomes.innerHTML = `<ul class="dash-list"><li>None completed yet</li></ul>`;
       }
       recordOriginal("outcomes", dashOutcomes.textContent || dashOutcomes.innerText || "");
       setCardVisibilityForContent("dashOutcomes");
@@ -1148,7 +1147,6 @@ function renderDashboard(rawData) {
         )
         .sort((a, b) => (Number(b.importance) || 0) - (Number(a.importance) || 0));
 
-      const heading = "<div><strong>Addressed pain points:</strong></div>";
       if (completedPains.length) {
         const listHtml = completedPains
           .map((g) => {
@@ -1156,13 +1154,13 @@ function renderDashboard(rawData) {
             const note = g.howWeDidIt || g.completionNote || g.finalNotes || "";
             const safeLabel = escapeHTML(label);
             const safeNote = escapeHTML(note);
-            const noteLine = note ? `<div class="goal-note">How we addressed it: ${safeNote}</div>` : "";
+            const noteLine = note ? `<div class="goal-note"><strong>How we addressed it:</strong> ${safeNote}</div>` : "";
             return `<li>${safeLabel}${noteLine ? `<br>${noteLine}` : ""}</li>`;
           })
           .join("");
-        dashPain.innerHTML = `${heading}<ul class="dash-list">${listHtml}</ul>`;
+        dashPain.innerHTML = `<ul class="dash-list">${listHtml}</ul>`;
       } else {
-        dashPain.innerHTML = `${heading}<ul class="dash-list"><li>No pain points marked as addressed yet</li></ul>`;
+        dashPain.innerHTML = `<ul class="dash-list"><li>No pain points marked as addressed yet</li></ul>`;
       }
       recordOriginal("pain", dashPain.textContent || dashPain.innerText || "");
       setCardVisibilityForContent("dashPain");
