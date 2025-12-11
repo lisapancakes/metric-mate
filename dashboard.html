@@ -59,7 +59,7 @@
       <div class="dash-card">
         <div class="dash-card-heading">
             <div class="dash-card-heading-row">
-              <h3>Goals Completed</h3>
+              <h3 id="goalsCompletedTitle">Goals Completed</h3>
               <div class="dash-actions">
                 <button class="icon-copy-btn" data-copy-target="dashOutcomes" title="Copy to clipboard" aria-label="Copy Goals Completed">
                   <i class="fa-regular fa-copy"></i>
@@ -84,7 +84,7 @@
       <div class="dash-card">
         <div class="dash-card-heading">
             <div class="dash-card-heading-row">
-              <h3>Pain Points Addressed</h3>
+              <h3 id="painPointsTitle">Pain Points Addressed</h3>
               <div class="dash-actions">
                 <button class="icon-copy-btn" data-copy-target="dashPain" title="Copy to clipboard" aria-label="Copy Pain Points Addressed">
                   <i class="fa-regular fa-copy"></i>
@@ -131,9 +131,9 @@
       <div class="dash-card">
         <div class="dash-card-heading">
             <div class="dash-card-heading-row">
-              <h3>Challenges & Constraints</h3>
+              <h3 id="challengesTitle">Challenges</h3>
               <div class="dash-actions">
-                <button class="icon-copy-btn" data-copy-target="dashChallenges" title="Copy to clipboard" aria-label="Copy Challenges & Constraints">
+                <button class="icon-copy-btn" data-copy-target="dashChallenges" title="Copy to clipboard" aria-label="Copy Challenges">
                   <i class="fa-regular fa-copy"></i>
                 </button>
                 
@@ -200,15 +200,14 @@
           <p class="help-text ai-helper" data-ai-helper-for="dashSummaryText">AI draft not generated</p>
         </div>
         <pre id="dashSummaryText" class="dash-summary"></pre>
+        <div class="dashboard-footer-action">
+          <button class="btn btn-primary" id="openCaseStudyBtn" type="button">
+            Open Pre-filled Case Study Form
+          </button>
+        </div>
       </div>
 
     </main>
-
-    <div class="dashboard-footer-action">
-      <button class="btn btn-primary" id="openCaseStudyBtn" type="button" style="display:none;">
-        Open Pre-filled Case Study Form
-      </button>
-    </div>
 
 <section id="errorPanel" class="error-box" style="display:none;"></section>
 <div id="copyStatus" class="status-message" style="display:none;"></div>

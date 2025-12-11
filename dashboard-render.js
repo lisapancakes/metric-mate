@@ -28,6 +28,8 @@ function renderDashboard(rawData) {
   const dashChallenges = document.getElementById("dashChallenges");
   const dashLearnings = document.getElementById("dashLearnings");
   const dashNextSteps = document.getElementById("dashNextSteps");
+  const painPointsTitle = document.getElementById("painPointsTitle");
+  const challengesTitle = document.getElementById("challengesTitle");
   const dashSummaryText = document.getElementById("dashSummaryText");
   const dashImpactCard = document.getElementById("dashImpact")?.closest(".dash-card");
   const dashMidtermSummary = document.getElementById("dashMidtermSummary");
@@ -266,6 +268,21 @@ function renderDashboard(rawData) {
     if (!card) return;
     const text = (el.textContent || el.innerText || "").trim();
     card.style.display = text ? "block" : "none";
+  }
+
+  function setGoalsCompletedTitle(count = 0) {
+    if (!goalsCompletedTitle) return;
+    goalsCompletedTitle.textContent = `Goals Completed (${count})`;
+  }
+
+  function setPainPointsTitle(count = 0) {
+    if (!painPointsTitle) return;
+    painPointsTitle.textContent = `Pain Points Addressed (${count})`;
+  }
+
+  function setChallengesTitle(count = 0) {
+    if (!challengesTitle) return;
+        challengesTitle.textContent = `Challenges (${count})`;
   }
 
   const listTargets = new Set([
@@ -1110,16 +1127,17 @@ function renderDashboard(rawData) {
         if (val === "pain") return "Pain point";
         return "Goal";
       };
-      const activeGoals = finalGoalsList.filter((g) => getCanonicalStatus(g) !== "discard");
-      const completedGoals = activeGoals
-        .filter((g) => getCanonicalStatus(g) === "completed")
-        .sort((a, b) => (Number(b.importance) || 0) - (Number(a.importance) || 0));
+    const activeGoals = finalGoalsList.filter((g) => getCanonicalStatus(g) !== "discard");
+    const completedGoals = activeGoals
+      .filter((g) => getCanonicalStatus(g) === "completed")
+      .sort((a, b) => (Number(b.importance) || 0) - (Number(a.importance) || 0));
 
-      if (completedGoals.length) {
-        const listHtml = completedGoals
-          .map((g) => {
-            const label = g.label || g.goal || "";
-            return `<li>${escapeHTML(label)} (${typeLabel(g.type)})</li>`;
+    setGoalsCompletedTitle(completedGoals.length);
+    if (completedGoals.length) {
+      const listHtml = completedGoals
+        .map((g) => {
+          const label = g.label || g.goal || "";
+          return `<li>${escapeHTML(label)} (${typeLabel(g.type)})</li>`;
           })
           .join("");
         dashOutcomes.innerHTML = `<ul class="dash-list">${listHtml}</ul>`;
@@ -1147,6 +1165,9 @@ function renderDashboard(rawData) {
         )
         .sort((a, b) => (Number(b.importance) || 0) - (Number(a.importance) || 0));
 
+      if (painPointsTitle) {
+        painPointsTitle.textContent = `Pain Points Addressed (${completedPains.length})`;
+      }
       if (completedPains.length) {
         const listHtml = completedPains
           .map((g) => {
@@ -1166,9 +1187,16 @@ function renderDashboard(rawData) {
       setCardVisibilityForContent("dashPain");
     }
     if (dashChallenges) {
+      const challengesText = (final.challenges && final.challenges.trim()) || "";
+      if (challengesTitle) {
+        const count = challengesText
+          ? challengesText.split(/[\n•]/).map(t => t.trim()).filter(Boolean).length
+          : 0;
+        challengesTitle.textContent = `Challenges (${count})`;
+      }
       setSectionContent(
         "dashChallenges",
-        (final.challenges && final.challenges.trim()) || "No challenges provided"
+        challengesText || "No challenges provided"
       );
       recordOriginal("challenges", dashChallenges.textContent);
       setCardVisibilityForContent("dashChallenges");
@@ -1201,11 +1229,6 @@ function renderDashboard(rawData) {
       if (summaryCardEl) {
         summaryCardEl.style.display =
           (dashSummaryText.textContent || "").trim() ? "block" : "none";
-      }
-      const mode = modeForTarget("dashSummaryText");
-      if (mode && finalSummaryAIButton && !finalSummaryAIButton.dataset.autoGen) {
-        finalSummaryAIButton.dataset.autoGen = "1";
-        rewriteDashboardSection("dashSummaryText");
       }
     }
     ["outcomes", "pain", "results", "challenges", "learnings", "nextSteps", "midtermSummary", "finalSummary"].forEach(k =>
@@ -1263,6 +1286,7 @@ function renderDashboard(rawData) {
                 : "No midterm data provided"
             )
       );
+      setGoalsCompletedTitle(midtermCompleted.length || 0);
       recordOriginal("outcomes", dashOutcomes.textContent);
       setAIHelper("outcomes", aiGeneratedState.outcomes);
     }
@@ -1278,6 +1302,7 @@ function renderDashboard(rawData) {
     }
 
     if (dashPain) {
+      setPainPointsTitle(midtermAddressedPain.length || 0);
       setSectionContent(
         "dashPain",
         midtermAddressedPain.length
@@ -1292,6 +1317,13 @@ function renderDashboard(rawData) {
       const risksList = Array.isArray(midterm.risks)
         ? midterm.risks.filter(r => (r.selected ?? true) && (r.label || r.notes))
         : [];
+      if (risksList.length) {
+        setChallengesTitle(risksList.length);
+      } else if (typeof midterm.risks === "string" && midterm.risks.trim()) {
+        setChallengesTitle(1);
+      } else {
+        setChallengesTitle(0);
+      }
       if (risksList.length) {
         setSectionContent(
           "dashChallenges",
@@ -1332,12 +1364,6 @@ function renderDashboard(rawData) {
       dashMidtermSummary.textContent = summaryInput || "No midterm summary provided yet.";
       midtermSummaryCard.style.display = "block";
       setAIHelper("midtermSummary", aiGeneratedState.midtermSummary);
-      // Auto-generate a cohesive AI rewrite if available
-      const mode = modeForTarget("dashMidtermSummary");
-      if (mode && summaryInput && midtermSummaryAIButton && !midtermSummaryAIButton.dataset.autoGen) {
-        midtermSummaryAIButton.dataset.autoGen = "1";
-        rewriteDashboardSection("dashMidtermSummary");
-      }
     }
 
     wireCopyButtons();
@@ -1368,6 +1394,9 @@ function renderDashboard(rawData) {
     allDashCards.forEach((card, idx) => {
       card.style.setProperty("display", idx === 0 ? "block" : "none", "important");
     });
+    setGoalsCompletedTitle(0);
+    setPainPointsTitle(0);
+    setChallengesTitle(0);
     const keyDecisionsCard = document.getElementById("dashNextSteps")
       ? document.getElementById("dashNextSteps").closest(".dash-card")
       : null;
