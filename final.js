@@ -7,6 +7,7 @@
 // -------------------------------
 const finalState = {
   projectName: "",
+  projectSummary: "",
   client: "",
   pm: "",
   designer: "",
@@ -88,6 +89,10 @@ function hydrateForm() {
     finalState.client =
       info.client || info.clientName || finalState.client;
   }
+
+  // ---- Project summary ----
+  finalState.projectSummary =
+    info.projectSummary || info.summary || finalState.projectSummary;
 
   // ---- PM ----
   if (typeof info.pmId === "number" && Array.isArray(dir.pms)) {
@@ -216,6 +221,7 @@ function updateDashboardPayload(summaryText) {
 
   const project = {
     name: finalState.projectName || info.projectName || info.name || "",
+    summary: finalState.projectSummary || info.projectSummary || info.summary || "",
     client: finalState.client || info.client || info.clientName || "",
     pm: finalState.pm || info.pm || info.pmName || "",
     designer:

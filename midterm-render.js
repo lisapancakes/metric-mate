@@ -78,6 +78,10 @@ function initMidterm() {
     midterm.info.projectName =
       info.projectName || info.name || midterm.info.projectName;
 
+    // Project summary (one sentence)
+    midterm.info.projectSummary =
+      info.projectSummary || info.summary || midterm.info.projectSummary;
+
     // Client
     if (typeof info.clientId === "number" && Array.isArray(dir.clients)) {
       midterm.info.client = dir.clients[info.clientId] || "";
@@ -374,6 +378,7 @@ function renderStatusStep() {
                 <th>Type</th>
                 <th>Status</th>
                 <th>Notes</th>
+                <th>How?</th>
               </tr>
             </thead>
             <tbody>
@@ -399,6 +404,15 @@ function renderStatusStep() {
                           data-id="${item.id}"
                           placeholder="Notes on Progress, Blockers, Scope Changes..."
                         >${item.notes || ""}</textarea>
+                      </td>
+                      <td>
+                        <textarea
+                          rows="2"
+                          data-type="goal-completion-note"
+                          data-id="${item.id}"
+                          placeholder="How did you complete this goal? What helped?"
+                          style="display:${item.status === "completed" ? "block" : "none"};"
+                        >${item.completionNote || ""}</textarea>
                       </td>
                     </tr>
                   `
@@ -439,15 +453,22 @@ function renderStatusStep() {
                   ${STATUS_OPTIONS.map(opt => `<option value="${opt.value}">${opt.label}</option>`).join("")}
                 </select>
               </div>
-              <div class="form-group">
-                <label for="midtermNewGoalNotes">Notes</label>
-                <textarea id="midtermNewGoalNotes" rows="2"></textarea>
-              </div>
-            </div>
-            <button type="button" class="btn btn-secondary btn-sm" id="midtermAddGoalBtn">
-              <i class="fa-solid fa-plus"></i>
-              Add Goal
-            </button>
+        <div class="form-group">
+          <label for="midtermNewGoalNotes">Notes</label>
+          <textarea id="midtermNewGoalNotes" rows="2"></textarea>
+        </div>
+        <div class="form-group">
+          <label for="midtermNewGoalCompletionNote">What helped?</label>
+          <textarea id="midtermNewGoalCompletionNote" rows="2" placeholder="Optional – 1 short sentence about what changed."></textarea>
+          <p class="help-text">
+            Optional – 1 short sentence about what changed, e.g. “Simplified first-run steps and added a tour.”
+          </p>
+        </div>
+      </div>
+      <button type="button" class="btn btn-secondary btn-sm" id="midtermAddGoalBtn">
+        <i class="fa-solid fa-plus"></i>
+        Add Goal
+      </button>
           </div>
         </div>
       `
@@ -478,7 +499,7 @@ function renderNarrativesStep() {
     "Observations, Hypotheses Proven or Disproven."
   );
   const nextStepsSection = renderTextAreaSection(
-    "Updated Next Steps",
+    "Next Steps",
     "nextSteps",
     midterm.nextSteps,
     "What Should Happen Next to Keep the Project Healthy?"
@@ -952,7 +973,7 @@ function initMidtermCopyChips() {
       }
       try {
         copyToClipboard(val);
-        showStatus("✅ Text Copied to Clipboard");
+        showStatus("Text Copied to Clipboard");
       } catch (err) {
         console.error("Copy chip failed", err);
         alert("Could not copy text. Please try again.");
@@ -1017,6 +1038,14 @@ function handleChange(e) {
     const gs = midterm.goalStatuses.find(g => g.id === id);
     if (gs) {
       gs.status = t.value;
+      const row = t.closest("tr");
+      if (row) {
+        const completionField = row.querySelector('textarea[data-type="goal-completion-note"]');
+        const completionHelp = row.querySelector('p.help-text');
+        const shouldShow = t.value === "completed";
+        if (completionField) completionField.style.display = shouldShow ? "block" : "none";
+        if (completionHelp) completionHelp.style.display = shouldShow ? "block" : "none";
+      }
       saveMidtermForDashboard();
     }
     return;
@@ -1085,6 +1114,12 @@ function handleInput(e) {
     const id = t.dataset.id;
     const gs = midterm.goalStatuses.find(g => g.id === id);
     if (gs) gs.notes = val;
+  }
+
+  if (t.dataset.type === "goal-completion-note") {
+    const id = t.dataset.id;
+    const gs = midterm.goalStatuses.find(g => g.id === id);
+    if (gs) gs.completionNote = val;
   }
 
   if (t.dataset.type === "risk-label") {
@@ -1164,6 +1199,7 @@ function addMidtermInlineGoal() {
   const importanceEl = document.getElementById("midtermNewGoalImportance");
   const statusEl = document.getElementById("midtermNewGoalStatus");
   const notesEl = document.getElementById("midtermNewGoalNotes");
+  const completionEl = document.getElementById("midtermNewGoalCompletionNote");
 
   if (!labelEl || !labelEl.value.trim()) return;
 
@@ -1173,7 +1209,8 @@ function addMidtermInlineGoal() {
     type: typeEl ? typeEl.value : "business",
     importance: importanceEl ? parseInt(importanceEl.value, 10) : 3,
     status: statusEl ? statusEl.value : "not-started",
-    notes: notesEl ? notesEl.value : ""
+    notes: notesEl ? notesEl.value : "",
+    completionNote: completionEl ? completionEl.value : ""
   };
 
   midterm.goalStatuses = midterm.goalStatuses || [];
@@ -1181,6 +1218,7 @@ function addMidtermInlineGoal() {
 
   if (labelEl) labelEl.value = "";
   if (notesEl) notesEl.value = "";
+  if (completionEl) completionEl.value = "";
   if (typeEl) typeEl.value = "business";
   if (importanceEl) importanceEl.value = "3";
   if (statusEl) statusEl.value = "not-started";
@@ -1211,6 +1249,7 @@ function openDashboardFromMidterm() {
 
   const project = {
     name: midterm.info.projectName || info.projectName || info.name || "",
+    summary: midterm.info.projectSummary || info.projectSummary || info.summary || "",
     client: typeof info.clientId === "number" && Array.isArray(dir.clients)
       ? dir.clients[info.clientId] || ""
       : (midterm.info.client || info.client || info.clientName || ""),

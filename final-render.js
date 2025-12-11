@@ -123,6 +123,8 @@ function hydrateForm() {
 
   finalState.projectName =
     info.projectName || info.name || finalState.projectName;
+  finalState.projectSummary =
+    info.projectSummary || info.summary || finalState.projectSummary;
 
   if (typeof info.clientId === "number" && Array.isArray(dir.clients)) {
     finalState.client = dir.clients[info.clientId] || finalState.client;
@@ -207,7 +209,17 @@ function handleInput(e) {
   if (t.dataset.type === "final-status") {
     const id = t.dataset.id;
     const goal = finalGoals.find(g => g.id === id);
-    if (goal) goal.finalStatus = t.value;
+    if (goal) {
+      goal.finalStatus = t.value;
+      const row = t.closest("tr");
+      if (row) {
+        const completionField = row.querySelector('textarea[data-type="final-completion-note"]');
+        const completionHelp = row.querySelector("p.help-text");
+        const shouldShow = t.value === "completed";
+        if (completionField) completionField.style.display = shouldShow ? "block" : "none";
+        if (completionHelp) completionHelp.style.display = shouldShow ? "block" : "none";
+      }
+    }
     updateSummary();
     return;
   }
@@ -216,6 +228,14 @@ function handleInput(e) {
     const id = t.dataset.id;
     const goal = finalGoals.find(g => g.id === id);
     if (goal) goal.finalNotes = val;
+    updateSummary();
+    return;
+  }
+
+  if (t.dataset.type === "final-completion-note") {
+    const id = t.dataset.id;
+    const goal = finalGoals.find(g => g.id === id);
+    if (goal) goal.completionNote = val;
     updateSummary();
     return;
   }
@@ -461,7 +481,6 @@ function renderGoalsTable() {
           <td>${titleCaseTypeFinal(g.type || "")}</td>
           <td class="numeric">${g.importance != null ? g.importance : ""}</td>
           <td>${formatFinalStatus(g.midtermStatus || "")}</td>
-          <td>${g.midtermNotes || ""}</td>
           <td>
             <select data-type="final-status" data-id="${g.id}">
               ${["not-started", "in-progress", "completed", "discard"]
@@ -485,6 +504,15 @@ function renderGoalsTable() {
               data-id="${g.id}"
               placeholder="Final Notes"
             >${g.finalNotes || ""}</textarea>
+          </td>
+          <td>
+            <textarea
+              rows="2"
+              data-type="final-completion-note"
+              data-id="${g.id}"
+              placeholder="How did you complete this goal? What helped?"
+              style="margin-top:0.35rem; display:${g.finalStatus === "completed" ? "block" : "none"};"
+            >${g.completionNote || ""}</textarea>
           </td>
         </tr>
       `
@@ -573,7 +601,7 @@ function initFinal() {
     copyBtn.addEventListener("click", () => {
       const summary = $("finalSummary").value || "";
       copyToClipboard(summary);
-      showStatus("✅ Final Summary Copied to Clipboard");
+      showStatus("Final Summary Copied to Clipboard");
     });
   }
 
@@ -581,7 +609,7 @@ function initFinal() {
     copyClientBtn.addEventListener("click", () => {
       const text = $("finalClientSummary").value || "";
       copyToClipboard(text);
-      showStatus("✅ Final Client Summary Copied to Clipboard");
+      showStatus("Final Client Summary Copied to Clipboard");
     });
   }
   initFinalCopyChips();
@@ -647,7 +675,7 @@ function initFinalCopyChips() {
         return;
       }
       copyToClipboard(val);
-      showStatus("✅ Text Copied to Clipboard");
+      showStatus("Text Copied to Clipboard");
     });
   });
 }

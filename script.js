@@ -7,6 +7,7 @@ const project = {
   goalsStepVisited: false,
   info: {
     name: '',
+    projectSummary: '',
     clientId: null,
     pmId: null,
     designerId: null,
@@ -327,6 +328,12 @@ function renderProjectInfoStep() {
       <label for="projectName">Project Name</label>
       <input type="text" id="projectName" value="${project.info.name || ''}" required>
     </div>
+
+    <div class="form-group">
+      <label for="projectSummary">Project Summary (one sentence)</label>
+      <textarea id="projectSummary" rows="2" placeholder="Describe the project in one sentence.">${project.info.projectSummary || ''}</textarea>
+      <p class="help-text">In one sentence, what is this project fundamentally about?</p>
+    </div>
     
     ${renderDropdown('client', 'Client', directory.clients, project.info.clientId)}
     ${renderDropdown('pm', 'Project Manager', directory.pms, project.info.pmId)}
@@ -415,9 +422,9 @@ function renderGoalDetails(goal, type) {
   return `
     <div class="card" data-goal-id="${goal.id}">
       <div class="form-group">
-        <label>Current State</label>
+        <label style="margin-top:4px;">Importance to this Project</label>
         <div class="rating">
-          <div class="rating-label">Needs Work</div>
+          <div class="rating-label">Nice to have</div>
           <div class="rating-scale">
             ${[1, 2, 3, 4, 5].map(num => `
               <label class="rating-option">
@@ -425,12 +432,12 @@ function renderGoalDetails(goal, type) {
                        name="${namePrefix}${goal.id}" 
                        value="${num}" 
                        ${goal.currentScore === num ? 'checked' : ''}
-                       data-id="${goal.id}">
+                      data-id="${goal.id}">
                 <span>${num}</span>
               </label>
             `).join('')}
           </div>
-          <div class="rating-label">Excellent</div>
+          <div class="rating-label">Critical</div>
         </div>
       </div>
       <div class="form-group">
@@ -557,9 +564,9 @@ function renderUserItemDetails(item, type) {
   return `
     <div class="card" data-item-id="${item.id}">
       <div class="form-group">
-        <label>${label} Today</label>
+        <label style="margin-top:4px;">Importance to this Project</label>
         <div class="rating">
-          <div class="rating-label">Low</div>
+          <div class="rating-label">Nice to have</div>
           <div class="rating-scale">
             ${[1, 2, 3, 4, 5].map(num => `
               <label class="rating-option">
@@ -573,7 +580,7 @@ function renderUserItemDetails(item, type) {
               </label>
             `).join('')}
           </div>
-          <div class="rating-label">High</div>
+          <div class="rating-label">Critical</div>
         </div>
       </div>
       <div class="form-group">
@@ -1287,6 +1294,11 @@ function handleFormInput(e) {
     return;
   }
 
+  if (target.id === 'projectSummary') {
+    project.info.projectSummary = target.value;
+    return;
+  }
+
   if (target.id === 'otherContributors') {
     project.info.otherContributors = target.value;
     return;
@@ -1558,6 +1570,7 @@ function buildDashboardPayloadFromKickoff() {
 
   const proj = {
     name: project.info.name || '',
+    summary: project.info.projectSummary || '',
     clientId: project.info.clientId,
     pmId: project.info.pmId,
     designerId: project.info.designerId,

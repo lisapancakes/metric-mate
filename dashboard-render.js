@@ -19,6 +19,8 @@ function renderDashboard(rawData) {
   const clientTitleEl = document.getElementById("dashboardClientTitle");
   const titleDividerEl = document.querySelector(".dashboard-title-divider");
   const projectStatusChip = document.getElementById("projectStatusChip");
+  const projectSummaryEl = document.getElementById("dashboardProjectSummary");
+  const caseStudyBtn = document.getElementById("openCaseStudyBtn");
 
   const dashOutcomes = document.getElementById("dashOutcomes");
   const dashResults = document.getElementById("dashResults");
@@ -27,6 +29,15 @@ function renderDashboard(rawData) {
   const dashLearnings = document.getElementById("dashLearnings");
   const dashNextSteps = document.getElementById("dashNextSteps");
   const dashSummaryText = document.getElementById("dashSummaryText");
+  const dashImpactCard = document.getElementById("dashImpact")?.closest(".dash-card");
+  const dashMidtermSummary = document.getElementById("dashMidtermSummary");
+  const midtermSummaryCard = document.getElementById("midtermSummaryCard");
+  const midtermSummaryAIButton = document.querySelector(
+    '.icon-ai-btn[data-ai-target="dashMidtermSummary"]'
+  );
+  const finalSummaryAIButton = document.querySelector(
+    '.icon-ai-btn[data-ai-target="dashSummaryText"]'
+  );
   const summaryCard = dashSummaryText ? dashSummaryText.closest(".dash-card") : null;
   const aiHelpers = {
     outcomes: document.querySelector('[data-ai-helper-for="dashOutcomes"]'),
@@ -34,7 +45,9 @@ function renderDashboard(rawData) {
     pain: document.querySelector('[data-ai-helper-for="dashPain"]'),
     challenges: document.querySelector('[data-ai-helper-for="dashChallenges"]'),
     learnings: document.querySelector('[data-ai-helper-for="dashLearnings"]'),
-    nextSteps: document.querySelector('[data-ai-helper-for="dashNextSteps"]')
+    nextSteps: document.querySelector('[data-ai-helper-for="dashNextSteps"]'),
+    midtermSummary: document.querySelector('[data-ai-helper-for="dashMidtermSummary"]'),
+    finalSummary: document.querySelector('[data-ai-helper-for="dashSummaryText"]')
   };
   const originalSections = {
     outcomes: "",
@@ -50,7 +63,9 @@ function renderDashboard(rawData) {
     pain: false,
     challenges: false,
     learnings: false,
-    nextSteps: false
+    nextSteps: false,
+    midtermSummary: false,
+    finalSummary: false
   };
 
   if (app) app.innerHTML = "";
@@ -79,6 +94,7 @@ function renderDashboard(rawData) {
 
   if (emptyState) emptyState.style.display = "none";
   if (dashboardContent) dashboardContent.style.display = "grid";
+  if (caseStudyBtn) caseStudyBtn.style.display = "none";
 
   // Prefer normalised kickoff, but also keep a direct reference to the raw one
   const kickoff = data.kickoff || (rawData && rawData.kickoff) || null;
@@ -90,6 +106,7 @@ function renderDashboard(rawData) {
   const projectPayloadBase = {
     clientName: project.client || "",
     title: project.name || "",
+    summary: project.summary || "",
     serviceCategories: project.serviceCategories || [],
     techCategories: project.techCategories || [],
     toolsUsed: project.toolsUsed || [],
@@ -102,7 +119,7 @@ function renderDashboard(rawData) {
   console.log("[dashboard-render] project object:", project);
 
   // --- Status helpers ---
-  const hasMidterm = !!(
+  const midtermHasContent = !!(
     midterm &&
     (
       midterm.healthScore != null ||
@@ -115,6 +132,7 @@ function renderDashboard(rawData) {
       (midterm.nextSteps && midterm.nextSteps.trim())
     )
   );
+  const hasMidterm = midtermHasContent;
 
   const hasFinal = !!(
     final &&
@@ -156,6 +174,11 @@ function renderDashboard(rawData) {
     projectStatusChip.className = `project-status-chip ${chipClass}`;
     projectStatusChip.style.display = "inline-flex";
   }
+  if (projectSummaryEl) {
+    const summaryText = project.summary || "";
+    projectSummaryEl.textContent = summaryText;
+    projectSummaryEl.style.display = summaryText ? "block" : "none";
+  }
 
   // Kickoff selections (shared across all modes)
   function getKickoffArray(propName) {
@@ -191,6 +214,10 @@ function renderDashboard(rawData) {
         return "learnings";
       case "dashNextSteps":
         return "nextSteps";
+      case "dashMidtermSummary":
+        return "midtermSummary";
+      case "dashSummaryText":
+        return "finalSummary";
       default:
         return null;
     }
@@ -210,6 +237,10 @@ function renderDashboard(rawData) {
         return "dashboard_learnings_card";
       case "dashNextSteps":
         return null;
+      case "dashMidtermSummary":
+        return hasMidterm ? "dashboard_midterm_summary" : null;
+      case "dashSummaryText":
+        return hasFinal ? "dashboard_final_summary" : null;
       default:
         return null;
     }
@@ -228,13 +259,22 @@ function renderDashboard(rawData) {
     originalSections[key] = value || "";
   }
 
+  function setCardVisibilityForContent(targetId) {
+    const el = document.getElementById(targetId);
+    if (!el) return;
+    const card = el.closest(".dash-card");
+    if (!card) return;
+    const text = (el.textContent || el.innerText || "").trim();
+    card.style.display = text ? "block" : "none";
+  }
+
   const listTargets = new Set([
     "dashOutcomes",
-    "dashResults",
     "dashPain",
     "dashChallenges",
     "dashLearnings",
-    "dashNextSteps"
+    "dashNextSteps",
+    "dashMidtermSummary"
   ]);
   const pastTenseTargets = new Set(["dashOutcomes"]);
 
@@ -318,6 +358,30 @@ function renderDashboard(rawData) {
   function applyContent(targetId, targetEl, text, opts = {}) {
     const key = helperKeyForTarget(targetId);
     const forceText = opts.forceText === true;
+    if (targetId === "dashResults") {
+      const headings = [
+        "Progress vs Plan",
+        "Goal Status",
+        "Top Completed Goals"
+      ];
+      const lines = (text || "").split("\n");
+      const htmlLines = lines.map((rawLine) => {
+        const line = (rawLine || "").trim();
+        if (!line) return "";
+        const lower = line.toLowerCase();
+        for (const h of headings) {
+          const prefix = `${h}:`.toLowerCase();
+          if (lower.startsWith(prefix)) {
+            const remainder = line.slice(prefix.length).trim();
+            const rest = remainder ? ` ${escapeHTML(remainder)}` : "";
+            return `<strong>${h}:</strong>${rest}`;
+          }
+        }
+        return escapeHTML(line);
+      }).filter(Boolean);
+      targetEl.innerHTML = htmlLines.join("<br>");
+      return;
+    }
     const shouldList =
       listTargets.has(targetId) && !forceText && !(key && aiGeneratedState[key]);
 
@@ -355,21 +419,49 @@ function renderDashboard(rawData) {
     return "";
   }
 
+  function normalizeStatus(status) {
+    return (status || "").toLowerCase().trim();
+  }
+
+  function getCanonicalStatus(goal) {
+    const normalize = (str) => (str || "").toLowerCase().trim();
+    const mid = normalize(goal.midtermStatus);
+    const fin = normalize(goal.finalStatus);
+    const combined = `${mid} ${fin}`;
+
+    if (combined.includes("discard")) return "discard";
+    if (combined.includes("completed")) return "completed";
+    if (combined.includes("progress")) return "in-progress";
+
+    return "not-started";
+  }
+
   function buildGoalStatusSummary(goals) {
     if (!Array.isArray(goals) || !goals.length) return "";
-    const total = goals.length;
-    let completed = 0;
-    let inProgress = 0;
-    let notStarted = 0;
 
-    goals.forEach((g) => {
-      const status = normalizeGoalStatus(g.finalStatus || g.status || g.midtermStatus);
-      if (status === "completed") completed += 1;
-      else if (status === "in progress") inProgress += 1;
-      else if (status === "not started") notStarted += 1;
-    });
+    const activeGoals = goals.filter(
+      (g) => normalizeStatus(g.finalStatus || g.status || g.midtermStatus) !== "discard"
+    );
 
-    return `Goal status summary: ${completed} completed, ${inProgress} in progress, ${notStarted} not started (${total} total).`;
+    const completed = activeGoals.filter(
+      (g) => normalizeStatus(g.finalStatus || g.status || g.midtermStatus) === "completed"
+    );
+    const inProgress = activeGoals.filter(
+      (g) =>
+        ["in progress", "inprogress"].includes(
+          normalizeStatus(g.finalStatus || g.status || g.midtermStatus)
+        )
+    );
+    const notStarted = activeGoals.filter(
+      (g) =>
+        ["not started", "notstarted"].includes(
+          normalizeStatus(g.finalStatus || g.status || g.midtermStatus)
+        )
+    );
+
+    const total = activeGoals.length;
+
+    return `Goal status summary: ${completed.length} completed, ${inProgress.length} in progress, ${notStarted.length} not started (${total} total).`;
   }
 
   function buildResultsAIInput() {
@@ -456,13 +548,113 @@ function renderDashboard(rawData) {
       .filter(Boolean);
   }
 
+  function buildResultsImpactText(goalsList = [], progressScore) {
+    const progressMap = {
+      1: "Well behind plan",
+      2: "Slightly behind plan",
+      3: "On track",
+      4: "Slightly ahead of plan",
+      5: "Well ahead of plan"
+    };
+
+    const filtered = (goalsList || []).filter(
+      (g) => getCanonicalStatus(g) !== "discard"
+    );
+    const completed = filtered.filter((g) => getCanonicalStatus(g) === "completed");
+    const inProgress = filtered.filter((g) => getCanonicalStatus(g) === "in-progress");
+    const notStarted = filtered.filter((g) => getCanonicalStatus(g) === "not-started");
+    const total = filtered.length;
+
+    const label = progressMap[progressScore] || "Not assessed";
+    const progressLine =
+      progressScore != null
+        ? `Progress vs Plan:\n${progressScore}/5 (${label})`
+        : `Progress vs Plan:\nNot assessed.`;
+
+    const statusLine =
+      total === 0
+        ? "Goal Status:\nNo goals tracked yet."
+        : `Goal Status:\n${completed.length} completed, ${inProgress.length} in progress, ${notStarted.length} not started (${total} total).`;
+
+    const topCompleted = [...completed]
+      .sort((a, b) => (Number(b.importance) || 0) - (Number(a.importance) || 0))
+      .slice(0, 3)
+      .map((g) => g.goal || g.label)
+      .filter(Boolean);
+
+    const topGoalsBlock =
+      topCompleted.length
+        ? `Top Completed Goals:\n${topCompleted.map((g) => `• ${g}`).join("\n")}`
+        : `Top Completed Goals:\n• None completed yet`;
+
+    return [progressLine, statusLine, topGoalsBlock].join("\n\n");
+  }
+
+  function buildMidtermSummaryInput(midtermData = {}, goalsList = [], projectMeta = {}) {
+    const lines = [];
+    if (projectMeta.name) lines.push(`Project: ${projectMeta.name}`);
+    if (projectMeta.client) lines.push(`Client: ${projectMeta.client}`);
+    if (midtermData.healthScore != null) lines.push(`Health Score: ${midtermData.healthScore}/5`);
+    if (midtermData.progressScore != null) lines.push(`Progress Confidence: ${midtermData.progressScore}/5`);
+
+    const statusSummary = buildGoalStatusSummary(
+      Array.isArray(midtermData.goalStatuses) ? midtermData.goalStatuses : goalsList || []
+    );
+    if (statusSummary) lines.push(statusSummary);
+
+    const risks = Array.isArray(midtermData.risks)
+      ? midtermData.risks.filter(r => r.selected ?? true).map(r => r.label || r.notes).filter(Boolean)
+      : [];
+    if (risks.length) {
+      lines.push("Risks / Issues:");
+      risks.forEach(r => lines.push(`- ${r}`));
+    }
+
+    if (midtermData.wins) lines.push(`Wins: ${midtermData.wins}`);
+    if (midtermData.learnings) lines.push(`Learnings: ${midtermData.learnings}`);
+    if (midtermData.nextSteps) lines.push(`Next Steps: ${midtermData.nextSteps}`);
+
+    return lines.join("\n").trim();
+  }
+
+  function buildImpactBuckets(goalList = []) {
+    const buckets = {
+      uxGoals: [],
+      productGoals: [],
+      businessGoals: []
+    };
+
+    goalList.forEach((goal) => {
+      if (!goal) return;
+      const status = (goal.finalStatus || "").toLowerCase();
+      if (status !== "completed") return;
+      const label = goal.label || goal.name || "";
+      if (!label) return;
+      const type = (goal.type || "").toLowerCase();
+      if (type === "user" || type === "pain") {
+        buckets.uxGoals.push(label);
+      } else if (type === "product") {
+        buckets.productGoals.push(label);
+      } else if (type === "business") {
+        buckets.businessGoals.push(label);
+      }
+    });
+
+    return buckets;
+  }
+
   // Build prefilled Google Form URL for case study intake
   function getCaseStudyPrefilledUrl(projectPayload, finalDashboard) {
     const FORM_URL = "https://docs.google.com/forms/d/e/1FAIpQLSfPvvxah0MGvF6FVn4lId73mkAYEM2R0Ijf5U38fd6m0xyFcQ/viewform";
     const params = new URLSearchParams();
 
     const safeJoin = (arr = []) => arr.filter(Boolean);
-    const goalsCompleted = safeJoin(finalDashboard.goalsCompleted || []);
+    const goalsCompletedDetailed = Array.isArray(finalDashboard.completedGoalsDetailed)
+      ? finalDashboard.completedGoalsDetailed.filter(Boolean)
+      : [];
+    const goalsCompleted = goalsCompletedDetailed.length
+      ? goalsCompletedDetailed.map((g) => g && g.label).filter(Boolean)
+      : safeJoin(finalDashboard.goalsCompleted || []);
     const painPoints = safeJoin(finalDashboard.originalPainPoints || []);
     const decisions = safeJoin(finalDashboard.keyDecisions || []);
     const learningsText = (finalDashboard.keyLearningsText || "").trim();
@@ -471,11 +663,17 @@ function renderDashboard(rawData) {
     if (projectPayload.title) params.set("entry.1888520839", projectPayload.title);
 
     // Project goals (completed only) into Other option
-    if (goalsCompleted.length) {
+    const goalsForOther = goalsCompletedDetailed.length
+      ? goalsCompletedDetailed.map((g) =>
+          g.completionNote ? `${g.label} — ${g.completionNote}` : g.label
+        )
+      : goalsCompleted;
+
+    if (goalsForOther.length) {
       params.append("entry.607934051", "__other_option__");
       params.set(
         "entry.607934051.other_option_response",
-        goalsCompleted.map((g) => `• ${g}`).join("\n")
+        goalsForOther.map((g) => `• ${g}`).join("\n")
       );
     }
 
@@ -489,9 +687,9 @@ function renderDashboard(rawData) {
     }
 
     const didLines = [];
-    if (goalsCompleted.length) {
+    if (goalsForOther.length) {
       didLines.push("What We Did:");
-      didLines.push(...goalsCompleted.map((g) => `• ${g}`));
+      didLines.push(...goalsForOther.map((g) => `• ${g}`));
     }
     if (decisions.length) {
       if (didLines.length && didLines[didLines.length - 1] !== "") didLines.push("");
@@ -564,10 +762,15 @@ function renderDashboard(rawData) {
         if (!target) return;
         const val = (target.textContent || "").trim();
         if (!val) return;
-        const prev = btn.innerHTML;
+        const statusEl = document.getElementById("copyStatus");
         const onCopied = () => {
-          btn.innerHTML = '<i class="fa-regular fa-copy"></i> Copied';
-          setTimeout(() => (btn.innerHTML = prev), 900);
+          if (statusEl) {
+            statusEl.textContent = "Copied to clipboard";
+            statusEl.style.display = "block";
+            setTimeout(() => {
+              statusEl.style.display = "none";
+            }, 2200);
+          }
         };
         if (navigator.clipboard && navigator.clipboard.writeText) {
           navigator.clipboard.writeText(val).then(onCopied).catch(() => {});
@@ -609,7 +812,30 @@ function renderDashboard(rawData) {
 
     const sourceText = (target.textContent || "").trim();
     const isResults = targetId === "dashResults";
-    const builtSource = isResults ? buildResultsAIInput() : sourceText;
+    const isMidtermSummary = targetId === "dashMidtermSummary";
+    const isFinalSummary = targetId === "dashSummaryText";
+    let builtSource = sourceText;
+    if (isResults) builtSource = buildResultsAIInput();
+    if (isMidtermSummary && sourceText) {
+      builtSource = [
+        "Rewrite this into a cohesive midterm project summary (3–4 sentences) with no headings or bullets.",
+        "Use plain language: summarize overall health/progress, key risks or blockers, notable wins, and immediate next steps.",
+        "Translate any ratings or counts into words; avoid raw numbers, percentages, or score labels.",
+        "Do not add new data or promises. Keep it concise and readable.",
+        "",
+        sourceText
+      ].join("\n");
+    }
+    if (isFinalSummary && sourceText) {
+      builtSource = [
+        "Rewrite this into a concise final project wrap-up (3–5 sentences) with no headings or bullets.",
+        "Use narrative sentences that cover: what was shipped (high-level), observed impact or signals, major wins, key challenges, and immediate next steps.",
+        "Translate any ratings or counts into words; avoid raw numbers, percentages, or score labels.",
+        "Do not include goal status lists, markdown headings, or bullets. Do not add new data or promises.",
+        "",
+        sourceText
+      ].join("\n");
+    }
     if ((isResults && !builtSource) || (!isResults && !sourceText)) {
       if (isResults) {
         const fallback =
@@ -821,9 +1047,9 @@ function renderDashboard(rawData) {
       { header: "Type", render: (r) => titleCaseType(r.type || ""), className: (r) => r.finalStatus === "discard" || r.midtermStatus === "discard" ? "goal-row--discard" : "" },
       { header: "Importance", headerClass: "numeric text-center", render: (r) => r.importance != null ? `${r.importance}/5` : "", className: (r) => (r.finalStatus === "discard" || r.midtermStatus === "discard" ? "goal-row--discard text-center numeric" : "text-center numeric") },
       { header: "Midterm Status", render: (r) => formatStatus(r.midtermStatus), className: (r) => r.midtermStatus === "discard" ? "goal-row--discard" : "" },
-      { header: "Midterm Notes", render: (r) => r.midtermNotes || "—", className: (r) => r.midtermStatus === "discard" ? "goal-row--discard" : "" },
       { header: "Final Status", render: (r) => formatStatus(r.finalStatus), className: (r) => r.finalStatus === "discard" ? "goal-row--discard" : "" },
-      { header: "Final Notes", render: (r) => r.finalNotes || "—", className: (r) => r.finalStatus === "discard" ? "goal-row--discard" : "" }
+      { header: "Final Notes", render: (r) => r.finalNotes || "—", className: (r) => r.finalStatus === "discard" ? "goal-row--discard" : "" },
+      { header: "How We Did It", render: (r) => r.completionNote || "—", className: (r) => r.finalStatus === "discard" ? "goal-row--discard" : "" }
     ]);
     totalGoals = sorted.length;
     completedGoals = sorted.filter(r => (r.finalStatus || r.midtermStatus || "").toLowerCase() === "completed").length;
@@ -860,7 +1086,8 @@ function renderDashboard(rawData) {
       { header: "Type", render: (r) => titleCaseType(r.type || ""), className: (r) => r.status === "discard" ? "goal-row--discard" : "" },
       { header: "Importance", headerClass: "numeric text-center", render: (r) => r.importance != null ? `${r.importance}/5` : "", className: (r) => r.status === "discard" ? "goal-row--discard text-center numeric" : "text-center numeric" },
       { header: "Status", render: (r) => formatStatus(r.status), className: (r) => r.status === "discard" ? "goal-row--discard" : "" },
-      { header: "Notes", render: (r) => r.notes || "—", className: (r) => r.status === "discard" ? "goal-row--discard" : "" }
+      { header: "Notes", render: (r) => r.notes || "—", className: (r) => r.status === "discard" ? "goal-row--discard" : "" },
+      { header: "How We Did It", render: (r) => r.completionNote || "—", className: (r) => r.status === "discard" ? "goal-row--discard" : "" }
     ]);
     totalGoals = list.length;
     completedGoals = list.filter(r => (r.status || "").toLowerCase() === "completed").length;
@@ -884,20 +1111,32 @@ function renderDashboard(rawData) {
 
     if (summaryCard) summaryCard.style.display = "block";
     if (dashOutcomes) {
-      setSectionContent(
-        "dashOutcomes",
-        completedFinalGoals.length
-          ? completedFinalGoals.map(g => g.label).join(" • ")
-          : (final.outcomes && final.outcomes.trim()) || "No final outcomes provided"
-      );
-      recordOriginal("outcomes", dashOutcomes.textContent);
+      if (completedFinalGoals.length) {
+        dashOutcomes.innerHTML = completedFinalGoals
+          .map((g) => {
+            const note = g.completionNote && g.completionNote.trim();
+            return `
+              <div class="completed-goal">
+                <div class="goal-label">${g.label}</div>
+                ${note ? `<div class="goal-note">Note: ${note}</div>` : ""}
+              </div>
+            `;
+          })
+          .join("");
+      } else {
+        dashOutcomes.textContent =
+          (final.outcomes && final.outcomes.trim()) || "No final outcomes provided";
+      }
+      recordOriginal("outcomes", dashOutcomes.textContent || dashOutcomes.innerText || "");
+      setCardVisibilityForContent("dashOutcomes");
     }
     if (dashResults) {
-      const statusSummary = buildGoalStatusSummary(finalGoalsList);
-      const resultsText = (final.results && final.results.trim()) || "No final results provided";
-      const combined = statusSummary ? `${resultsText}\n${statusSummary}` : resultsText;
-      setSectionContent("dashResults", combined);
+      const progressScore =
+        final.progressScore != null ? final.progressScore : midterm.progressScore;
+      const resultsText = buildResultsImpactText(finalGoalsList, progressScore);
+      setSectionContent("dashResults", resultsText);
       recordOriginal("results", dashResults.textContent);
+      setCardVisibilityForContent("dashResults");
     }
     if (dashPain) {
       setSectionContent(
@@ -907,6 +1146,7 @@ function renderDashboard(rawData) {
           : "No pain points marked as addressed yet."
       );
       recordOriginal("pain", dashPain.textContent);
+      setCardVisibilityForContent("dashPain");
     }
     if (dashChallenges) {
       setSectionContent(
@@ -914,6 +1154,7 @@ function renderDashboard(rawData) {
         (final.challenges && final.challenges.trim()) || "No challenges provided"
       );
       recordOriginal("challenges", dashChallenges.textContent);
+      setCardVisibilityForContent("dashChallenges");
     }
     if (dashLearnings) {
       setSectionContent(
@@ -921,21 +1162,36 @@ function renderDashboard(rawData) {
         (final.learnings && final.learnings.trim()) || "No learnings provided"
       );
       recordOriginal("learnings", dashLearnings.textContent);
+      setCardVisibilityForContent("dashLearnings");
     }
     if (dashNextSteps) {
-      const decisions = getDecisions();
+      const nextStepsText =
+        (final.nextSteps && final.nextSteps.trim()) ||
+        ((midterm && midterm.nextSteps && midterm.nextSteps.trim()) || "");
       setSectionContent(
         "dashNextSteps",
-        decisions.length ? decisions.join(" • ") : "No key decisions documented yet."
+        nextStepsText || "No next steps provided"
       );
       recordOriginal("nextSteps", dashNextSteps.textContent);
+      setCardVisibilityForContent("dashNextSteps");
     }
+
     if (dashSummaryText) {
       dashSummaryText.textContent =
         (finalSummary && finalSummary.trim()) ||
         "No final summary provided";
+      const summaryCardEl = dashSummaryText.closest(".dash-card");
+      if (summaryCardEl) {
+        summaryCardEl.style.display =
+          (dashSummaryText.textContent || "").trim() ? "block" : "none";
+      }
+      const mode = modeForTarget("dashSummaryText");
+      if (mode && finalSummaryAIButton && !finalSummaryAIButton.dataset.autoGen) {
+        finalSummaryAIButton.dataset.autoGen = "1";
+        rewriteDashboardSection("dashSummaryText");
+      }
     }
-    ["outcomes", "pain", "results", "challenges", "learnings", "nextSteps"].forEach(k =>
+    ["outcomes", "pain", "results", "challenges", "learnings", "nextSteps", "midtermSummary", "finalSummary"].forEach(k =>
       setAIHelper(k, aiGeneratedState[k])
     );
     wireCopyButtons();
@@ -945,6 +1201,10 @@ function renderDashboard(rawData) {
     const finalDashboardPayload = {
       quickSummary: "",
       goalsCompleted: completedFinalGoals.map(g => g.label || ""),
+      completedGoalsDetailed: completedFinalGoals.map(g => ({
+        label: g.label || "",
+        completionNote: g.completionNote || ""
+      })),
       painPointsAddressed: completedFinalPain,
       originalPainPoints: selectedUserPains.map(p => p.label || ""),
       challengesText: dashChallenges ? dashChallenges.textContent : "",
@@ -953,12 +1213,16 @@ function renderDashboard(rawData) {
       keyDecisions: getDecisions()
     };
     setCaseStudyButton(projectPayloadBase, finalDashboardPayload);
+    if (caseStudyBtn) caseStudyBtn.style.display = "inline-flex";
     return;
   }
 
   // ---------- MIDTERM VIEW ----------
   if (hasMidterm) {
     if (summaryCard) summaryCard.style.display = "none";
+    if (dashImpact && dashImpact.closest(".dash-card")) {
+      dashImpact.closest(".dash-card").style.display = "none";
+    }
 
     const midtermCompleted = Array.isArray(midterm.goalStatuses)
       ? midterm.goalStatuses.filter(r => (r.status || "").toLowerCase() === "completed")
@@ -987,15 +1251,11 @@ function renderDashboard(rawData) {
     }
 
     if (dashResults) {
-      const statusSummary = buildGoalStatusSummary(
-        Array.isArray(midterm.goalStatuses) ? midterm.goalStatuses : midterm.goals || []
-      );
-      const progressText =
-        midterm.progressScore != null
-          ? `Progress Confidence: ${midterm.progressScore}/5`
-          : "No midterm data provided";
-      const combined = statusSummary ? `${progressText}\n${statusSummary}` : progressText;
-      setSectionContent("dashResults", combined);
+      const list = Array.isArray(midterm.goalStatuses)
+        ? midterm.goalStatuses
+        : midterm.goals || [];
+      const resultsText = buildResultsImpactText(list, midterm.progressScore);
+      setSectionContent("dashResults", resultsText);
       recordOriginal("results", dashResults.textContent);
       setAIHelper("results", aiGeneratedState.results);
     }
@@ -1042,12 +1302,25 @@ function renderDashboard(rawData) {
     }
 
     if (dashNextSteps) {
-      const decisions = getDecisions();
+      const nextStepsText = (midterm.nextSteps && midterm.nextSteps.trim()) || "";
       setSectionContent(
         "dashNextSteps",
-        decisions.length ? decisions.join(" • ") : "No key decisions documented yet."
+        nextStepsText || "No next steps provided"
       );
       recordOriginal("nextSteps", dashNextSteps.textContent);
+    }
+
+    if (dashMidtermSummary && midtermSummaryCard) {
+      const summaryInput = buildMidtermSummaryInput(midterm, goals, project);
+      dashMidtermSummary.textContent = summaryInput || "No midterm summary provided yet.";
+      midtermSummaryCard.style.display = "block";
+      setAIHelper("midtermSummary", aiGeneratedState.midtermSummary);
+      // Auto-generate a cohesive AI rewrite if available
+      const mode = modeForTarget("dashMidtermSummary");
+      if (mode && summaryInput && midtermSummaryAIButton && !midtermSummaryAIButton.dataset.autoGen) {
+        midtermSummaryAIButton.dataset.autoGen = "1";
+        rewriteDashboardSection("dashMidtermSummary");
+      }
     }
 
     wireCopyButtons();
@@ -1065,92 +1338,94 @@ function renderDashboard(rawData) {
       keyDecisions: getDecisions()
     };
     setCaseStudyButton(projectPayloadBase, midtermDashboardPayload);
+    if (caseStudyBtn) caseStudyBtn.style.display = "none";
 
     // Kickoff baseline placeholders suppressed in midterm view
     return;
   }
 
   // ---------- KICKOFF-ONLY BASELINE VIEW ----------
-  // Hide narrative cards when only kickoff data exists
-  const kickoffCards = [
-    dashOutcomes && dashOutcomes.closest(".dash-card"),
-    dashResults && dashResults.closest(".dash-card"),
-    dashWins && dashWins.closest(".dash-card"),
-    dashChallenges && dashChallenges.closest(".dash-card"),
-    dashLearnings && dashLearnings.closest(".dash-card"),
-    dashNextSteps && dashNextSteps.closest(".dash-card"),
-    summaryCard
-  ].filter(Boolean);
-  kickoffCards.forEach(card => {
-    card.style.display = "none";
-  });
+  if (!hasMidterm && !hasFinal) {
+    // Hide all narrative cards when only kickoff data exists; show only the goals table card
+    const allDashCards = Array.from(document.querySelectorAll(".dash-card"));
+    allDashCards.forEach((card, idx) => {
+      card.style.setProperty("display", idx === 0 ? "block" : "none", "important");
+    });
+    const keyDecisionsCard = document.getElementById("dashNextSteps")
+      ? document.getElementById("dashNextSteps").closest(".dash-card")
+      : null;
+    if (keyDecisionsCard) keyDecisionsCard.style.setProperty("display", "none", "important");
+    if (caseStudyBtn) caseStudyBtn.style.display = "none";
 
-  // Render selected goals into the kickoff card table (full-width)
-  if (dashGoalsTable) {
-    const rows = [
-      ...selectedBusinessGoals.map(item => ({
-        label: item.label,
-        type: "Business",
-        importance: item.currentScore ?? item.severity ?? "—",
-        notes: item.notes || ""
-      })),
-      ...selectedProductGoals.map(item => ({
-        label: item.label,
-        type: "Product",
-        importance: item.currentScore ?? item.severity ?? "—",
-        notes: item.notes || ""
-      })),
-      ...selectedUserGoals.map(item => ({
-        label: item.label,
-        type: "User Goal",
-        importance: item.severity ?? item.currentScore ?? "—",
-        notes: item.notes || ""
-      })),
-      ...selectedUserPains.map(item => ({
-        label: item.label,
-        type: "User Pain",
-        importance: item.severity ?? item.currentScore ?? "—",
-        notes: item.notes || ""
-      }))
-    ];
+    // Render selected goals into the kickoff card table (full-width)
+    if (dashGoalsTable) {
+      const rows = [
+        ...selectedBusinessGoals.map(item => ({
+          label: item.label,
+          type: "Business",
+          importance: item.currentScore ?? item.severity ?? "—",
+          notes: item.notes || ""
+        })),
+        ...selectedProductGoals.map(item => ({
+          label: item.label,
+          type: "Product",
+          importance: item.currentScore ?? item.severity ?? "—",
+          notes: item.notes || ""
+        })),
+        ...selectedUserGoals.map(item => ({
+          label: item.label,
+          type: "User Goal",
+          importance: item.severity ?? item.currentScore ?? "—",
+          notes: item.notes || ""
+        })),
+        ...selectedUserPains.map(item => ({
+          label: item.label,
+          type: "User Pain",
+          importance: item.severity ?? item.currentScore ?? "—",
+          notes: item.notes || ""
+        }))
+      ];
 
-    if (rows.length) {
-      const tableHtml = [
-        '<table class="dash-table"><colgroup>',
-        '<col style="width:45%">',
-        '<col style="width:18%">',
-        '<col style="width:12%">',
-        '<col style="width:25%">',
-        '</colgroup><thead>',
-        '<tr><th>Goal</th><th>Type</th><th class="numeric">Importance</th><th>Kickoff Notes</th></tr>',
-        '</thead><tbody>',
-        ...rows.map(r => `
-          <tr>
-            <td style="white-space: normal;">${r.label}</td>
-            <td>${r.type}</td>
-            <td class="numeric">${r.importance}</td>
-            <td style="white-space: normal;">${r.notes || "—"}</td>
-          </tr>
-        `),
-        '</tbody></table>'
-      ].join("");
-      dashGoalsTable.innerHTML = tableHtml;
-      // Normalize any numeric importance
-      const centerCells = dashGoalsTable.querySelectorAll("td:nth-child(3)");
-      centerCells.forEach(cell => {
-        const num = parseFloat(cell.textContent);
-        if (!Number.isNaN(num)) {
-          cell.textContent = `${num}/5`;
-          cell.style.textAlign = "center";
-        }
-      });
-    } else {
-      dashGoalsTable.textContent = "No Selections Were Made During Kickoff.";
+      if (rows.length) {
+        const tableHtml = [
+          '<table class="dash-table"><colgroup>',
+          '<col style="width:45%">',
+          '<col style="width:18%">',
+          '<col style="width:12%">',
+          '<col style="width:25%">',
+          '</colgroup><thead>',
+          '<tr><th>Goal</th><th>Type</th><th class="numeric">Importance</th><th>Kickoff Notes</th></tr>',
+          '</thead><tbody>',
+          ...rows.map(r => `
+            <tr>
+              <td style="white-space: normal;">${r.label}</td>
+              <td>${r.type}</td>
+              <td class="numeric">${r.importance}</td>
+              <td style="white-space: normal;">${r.notes || "—"}</td>
+            </tr>
+          `),
+          '</tbody></table>'
+        ].join("");
+        dashGoalsTable.innerHTML = tableHtml;
+        // Normalize any numeric importance
+        const centerCells = dashGoalsTable.querySelectorAll("td:nth-child(3)");
+        centerCells.forEach(cell => {
+          const num = parseFloat(cell.textContent);
+          if (!Number.isNaN(num)) {
+            cell.textContent = `${num}/5`;
+            cell.style.textAlign = "center";
+          }
+        });
+      } else {
+        dashGoalsTable.textContent = "No Selections Were Made During Kickoff.";
+      }
+      totalGoals = rows.length;
+      completedGoals = 0;
+      updateGoalCounter(completedGoals, totalGoals);
+      if (goalsCard) goalsCard.style.display = "block";
     }
-    totalGoals = rows.length;
-    completedGoals = 0;
-    updateGoalCounter(completedGoals, totalGoals);
-    if (goalsCard) goalsCard.style.display = "block";
+
+    return;
   }
 
   // What we shipped → baseline business goals
@@ -1191,6 +1466,13 @@ function renderDashboard(rawData) {
   if (dashNextSteps) {
     setSectionContent("dashNextSteps", "Not captured yet.");
     recordOriginal("nextSteps", dashNextSteps.textContent);
+    const kdCard = dashNextSteps.closest(".dash-card");
+    if (kdCard) kdCard.style.setProperty("display", "none", "important");
+  }
+
+  // Midterm summary card hidden in kickoff-only view
+  if (midtermSummaryCard) {
+    midtermSummaryCard.style.display = "none";
   }
 
   // Full Final Summary → placeholder
@@ -1220,4 +1502,5 @@ function renderDashboard(rawData) {
     keyDecisions: getDecisions()
   };
   setCaseStudyButton(projectPayloadBase, kickoffPayload);
+  if (caseStudyBtn) caseStudyBtn.style.display = "none";
 }

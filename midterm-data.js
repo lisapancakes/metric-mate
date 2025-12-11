@@ -13,6 +13,7 @@ const midterm = {
   metaExpanded: false,
   info: {
     projectName: "",
+    projectSummary: "",
     client: "",
     pm: "",
     designer: "",
@@ -147,7 +148,8 @@ function normalizeGoalStatusesFromKickoff(kickoff, existingStatuses = []) {
           type,
           importance: baseImportance,
           status: previous.status || "not-started",
-          notes: previous.notes || ""
+          notes: previous.notes || "",
+          completionNote: previous.completionNote || ""
         });
       });
   }

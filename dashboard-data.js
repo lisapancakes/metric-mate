@@ -73,6 +73,9 @@ function deriveProjectFromKickoff(kickoff) {
   // Name
   project.name = info.projectName || info.name || "";
 
+  // Summary (one-sentence)
+  project.summary = info.projectSummary || info.summary || "";
+
   // Client
   if (typeof info.clientId === "number" && Array.isArray(dir.clients)) {
     project.client = dir.clients[info.clientId] || "";
@@ -125,8 +128,8 @@ function normalizeDashboardData(raw) {
     project: raw.project ? { ...raw.project } : {}
   };
 
-  // Derive from kickoff if needed
-  if (!data.project.name && data.kickoff) {
+  // Derive from kickoff and merge any missing fields
+  if (data.kickoff) {
     const fromKickoff = deriveProjectFromKickoff(data.kickoff);
     data.project = { ...fromKickoff, ...data.project };
   }

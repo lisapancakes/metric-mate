@@ -4,6 +4,12 @@
 <meta charset="UTF-8" />
 <title>Metric Mate – Project Dashboard</title>
 <meta name="viewport" content="width=device-width, initial-scale=1" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link
+  href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap"
+  rel="stylesheet"
+/>
 <link
   rel="stylesheet"
   href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css"
@@ -26,6 +32,7 @@
     </div>
     <span id="projectStatusChip" class="project-status-chip" style="display:none;"></span>
   </div>
+  <p id="dashboardProjectSummary" class="project-summary" style="display:none;"></p>
 
       <div class="dashboard-top-grid">
         <div id="statusList" class="dashboard-stack"></div>
@@ -57,14 +64,21 @@
                 <button class="icon-copy-btn" data-copy-target="dashOutcomes" title="Copy to clipboard" aria-label="Copy Goals Completed">
                   <i class="fa-regular fa-copy"></i>
                 </button>
-                <button class="icon-revert-btn" data-revert-target="dashOutcomes" title="Revert to original" aria-label="Revert Goals Completed">
-                  <i class="fa-solid fa-rotate-left"></i>
-                </button>
               </div>
             </div>
-            <p class="help-text ai-helper" data-ai-helper-for="dashOutcomes">AI draft not generated</p>
+            
           </div>
         <p id="dashOutcomes" class="dash-text"></p>
+      </div>
+
+      <div class="dash-card" style="display:none;">
+        <div class="dash-card-heading">
+          <div class="dash-card-heading-row">
+            <h3>Expected Impact</h3>
+          </div>
+          <p class="help-text">Completed goals grouped by impact area.</p>
+        </div>
+        <div id="dashImpact" class="dash-text"></div>
       </div>
 
       <div class="dash-card">
@@ -75,12 +89,9 @@
                 <button class="icon-copy-btn" data-copy-target="dashPain" title="Copy to clipboard" aria-label="Copy Pain Points Addressed">
                   <i class="fa-regular fa-copy"></i>
                 </button>
-                <button class="icon-revert-btn" data-revert-target="dashPain" title="Revert to original" aria-label="Revert Pain Points Addressed">
-                  <i class="fa-solid fa-rotate-left"></i>
-                </button>
               </div>
             </div>
-            <p class="help-text ai-helper" data-ai-helper-for="dashPain">AI draft not generated</p>
+            
           </div>
         <p id="dashPain" class="dash-text"></p>
       </div>
@@ -93,15 +104,10 @@
                 <button class="icon-copy-btn" data-copy-target="dashResults" title="Copy to clipboard" aria-label="Copy Results & Impact">
                   <i class="fa-regular fa-copy"></i>
                 </button>
-                <button class="icon-ai-btn" data-ai-target="dashResults" title="Rewrite with AI" aria-label="Rewrite Results & Impact with AI">
-                  <i class="fa-solid fa-robot"></i>
-                </button>
-                <button class="icon-revert-btn" data-revert-target="dashResults" title="Revert to original" aria-label="Revert Results & Impact">
-                  <i class="fa-solid fa-rotate-left"></i>
-                </button>
+                
               </div>
             </div>
-            <p class="help-text ai-helper" data-ai-helper-for="dashResults">AI draft not generated</p>
+            
           </div>
         <p id="dashResults" class="dash-text"></p>
       </div>
@@ -114,15 +120,10 @@
                 <button class="icon-copy-btn" data-copy-target="dashLearnings" title="Copy to clipboard" aria-label="Copy Key Learnings">
                   <i class="fa-regular fa-copy"></i>
                 </button>
-                <button class="icon-ai-btn" data-ai-target="dashLearnings" title="Rewrite with AI" aria-label="Rewrite Key Learnings with AI">
-                  <i class="fa-solid fa-robot"></i>
-                </button>
-                <button class="icon-revert-btn" data-revert-target="dashLearnings" title="Revert to original" aria-label="Revert Key Learnings">
-                  <i class="fa-solid fa-rotate-left"></i>
-                </button>
+                
               </div>
             </div>
-            <p class="help-text ai-helper" data-ai-helper-for="dashLearnings">AI draft not generated</p>
+            
           </div>
         <p id="dashLearnings" class="dash-text"></p>
       </div>
@@ -135,15 +136,10 @@
                 <button class="icon-copy-btn" data-copy-target="dashChallenges" title="Copy to clipboard" aria-label="Copy Challenges & Constraints">
                   <i class="fa-regular fa-copy"></i>
                 </button>
-                <button class="icon-ai-btn" data-ai-target="dashChallenges" title="Rewrite with AI" aria-label="Rewrite Challenges & Constraints with AI">
-                  <i class="fa-solid fa-robot"></i>
-                </button>
-                <button class="icon-revert-btn" data-revert-target="dashChallenges" title="Revert to original" aria-label="Revert Challenges & Constraints">
-                  <i class="fa-solid fa-rotate-left"></i>
-                </button>
+                
               </div>
             </div>
-            <p class="help-text ai-helper" data-ai-helper-for="dashChallenges">AI draft not generated</p>
+            
           </div>
         <p id="dashChallenges" class="dash-text"></p>
       </div>
@@ -151,38 +147,71 @@
       <div class="dash-card">
         <div class="dash-card-heading">
             <div class="dash-card-heading-row">
-              <h3>Key Decisions</h3>
+              <h3>Next Steps</h3>
               <div class="dash-actions">
-                <button class="icon-copy-btn" data-copy-target="dashNextSteps" title="Copy to clipboard" aria-label="Copy Key Decisions">
+                <button class="icon-copy-btn" data-copy-target="dashNextSteps" title="Copy to clipboard" aria-label="Copy Next Steps">
                   <i class="fa-regular fa-copy"></i>
                 </button>
-                <button class="icon-ai-btn" data-ai-target="dashNextSteps" title="Rewrite with AI" aria-label="Rewrite Key Decisions with AI">
-                  <i class="fa-solid fa-robot"></i>
-                </button>
-                <button class="icon-revert-btn" data-revert-target="dashNextSteps" title="Revert to original" aria-label="Revert Key Decisions">
-                  <i class="fa-solid fa-rotate-left"></i>
-                </button>
+                
               </div>
             </div>
-            <p class="help-text ai-helper" data-ai-helper-for="dashNextSteps">AI draft not generated</p>
+            
           </div>
         <p id="dashNextSteps" class="dash-text"></p>
       </div>
 
+      <div class="dash-card dash-full" id="midtermSummaryCard" style="display:none;">
+        <div class="dash-card-heading">
+            <div class="dash-card-heading-row">
+              <h3>Midterm Summary</h3>
+              <div class="dash-actions">
+                <button class="icon-copy-btn" data-copy-target="dashMidtermSummary" title="Copy to clipboard" aria-label="Copy Midterm Summary">
+                  <i class="fa-regular fa-copy"></i>
+                </button>
+                <button class="icon-ai-btn" data-ai-target="dashMidtermSummary" title="Generate with AI" aria-label="Generate Midterm Summary with AI">
+                  <i class="fa-solid fa-robot"></i>
+                </button>
+                <button class="icon-revert-btn" data-revert-target="dashMidtermSummary" title="Revert to original" aria-label="Revert Midterm Summary">
+                  <i class="fa-solid fa-rotate-left"></i>
+                </button>
+              </div>
+            </div>
+            
+          </div>
+        <p id="dashMidtermSummary" class="dash-text"></p>
+      </div>
+
       <div class="dash-card dash-summary-full">
-        <h3>Full Final Summary</h3>
+        <div class="dash-card-heading">
+          <div class="dash-card-heading-row">
+            <h3>Final Summary</h3>
+            <div class="dash-actions">
+              <button class="icon-copy-btn" data-copy-target="dashSummaryText" title="Copy to clipboard" aria-label="Copy Final Summary">
+                <i class="fa-regular fa-copy"></i>
+              </button>
+              <button class="icon-ai-btn" data-ai-target="dashSummaryText" title="Rewrite with AI" aria-label="Rewrite Final Summary with AI">
+                <i class="fa-solid fa-robot"></i>
+              </button>
+              <button class="icon-revert-btn" data-revert-target="dashSummaryText" title="Revert to original" aria-label="Revert Final Summary">
+                <i class="fa-solid fa-rotate-left"></i>
+              </button>
+            </div>
+          </div>
+          <p class="help-text ai-helper" data-ai-helper-for="dashSummaryText">AI draft not generated</p>
+        </div>
         <pre id="dashSummaryText" class="dash-summary"></pre>
       </div>
 
     </main>
 
     <div class="dashboard-footer-action">
-      <button class="btn btn-primary" id="openCaseStudyBtn" type="button">
+      <button class="btn btn-primary" id="openCaseStudyBtn" type="button" style="display:none;">
         Open Pre-filled Case Study Form
       </button>
     </div>
 
 <section id="errorPanel" class="error-box" style="display:none;"></section>
+<div id="copyStatus" class="status-message" style="display:none;"></div>
 
 </div>
 

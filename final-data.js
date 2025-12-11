@@ -4,6 +4,7 @@
 
 const finalState = {
   projectName: "",
+  projectSummary: "",
   client: "",
   pm: "",
   designer: "",
@@ -72,6 +73,7 @@ function buildProjectMeta(kickoff) {
 
   const meta = {};
   meta.name = info.projectName || info.name || "";
+  meta.summary = info.projectSummary || info.summary || "";
 
   if (typeof info.clientId === "number" && Array.isArray(dir.clients)) {
     meta.client = dir.clients[info.clientId] || "";
@@ -134,6 +136,7 @@ function normalizeGoalsFromKickoff(kickoff, midterm) {
                   : 3,
           midtermStatus: mid.status || "",
           midtermNotes: mid.notes || "",
+          completionNote: g.completionNote || mid.completionNote || "",
           finalStatus: "",
           finalNotes: ""
         });
@@ -196,6 +199,7 @@ function saveDashboardPayload(summaryText) {
   const project = buildProjectMeta(kickoff);
 
   project.name = finalState.projectName || project.name || "";
+  project.summary = finalState.projectSummary || project.summary || "";
   project.client = finalState.client || project.client || "";
   project.pm = finalState.pm || project.pm || "";
   project.designer = finalState.designer || project.designer || "";
