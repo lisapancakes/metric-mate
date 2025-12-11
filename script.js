@@ -1611,11 +1611,10 @@ function openDashboardFromKickoff() {
   // Dashboard expects an object like { kickoff: {...}, project?: {...}, ... }
   const data = {
     kickoff: kickoffPayload
-    // we don't need to pass project here;
-    // dashboard-data.js derives project meta from kickoff.info + directory
+    // project meta derived from kickoff
   };
 
-  // Persist for other pages (and as a fallback if the dashboard opens without ?data=)
+  // Persist for other pages
   try {
     localStorage.setItem('metricMateKickoff', JSON.stringify(kickoffPayload));
     localStorage.setItem('metricMateDashboard', JSON.stringify(data));
@@ -1627,8 +1626,7 @@ function openDashboardFromKickoff() {
     console.warn('Could not save kickoff data to localStorage before opening dashboard', e);
   }
 
-  const url = `dashboard.html?data=${encodeURIComponent(JSON.stringify(data))}`;
-  window.open(url, "_blank");
+  window.open('dashboard.html', "_blank");
 }
 
 // ============================================================================

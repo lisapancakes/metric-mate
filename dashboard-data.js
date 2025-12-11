@@ -11,29 +11,15 @@ function loadDashboardData() {
   let data = null;
   let source = "none";
 
-  // Prefer URL ?data=... so pages can pass context directly
+  // Primary: saved snapshot
   try {
-    const params = new URLSearchParams(window.location.search);
-    const raw = params.get("data");
-    if (raw) {
-      data = JSON.parse(decodeURIComponent(raw));
-      source = "querystring";
+    const stored = localStorage.getItem("metricMateDashboard");
+    if (stored) {
+      data = JSON.parse(stored);
+      source = "metricMateDashboard";
     }
   } catch (e) {
-    console.warn("Failed to parse dashboard data from URL", e);
-  }
-
-  // Fallback: a saved snapshot (metricMateDashboard) or the latest kickoff/midterm/final entries
-  if (!data) {
-    try {
-      const stored = localStorage.getItem("metricMateDashboard");
-      if (stored) {
-        data = JSON.parse(stored);
-        source = "metricMateDashboard";
-      }
-    } catch (e) {
-      console.warn("Failed to load dashboard data from localStorage snapshot", e);
-    }
+    console.warn("Failed to load dashboard data from localStorage snapshot", e);
   }
 
   // Last-resort fallback: stitch together whatever survey data exists

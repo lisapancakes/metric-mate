@@ -50,19 +50,10 @@ function generateId() {
 // LOAD KICKOFF DATA
 function getKickoffDataFromUrl() {
   try {
-    // 1) Try URL ?data=...
-    const params = new URLSearchParams(window.location.search);
-    const raw = params.get("data");
-    if (raw) {
-      return JSON.parse(decodeURIComponent(raw));
-    }
-
-    // 2) Fallback: localStorage (saved by the kickoff survey)
     const stored = localStorage.getItem("metricMateKickoff");
     if (stored) {
       return JSON.parse(stored);
     }
-
     return null;
   } catch (err) {
     console.error("Failed to load kickoff data", err);

@@ -30,18 +30,7 @@ function $(id) {
 // -------------------------------
 function loadKickoffData() {
   try {
-    // 1) URL ?data=...
-    const params = new URLSearchParams(window.location.search);
-    const raw = params.get("data");
-    if (raw) {
-      return JSON.parse(decodeURIComponent(raw));
-    }
-  } catch (e) {
-    console.warn("Failed to parse kickoff data from URL", e);
-  }
-
-  try {
-    // 2) localStorage (saved by kickoff)
+    // localStorage (saved by kickoff)
     const stored = localStorage.getItem("metricMateKickoff");
     if (stored) {
       return JSON.parse(stored);
@@ -248,8 +237,7 @@ function updateDashboardPayload(summaryText) {
   const linkEl = $("openDashboardBtn");
   if (!linkEl) return;
 
-  const encoded = encodeURIComponent(JSON.stringify(payload));
-  linkEl.href = `dashboard.html?data=${encoded}`;
+  linkEl.href = "dashboard.html";
 }
 
 // -------------------------------
