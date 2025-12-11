@@ -1139,13 +1139,32 @@ function renderDashboard(rawData) {
       setCardVisibilityForContent("dashResults");
     }
     if (dashPain) {
-      setSectionContent(
-        "dashPain",
-        completedFinalPain.length
-          ? completedFinalPain.join(" • ")
-          : "No pain points marked as addressed yet."
-      );
-      recordOriginal("pain", dashPain.textContent);
+      const activeGoals = finalGoalsList.filter((g) => getCanonicalStatus(g) !== "discard");
+      const completedPains = activeGoals
+        .filter(
+          (g) =>
+            (g.type || "").toLowerCase() === "pain" &&
+            getCanonicalStatus(g) === "completed"
+        )
+        .sort((a, b) => (Number(b.importance) || 0) - (Number(a.importance) || 0));
+
+      const heading = "<div><strong>Addressed pain points:</strong></div>";
+      if (completedPains.length) {
+        const listHtml = completedPains
+          .map((g) => {
+            const label = g.label || g.goal || "";
+            const note = g.howWeDidIt || g.completionNote || g.finalNotes || "";
+            const safeLabel = escapeHTML(label);
+            const safeNote = escapeHTML(note);
+            const noteLine = note ? `<div class="goal-note">How we addressed it: ${safeNote}</div>` : "";
+            return `<li>${safeLabel}${noteLine ? `<br>${noteLine}` : ""}</li>`;
+          })
+          .join("");
+        dashPain.innerHTML = `${heading}<ul class="dash-list">${listHtml}</ul>`;
+      } else {
+        dashPain.innerHTML = `${heading}<ul class="dash-list"><li>No pain points marked as addressed yet</li></ul>`;
+      }
+      recordOriginal("pain", dashPain.textContent || dashPain.innerText || "");
       setCardVisibilityForContent("dashPain");
     }
     if (dashChallenges) {
