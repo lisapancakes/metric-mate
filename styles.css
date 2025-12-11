@@ -1111,6 +1111,15 @@ table th.numeric,
   color: var(--tl-text-primary);
 }
 
+.cell-scroll {
+  max-height: 150px;
+  overflow-y: auto;
+  border: 1px solid #e5e7eb;
+  border-radius: 6px;
+  padding: 6px 8px;
+  background: #f8fafc;
+}
+
 .dash-table td:first-child {
   white-space: normal;
   word-break: break-word;

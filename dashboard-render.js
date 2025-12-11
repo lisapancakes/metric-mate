@@ -666,6 +666,7 @@ function renderDashboard(rawData) {
     const params = new URLSearchParams();
 
     const safeJoin = (arr = []) => arr.filter(Boolean);
+    const mergedGoals = Array.isArray(finalDashboard.goals) ? finalDashboard.goals : [];
     const goalsCompletedDetailed = Array.isArray(finalDashboard.completedGoalsDetailed)
       ? finalDashboard.completedGoalsDetailed.filter(Boolean)
       : [];
@@ -679,18 +680,16 @@ function renderDashboard(rawData) {
     if (projectPayload.clientName) params.set("entry.1009657372", projectPayload.clientName);
     if (projectPayload.title) params.set("entry.1888520839", projectPayload.title);
 
-    // Project goals (completed only) into Other option
-    const goalsForOther = goalsCompletedDetailed.length
-      ? goalsCompletedDetailed.map((g) =>
-          g.completionNote ? `${g.label} — ${g.completionNote}` : g.label
-        )
-      : goalsCompleted;
-
-    if (goalsForOther.length) {
+    // Project goals → map to predefined options if any; otherwise short Other string
+    const otherGoals = mergedGoals
+      .map((g) => g && (g.label || g.goal || ""))
+      .filter(Boolean)
+      .slice(0, 3);
+    if (otherGoals.length) {
       params.append("entry.607934051", "__other_option__");
       params.set(
         "entry.607934051.other_option_response",
-        goalsForOther.map((g) => `• ${g}`).join("\n")
+        otherGoals.join("; ")
       );
     }
 
@@ -703,33 +702,106 @@ function renderDashboard(rawData) {
       params.set("entry.2146709131", challengesBlockParts.join("\n"));
     }
 
-    const didLines = [];
-    if (goalsForOther.length) {
-      didLines.push("What We Did:");
-      didLines.push(...goalsForOther.map((g) => `• ${g}`));
-    }
-    if (decisions.length) {
-      if (didLines.length && didLines[didLines.length - 1] !== "") didLines.push("");
-      didLines.push(...decisions.map((d) => `• ${d}`));
-    }
-    if (didLines.length) {
-      params.set("entry.1962619986", didLines.join("\n"));
-    }
+    // What We Did → completed goals/pains, using only "How We Did It" actions
+    const completedActions = [];
+    const seenActions = new Set();
+    const sortedCompleted = mergedGoals
+      .filter((g) => getCanonicalStatus(g) === "completed")
+      .sort((a, b) => (Number(b.importance) || 0) - (Number(a.importance) || 0));
 
-    if (finalDashboard.resultsImpactText) {
-      params.set("entry.391970403", finalDashboard.resultsImpactText);
-    }
+    const splitActions = (txt) =>
+      txt
+        .split(/[\n\.]+/)
+        .map((s) => s.replace(/^•\s*/, "").trim())
+        .filter(Boolean);
 
-    const highlights = [];
-    if (goalsCompleted.length) {
-      highlights.push(...goalsCompleted.slice(0, 3).map((g) => `• ${g}`));
+    sortedCompleted.forEach((g) => {
+      const raw = (g.howWeDidIt || "").trim();
+      if (!raw) return;
+      splitActions(raw).forEach((act) => {
+        if (seenActions.has(act)) return;
+        seenActions.add(act);
+        completedActions.push(act);
+      });
+    });
+
+    let whatWeDidValue = "";
+    if (completedActions.length) {
+      whatWeDidValue = completedActions.map((a) => `• ${a}`).join("\n");
+    } else {
+      // Fallback to prior content if no actions found
+      const fallbackGoals = goalsCompletedDetailed.length
+        ? goalsCompletedDetailed.map((g) => g && g.label).filter(Boolean)
+        : goalsCompleted;
+      if (fallbackGoals.length) {
+        whatWeDidValue = fallbackGoals.map((g) => `• ${g}`).join("\n");
+      } else if (finalDashboard.resultsImpactText) {
+        whatWeDidValue = finalDashboard.resultsImpactText;
+      } else {
+        whatWeDidValue = "Project work captured in dashboard.";
+      }
     }
+    params.set("entry.1962619986", whatWeDidValue);
+    console.log("CaseStudy WhatWeDid:", whatWeDidValue);
+
+    // Results & Impact (structured block)
+    const progressScore = finalDashboard.progressScore != null
+      ? finalDashboard.progressScore
+      : (projectPayload.progressScore != null ? projectPayload.progressScore : 3);
+    const goalsList = Array.isArray(finalDashboard.goals) ? finalDashboard.goals : [];
+    const trackedGoals = goalsList.filter((g) => {
+      const t = (g.type || "").toLowerCase();
+      return ["business", "product", "user", "pain"].includes(t);
+    });
+    const activeGoals = trackedGoals.filter((g) => getCanonicalStatus(g) !== "discard");
+    const completedGoals = activeGoals.filter((g) => getCanonicalStatus(g) === "completed");
+    const inProgressGoals = activeGoals.filter((g) => getCanonicalStatus(g) === "in-progress");
+    const notStartedGoals = activeGoals.filter((g) => getCanonicalStatus(g) === "not-started");
+    const totalTracked = activeGoals.length;
+
+    const typePriority = ["business", "user", "product", "pain"];
+    const topCompleted = [...completedGoals]
+      .sort((a, b) => {
+        const impDiff = (Number(b.importance) || 0) - (Number(a.importance) || 0);
+        if (impDiff !== 0) return impDiff;
+        const aType = typePriority.indexOf((a.type || "").toLowerCase());
+        const bType = typePriority.indexOf((b.type || "").toLowerCase());
+        return aType - bType;
+      })
+      .slice(0, 3);
+
+    const resultsLines = [];
+    resultsLines.push(`Progress vs Plan: ${progressScore}/5 (On track)`);
+    resultsLines.push("");
+    resultsLines.push("Goal Status:");
+    resultsLines.push(`• ${completedGoals.length} completed`);
+    resultsLines.push(`• ${inProgressGoals.length} in progress`);
+    resultsLines.push(`• ${notStartedGoals.length} not started`);
+    resultsLines.push(`(Total: ${totalTracked})`);
+    if (topCompleted.length) {
+      resultsLines.push("");
+      resultsLines.push("Top Completed Goals:");
+      resultsLines.push(
+        ...topCompleted.map((g) => `• ${g.label || g.goal || ""}`)
+      );
+    }
+    params.set("entry.391970403", resultsLines.join("\n"));
+
+    // Highlights / Key Wins (completed goals + key learnings)
+    const highlightBullets = [];
+    if (topCompleted.length) {
+      highlightBullets.push(...topCompleted.map((g) => `• ${g.label || g.goal || ""}`));
+    }
+    const learningsSentences = [];
     if (learningsText) {
-      const firstLearning = learningsText.split(/[\n\.]/).find((s) => s.trim());
-      if (firstLearning) highlights.push(`• ${firstLearning.trim()}`);
+      const sentences = learningsText.split(/\. |\n/).map(s => s.trim()).filter(Boolean);
+      learningsSentences.push(...sentences.slice(0, 2));
     }
-    if (highlights.length) {
-      params.set("entry.1162619322", `Highlights:\n${highlights.join("\n")}`);
+    if (learningsSentences.length) {
+      highlightBullets.push(...learningsSentences.map(s => `• ${s}`));
+    }
+    if (highlightBullets.length) {
+      params.set("entry.1162619322", highlightBullets.slice(0, 5).join("\n"));
     }
 
     if (Array.isArray(projectPayload.serviceCategories)) {
@@ -1017,7 +1089,12 @@ function renderDashboard(rawData) {
         const cells = columns
           .map(c => {
             const cls = c.className ? c.className(row) : "";
-            return `<td class="${cls}">${c.render(row)}</td>`;
+            const content = c.render(row);
+            const shouldScroll = c.scroll === true;
+            const wrapped = shouldScroll
+              ? `<div class="cell-scroll">${content}</div>`
+              : content;
+            return `<td class="${cls}">${wrapped}</td>`;
           })
           .join("");
         return `<tr>${cells}</tr>`;
@@ -1065,8 +1142,8 @@ function renderDashboard(rawData) {
       { header: "Importance", headerClass: "numeric text-center", render: (r) => r.importance != null ? `${r.importance}/5` : "", className: (r) => (r.finalStatus === "discard" || r.midtermStatus === "discard" ? "goal-row--discard text-center numeric" : "text-center numeric") },
       { header: "Midterm Status", render: (r) => formatStatus(r.midtermStatus), className: (r) => r.midtermStatus === "discard" ? "goal-row--discard" : "" },
       { header: "Final Status", render: (r) => formatStatus(r.finalStatus), className: (r) => r.finalStatus === "discard" ? "goal-row--discard" : "" },
-      { header: "Final Notes", render: (r) => r.finalNotes || "—", className: (r) => r.finalStatus === "discard" ? "goal-row--discard" : "" },
-      { header: "How We Did It", render: (r) => r.completionNote || "—", className: (r) => r.finalStatus === "discard" ? "goal-row--discard" : "" }
+      { header: "Final Notes", render: (r) => r.finalNotes || "—", className: (r) => r.finalStatus === "discard" ? "goal-row--discard" : "", scroll: true },
+      { header: "How We Did It", render: (r) => r.completionNote || "—", className: (r) => r.finalStatus === "discard" ? "goal-row--discard" : "", scroll: true }
     ]);
     totalGoals = sorted.length;
     completedGoals = sorted.filter(r => (r.finalStatus || r.midtermStatus || "").toLowerCase() === "completed").length;
@@ -1103,8 +1180,8 @@ function renderDashboard(rawData) {
       { header: "Type", render: (r) => titleCaseType(r.type || ""), className: (r) => r.status === "discard" ? "goal-row--discard" : "" },
       { header: "Importance", headerClass: "numeric text-center", render: (r) => r.importance != null ? `${r.importance}/5` : "", className: (r) => r.status === "discard" ? "goal-row--discard text-center numeric" : "text-center numeric" },
       { header: "Status", render: (r) => formatStatus(r.status), className: (r) => r.status === "discard" ? "goal-row--discard" : "" },
-      { header: "Notes", render: (r) => r.notes || "—", className: (r) => r.status === "discard" ? "goal-row--discard" : "" },
-      { header: "How We Did It", render: (r) => r.completionNote || "—", className: (r) => r.status === "discard" ? "goal-row--discard" : "" }
+      { header: "Notes", render: (r) => r.notes || "—", className: (r) => r.status === "discard" ? "goal-row--discard" : "", scroll: true },
+      { header: "How We Did It", render: (r) => r.completionNote || "—", className: (r) => r.status === "discard" ? "goal-row--discard" : "", scroll: true }
     ]);
     totalGoals = list.length;
     completedGoals = list.filter(r => (r.status || "").toLowerCase() === "completed").length;
@@ -1253,7 +1330,8 @@ function renderDashboard(rawData) {
       challengesText: dashChallenges ? dashChallenges.textContent : "",
       resultsImpactText: dashResults ? dashResults.textContent : "",
       keyLearningsText: dashLearnings ? dashLearnings.textContent : "",
-      keyDecisions: getDecisions()
+      keyDecisions: getDecisions(),
+      goals: finalGoalsList
     };
     setCaseStudyButton(projectPayloadBase, finalDashboardPayload);
     if (caseStudyBtn) caseStudyBtn.style.display = "inline-flex";
