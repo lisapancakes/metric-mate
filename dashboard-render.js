@@ -97,7 +97,6 @@ function renderDashboard(rawData) {
 
   if (emptyState) emptyState.style.display = "none";
   if (dashboardContent) dashboardContent.style.display = "grid";
-  if (caseStudyBtn) caseStudyBtn.style.display = "none";
 
   // Prefer normalised kickoff, but also keep a direct reference to the raw one
   const kickoff = data.kickoff || (rawData && rawData.kickoff) || null;
@@ -1116,6 +1115,9 @@ function renderDashboard(rawData) {
 
   // If we have final data, show that (full project view)
   if (hasFinal) {
+    const completedFinalGoals = goals.filter(
+      (g) => getCanonicalStatus(g) === "completed"
+    );
     const completedFinalPain = getAddressedPain(goals, "finalStatus");
 
     if (summaryCard) summaryCard.style.display = "block";
