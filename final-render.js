@@ -13,6 +13,33 @@ const FINAL_AI_BASE =
   window.location.protocol === "file:" ? "http://localhost:3001" : "";
 const finalAIModel = "gpt-4o-mini";
 
+function cleanFinalOutput(text = "") {
+  const lines = (text || "").split("\n");
+  const cleaned = [];
+  lines.forEach((line) => {
+    let l = (line || "").trim();
+    if (!l) {
+      cleaned.push("");
+      return;
+    }
+    l = l.replace(/^#+\s*/, ""); // strip markdown headings
+    l = l.replace(/\*\*(.*?)\*\*/g, "$1"); // remove bold markers
+    const bulletMatch = l.match(/^([-*•]|\d+\.)\s+(.*)$/);
+    if (bulletMatch) {
+      l = `  • ${bulletMatch[2].trim()}`;
+    }
+    cleaned.push(l);
+  });
+
+  // collapse multiple blanks
+  const collapsed = [];
+  cleaned.forEach((l) => {
+    if (l === "" && collapsed[collapsed.length - 1] === "") return;
+    collapsed.push(l);
+  });
+  return collapsed.join("\n").trim();
+}
+
 function tightenFinalText(text = "") {
   const lines = (text || "").split("\n");
   const cleaned = [];
@@ -545,10 +572,11 @@ async function triggerFinalAIRewrite({ btnId, textareaId, mode, placeholderFallb
       return data.text;
     });
 
-    const finalText =
+    const cleaned =
       mode === "final_client_email"
-        ? tightenFinalText(formatFinalClientEmail(rewritten))
-        : tightenFinalText(rewritten);
+        ? formatFinalClientEmail(rewritten)
+        : rewritten;
+    const finalText = tightenFinalText(cleanFinalOutput(cleaned));
     ta.value = finalText;
     ta.dataset.aiFilled = "true";
     if (ta.id === "finalSummary") {
