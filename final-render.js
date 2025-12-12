@@ -13,6 +13,35 @@ const FINAL_AI_BASE =
   window.location.protocol === "file:" ? "http://localhost:3001" : "";
 const finalAIModel = "gpt-4o-mini";
 
+function tightenFinalText(text = "") {
+  const lines = (text || "").split("\n");
+  const cleaned = [];
+  let prevWasHeading = false;
+  for (let i = 0; i < lines.length; i++) {
+    const curr = (lines[i] || "").replace(/\s+$/, "");
+    const isHeading =
+      curr &&
+      !/^\s*•/.test(curr) &&
+      !/^\s*[-*]/.test(curr) &&
+      !/^\s{2,}•/.test(curr);
+    // Skip blank lines immediately following headings
+    if (prevWasHeading && curr === "") {
+      prevWasHeading = false;
+      continue;
+    }
+    cleaned.push(curr);
+    prevWasHeading = isHeading;
+  }
+
+  // Collapse consecutive blank lines, keeping single separators between sections
+  const collapsed = [];
+  cleaned.forEach((l) => {
+    if (l === "" && collapsed[collapsed.length - 1] === "") return;
+    collapsed.push(l);
+  });
+  return collapsed.join("\n").trim();
+}
+
 function formatFinalClientEmail(aiText) {
   const client =
     finalState.client && finalState.client.trim() ? finalState.client.trim() : "there";
@@ -158,6 +187,16 @@ function hydrateForm() {
   }
 
   // Narrative lists hydration
+  if (!Array.isArray(finalState.outcomesList) || !finalState.outcomesList.length) {
+    finalState.outcomesList = finalState.outcomes
+      ? finalState.outcomes.split(/\n+/).map(s => s.trim()).filter(Boolean)
+      : [];
+  }
+  if (!Array.isArray(finalState.resultsList) || !finalState.resultsList.length) {
+    finalState.resultsList = finalState.results
+      ? finalState.results.split(/\n+/).map(s => s.trim()).filter(Boolean)
+      : [];
+  }
   if (!Array.isArray(finalState.winsList) || !finalState.winsList.length) {
     finalState.winsList = finalState.wins
       ? finalState.wins.split(/\n+/).map(s => s.trim()).filter(Boolean)
@@ -261,6 +300,22 @@ function handleInput(e) {
     if (goal) goal.completionNote = val;
     updateSummary();
     return;
+  }
+
+  if (t.dataset.type === "outcomes-item") {
+    const idx = parseInt(t.dataset.index, 10);
+    if (!Number.isNaN(idx)) {
+      finalState.outcomesList[idx] = val;
+      syncFinalNarrativeStrings();
+    }
+  }
+
+  if (t.dataset.type === "results-item") {
+    const idx = parseInt(t.dataset.index, 10);
+    if (!Number.isNaN(idx)) {
+      finalState.resultsList[idx] = val;
+      syncFinalNarrativeStrings();
+    }
   }
 
   if (t.dataset.type === "wins-item") {
@@ -492,8 +547,8 @@ async function triggerFinalAIRewrite({ btnId, textareaId, mode, placeholderFallb
 
     const finalText =
       mode === "final_client_email"
-        ? formatFinalClientEmail(rewritten)
-        : rewritten;
+        ? tightenFinalText(formatFinalClientEmail(rewritten))
+        : tightenFinalText(rewritten);
     ta.value = finalText;
     ta.dataset.aiFilled = "true";
     if (ta.id === "finalSummary") {
@@ -519,6 +574,12 @@ function goToPreviousFinalStep() {
 }
 
 function ensureFinalNarrativeDefaults() {
+  if (!Array.isArray(finalState.outcomesList) || finalState.outcomesList.length === 0) {
+    finalState.outcomesList = [""];
+  }
+  if (!Array.isArray(finalState.resultsList) || finalState.resultsList.length === 0) {
+    finalState.resultsList = [""];
+  }
   if (!Array.isArray(finalState.winsList) || finalState.winsList.length === 0) {
     finalState.winsList = [""];
   }
@@ -535,6 +596,8 @@ function ensureFinalNarrativeDefaults() {
 }
 
 function syncFinalNarrativeStrings() {
+  finalState.outcomes = (finalState.outcomesList || []).filter(Boolean).join("\n");
+  finalState.results = (finalState.resultsList || []).filter(Boolean).join("\n");
   finalState.wins = (finalState.winsList || []).filter(Boolean).join("\n");
   finalState.challenges = (finalState.challengesList || []).filter(Boolean).join("\n");
   finalState.learnings = (finalState.learningsList || []).filter(Boolean).join("\n");
@@ -547,14 +610,8 @@ function renderFinalNarrativeFields() {
   if (!container) return;
 
   container.innerHTML = `
-    <div class="form-group">
-      <label for="outcomes">What Did We Ship?</label>
-      <textarea id="outcomes" rows="3" placeholder="Major Releases, Features, or Milestones...">${finalState.outcomes || ""}</textarea>
-    </div>
-    <div class="form-group">
-      <label for="results">Results / Impact</label>
-      <textarea id="results" rows="3" placeholder="Metrics, Client Feedback, Internal Impact...">${finalState.results || ""}</textarea>
-    </div>
+    ${renderFinalListSection("What Did We Ship?", "outcomes", finalState.outcomesList, "Add a shipped feature, release, or milestone")}
+    ${renderFinalListSection("Results / Impact", "results", finalState.resultsList, "Add a result, metric, or impact signal")}
     ${renderFinalListSection("Biggest Wins", "wins", finalState.winsList, "Add a key win or positive outcome")}
     ${renderFinalListSection("Challenges", "challenges", finalState.challengesList, "Add a current challenge or constraint")}
     ${renderFinalListSection("Key Learnings", "learnings", finalState.learningsList, "Add a key learning or insight")}
@@ -568,11 +625,15 @@ function renderFinalListSection(title, key, items = [], placeholder = "") {
       ? "Add Win"
       : key === "challenges"
         ? "Add Challenge"
+        : key === "outcomes"
+          ? "Add Item"
+          : key === "results"
+            ? "Add Item"
         : key === "learnings"
           ? "Add Learning"
-          : key === "nextSteps"
-            ? "Add Next Step"
-            : "Add Item";
+        : key === "nextSteps"
+          ? "Add Next Step"
+          : "Add Item";
 
   const rows = (items || []).map((item, idx) => `
       <div class="list-row" data-key="${key}" data-index="${idx}">
@@ -775,6 +836,16 @@ function handleKeydown(e) {
   const t = e.target;
   if (!t || t.tagName !== "INPUT") return;
 
+  if (t.dataset.type === "outcomes-item") {
+    e.preventDefault();
+    addFinalListRow("outcomes", true);
+    return;
+  }
+  if (t.dataset.type === "results-item") {
+    e.preventDefault();
+    addFinalListRow("results", true);
+    return;
+  }
   const dt = t.dataset.type;
   if (dt === "wins-item") {
     e.preventDefault();
@@ -918,12 +989,34 @@ function handleClick(e) {
     addFinalListRow("challenges", true);
     return;
   }
+  if (t.id === "addOutcomesRow" || t.closest("#addOutcomesRow")) {
+    addFinalListRow("outcomes", true);
+    return;
+  }
+  if (t.id === "addResultsRow" || t.closest("#addResultsRow")) {
+    addFinalListRow("results", true);
+    return;
+  }
   if (t.id === "addLearningsRow" || t.closest("#addLearningsRow")) {
     addFinalListRow("learnings", true);
     return;
   }
   if (t.id === "addNextStepsRow" || t.closest("#addNextStepsRow")) {
     addFinalListRow("nextSteps", true);
+    return;
+  }
+
+  const removeOutcomes = t.closest('[data-type="remove-outcomes"]');
+  if (removeOutcomes) {
+    const idx = parseInt(removeOutcomes.dataset.index, 10);
+    removeFinalListItem("outcomes", idx);
+    return;
+  }
+
+  const removeResults = t.closest('[data-type="remove-results"]');
+  if (removeResults) {
+    const idx = parseInt(removeResults.dataset.index, 10);
+    removeFinalListItem("results", idx);
     return;
   }
 

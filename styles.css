@@ -621,6 +621,25 @@ textarea[readonly] {
   box-shadow: 0 2px 4px rgba(10, 13, 18, 0.10);
 }
 
+.btn.is-disabled,
+.btn[aria-disabled="true"] {
+  color: #9AA7BC;
+  background: #F6F7FB;
+  border-color: #CBD7EA;
+  pointer-events: none;
+  cursor: not-allowed;
+  box-shadow: none;
+  filter: none;
+  transform: none;
+}
+
+.btn-secondary.is-disabled,
+.btn-secondary[aria-disabled="true"] {
+  color: #8FA3C3;
+  border-color: #CBD7EA;
+  background: #F6F7FB;
+}
+
 .btn:disabled {
   opacity: 0.55;
   cursor: not-allowed;

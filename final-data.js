@@ -12,6 +12,8 @@ const finalState = {
   date: "",
   outcomes: "",
   results: "",
+  outcomesList: [],
+  resultsList: [],
   wins: "",
   challenges: "",
   learnings: "",

@@ -330,7 +330,7 @@ function renderProjectInfoStep() {
     </div>
 
     <div class="form-group">
-      <label for="projectSummary">Project Summary (one sentence)</label>
+      <label for="projectSummary">Project Summary</label>
       <textarea id="projectSummary" rows="2" placeholder="Describe the project in one sentence.">${project.info.projectSummary || ''}</textarea>
       <p class="help-text">In one sentence, what is this project fundamentally about?</p>
     </div>
@@ -388,8 +388,8 @@ function renderBusinessGoalsStep() {
     <h2>Business Goals</h2>
     <p>Select all that apply</p>
     <div id="businessGoalsList">
-      ${project.businessGoals.map(goal => `
-        <div class="form-group checkbox-group">
+        ${project.businessGoals.map(goal => `
+          <div class="form-group checkbox-group">
           <label class="checkbox-container">
             <input type="checkbox" 
                    id="bg-${goal.id}" 
@@ -458,18 +458,18 @@ function renderProductGoalsStep() {
     <h2>Product Goals</h2>
     <p>Select all that apply</p>
     <div id="productGoalsList">
-      ${project.productGoals.map(goal => `
-        <div class="form-group checkbox-group">
-          <label class="checkbox-container">
-            <input type="checkbox" 
-                   id="pg-${goal.id}" 
-                   ${goal.selected ? 'checked' : ''}
-                   data-id="${goal.id}">
-            <span>${goal.label}${goal.isCustom ? ' (Custom)' : ''}</span>
-          </label>
-          ${goal.selected ? renderGoalDetails(goal, 'product') : ''}
-        </div>
-      `).join('')}
+        ${project.productGoals.map(goal => `
+          <div class="form-group checkbox-group">
+            <label class="checkbox-container">
+              <input type="checkbox" 
+                     id="pg-${goal.id}" 
+                     ${goal.selected ? 'checked' : ''}
+                     data-id="${goal.id}">
+              <span>${goal.label}${goal.isCustom ? ' (Custom)' : ''}</span>
+            </label>
+            ${goal.selected ? renderGoalDetails(goal, 'product') : ''}
+          </div>
+        `).join('')}
       <div class="form-group" style="margin-top: 2rem;">
         <button type="button" id="addCustomProductGoalBtn" class="btn btn-secondary">
           <i class="fa-solid fa-plus"></i>
@@ -770,27 +770,30 @@ function buildKickoffClientEmailWithWrapper(bodyText) {
   const greeting = `Hi ${client} Team,`;
   const signature = `Best,\n${pm} & the Thinklogic Team`;
 
-  const cleanedLines = (bodyText || "")
+  const cleanedLines = [];
+  (bodyText || "")
     .split("\n")
-    .map((line) => line.trim())
-    .filter((t) => {
-      if (!t) return false;
+    .forEach((line) => {
+      const t = (line || "").trim();
+      if (!t) {
+        cleanedLines.push("");
+        return;
+      }
       const lower = t.toLowerCase();
-      if (lower.startsWith("subject:")) return false;
-      if (lower.startsWith("hi ")) return false;
-      if (lower.startsWith("hello")) return false;
-      if (lower.startsWith("dear")) return false;
-      if (t.includes("[Client") || t.includes("[client")) return false;
-      if (t.includes("[Your") || t.includes("[your")) return false;
-      if (lower.startsWith("best")) return false;
-      if (lower.startsWith("best regards")) return false;
-      if (lower.startsWith("kind regards")) return false;
-      if (lower.includes("project manager")) return false;
-      if (pmLower && (lower === pmLower || lower.startsWith(pmLower))) return false;
-      if (lower.includes("thinklogic team")) return false;
-      return true;
-    })
-    .map((t) => t.replace(/^#+\s*/, "")); // strip markdown headings like ### Heading
+      if (lower.startsWith("subject:")) return;
+      if (lower.startsWith("hi ")) return;
+      if (lower.startsWith("hello")) return;
+      if (lower.startsWith("dear")) return;
+      if (t.includes("[Client") || t.includes("[client")) return;
+      if (t.includes("[Your") || t.includes("[your")) return;
+      if (lower.startsWith("best")) return;
+      if (lower.startsWith("best regards")) return;
+      if (lower.startsWith("kind regards")) return;
+      if (lower.includes("project manager")) return;
+      if (pmLower && (lower === pmLower || lower.startsWith(pmLower))) return;
+      if (lower.includes("thinklogic team")) return;
+      cleanedLines.push(t.replace(/^#+\s*/, "")); // strip markdown headings like ### Heading
+    });
 
   // Normalize spacing for an email-ready body
   const formatted = [];
@@ -839,6 +842,157 @@ function buildKickoffClientEmailWithWrapper(bodyText) {
   return `${greeting}\n\n${body}\n\n${signature}`;
 }
 
+function cleanKickoffClientEmailOutput(text) {
+  const lines = (text || "").split("\n");
+  const cleaned = [];
+  const subheaderPattern = /^(goals & focus areas|business goals|product\/?\s*\/?\s*ux goals|product & experience goals|user goals(?: & pain points)?|user challenges & pain points)\s*:?\s*$/i;
+  const bulletify = (l) => `  • ${l.trim()}`;
+  const needsBlankBefore = /^(goals & focus areas)$/i;
+
+  lines.forEach((line) => {
+    let l = line.trim();
+    if (!l) {
+      cleaned.push("");
+      return;
+    }
+
+    // Strip markdown headings (###, ##, #)
+    l = l.replace(/^#+\s*/, "");
+
+    // Remove bold markers
+    l = l.replace(/\*\*(.*?)\*\*/g, "$1");
+
+    // Preserve subheaders without bullets
+    if (subheaderPattern.test(l)) {
+      const header = l.replace(/\s*:\s*$/, ":");
+      // Add a blank line before certain section headers for readability
+      if (needsBlankBefore.test(header)) {
+        if (cleaned.length === 0 || cleaned[cleaned.length - 1] !== "") {
+          cleaned.push("");
+        }
+      }
+      cleaned.push(header);
+      return;
+    }
+
+    // Normalize bullet styles (-, *, numbered) to "  • "
+    const bulletMatch = l.match(/^([-*•]|\d+\.)\s+(.*)$/);
+    if (bulletMatch) {
+      l = bulletify(bulletMatch[2]);
+    }
+
+    // Drop greetings or sign-offs if they slip through
+    const lower = l.toLowerCase();
+    if (
+      lower.startsWith("hi ") ||
+      lower.startsWith("hello") ||
+      lower.startsWith("thank you") ||
+      lower.startsWith("thanks") ||
+      lower === "best" ||
+      lower.startsWith("best,") ||
+      lower.includes("thinklogic team")
+    ) {
+      return;
+    }
+
+    cleaned.push(l);
+  });
+
+  const tightened = removeBlankAfterHeadings(cleaned);
+  const collapsed = collapseBlankLines(tightened);
+
+  return collapsed.join("\n").trim();
+}
+
+function cleanKickoffGoalNarratives(text) {
+  const lines = (text || "").split("\n");
+  const cleaned = [];
+
+  lines.forEach((line) => {
+    let l = line.trim();
+    if (!l) {
+      cleaned.push("");
+      return;
+    }
+
+    // Strip markdown headings and bold
+    l = l.replace(/^#+\s*/, "");
+    l = l.replace(/\*\*(.*?)\*\*/g, "$1");
+
+    // Normalize bullets
+    const bulletMatch = l.match(/^([-*•]|\d+\.)\s+(.*)$/);
+    if (bulletMatch) {
+      l = `  • ${bulletMatch[2].trim()}`;
+    }
+
+    cleaned.push(l);
+  });
+
+  const tightened = removeBlankAfterHeadings(cleaned);
+  const collapsed = collapseBlankLines(tightened);
+
+  return collapsed.join("\n").trim();
+}
+
+function cleanKickoffInternalSummary(text) {
+  const lines = (text || "").split("\n");
+  const cleaned = [];
+
+  lines.forEach((line) => {
+    let l = line.trim();
+    if (!l) {
+      cleaned.push("");
+      return;
+    }
+
+    // Strip markdown headings and bold
+    l = l.replace(/^#+\s*/, "");
+    l = l.replace(/\*\*(.*?)\*\*/g, "$1");
+
+    // Normalize bullets
+    const bulletMatch = l.match(/^([-*•]|\d+\.)\s+(.*)$/);
+    if (bulletMatch) {
+      l = `  • ${bulletMatch[2].trim()}`;
+    }
+
+    cleaned.push(l);
+  });
+
+  const tightened = removeBlankAfterHeadings(cleaned);
+  const collapsed = collapseBlankLines(tightened);
+
+  return collapsed.join("\n").trim();
+}
+
+function collapseBlankLines(lines) {
+  const collapsed = [];
+  lines.forEach((l) => {
+    if (l === "" && collapsed[collapsed.length - 1] === "") return;
+    collapsed.push(l);
+  });
+  return collapsed;
+}
+
+function removeBlankAfterHeadings(lines) {
+  const out = [];
+  for (let i = 0; i < lines.length; i++) {
+    const current = lines[i];
+    const next = lines[i + 1];
+    const isHeading =
+      current &&
+      !/^\s*•/.test(current) &&
+      !/^\s*[-*]/.test(current) &&
+      !/^\s{2,}•/.test(current);
+    if (isHeading && next === "") {
+      out.push(current);
+      i += 1; // skip the blank line
+    } else {
+      out.push(current);
+    }
+  }
+  return out;
+}
+
 function initKickoffAIButtons() {
   const mappings = [
     { btnId: "kickoff-ai-internal-btn", textareaId: "kickoff-internal-summary", mode: "kickoff_internal", stateKey: "internalSummary" },
@@ -879,10 +1033,16 @@ function initKickoffAIButtons() {
           text: sourceText,
           projectContext
         });
-        const finalText =
-          mode === "kickoff_client_email"
-            ? buildKickoffClientEmailWithWrapper(rewritten)
-            : rewritten;
+        let finalText = rewritten;
+        if (mode === "kickoff_client_email") {
+          finalText = buildKickoffClientEmailWithWrapper(
+            cleanKickoffClientEmailOutput(finalText)
+          );
+        } else if (mode === "kickoff_internal") {
+          finalText = cleanKickoffInternalSummary(finalText);
+        } else if (mode === "kickoff_goal_narratives") {
+          finalText = cleanKickoffGoalNarratives(finalText);
+        }
         ta.value = finalText;
         ta.dataset.aiFilled = "true";
         ta.dataset.original = ta.dataset.original || finalText;
@@ -1392,6 +1552,21 @@ function handleFormClick(e) {
   if (id === 'submitUserPainBtn') {
     addCustomUserItemFromInput('pain');
     return;
+  }
+
+  const removeUserGoal = target.closest('[data-type="remove-user-goal"]');
+  if (removeUserGoal) {
+    const itemId = removeUserGoal.dataset.id;
+    project.userGoals = project.userGoals.filter(g => g.id !== itemId);
+    renderStep(project.currentStep);
+    return;
+  }
+
+  const removeUserPain = target.closest('[data-type="remove-user-pain"]');
+  if (removeUserPain) {
+    const itemId = removeUserPain.dataset.id;
+    project.userPains = project.userPains.filter(p => p.id !== itemId);
+    renderStep(project.currentStep);
   }
 }
 

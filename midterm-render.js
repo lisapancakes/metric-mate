@@ -865,7 +865,7 @@ function buildClientSummary() {
 async function rewriteMidtermWithAI({ mode, text }) {
   const aiInput = buildMidtermAIInputText(text || "");
   const base =
-    window.location.protocol === "file:"
+    window.location.protocol === "file:" || window.location.hostname === "localhost"
       ? "http://localhost:3001"
       : "";
 
@@ -890,6 +890,37 @@ async function rewriteMidtermWithAI({ mode, text }) {
     throw new Error("Invalid AI response");
   }
   return data.text;
+}
+
+function tightenMidtermText(text = "") {
+  const lines = (text || "").split("\n");
+  const cleaned = [];
+  let prevWasHeading = false;
+  for (let i = 0; i < lines.length; i++) {
+    const curr = (lines[i] || "").replace(/\s+$/, "");
+    const trimmed = curr;
+    const isHeading =
+      trimmed &&
+      !/^\s*•/.test(trimmed) &&
+      !/^\s*[-*]/.test(trimmed) &&
+      !/^\s{2,}•/.test(trimmed);
+    // Skip a blank line immediately following a heading
+    if (prevWasHeading && trimmed === "") {
+      prevWasHeading = false;
+      continue;
+    }
+    cleaned.push(trimmed);
+    prevWasHeading = isHeading;
+  }
+  const collapsed = [];
+  cleaned.forEach((l) => {
+    // Keep a blank line only between sections; remove trailing blanks
+    if (l === "" && (collapsed.length === 0 || collapsed[collapsed.length - 1] === "")) {
+      return;
+    }
+    collapsed.push(l);
+  });
+  return collapsed.join("\n").trim();
 }
 
 function formatMidtermClientEmail(aiText) {
@@ -953,11 +984,20 @@ function buildMidtermAIInputText(userText = "") {
     lines.push(`Project: ${midterm.info.projectName}`);
   }
 
+  if (typeof midterm.healthScore === "number") {
+    lines.push(`Overall Health (1-5): ${midterm.healthScore}`);
+  }
+  if (typeof midterm.progressScore === "number") {
+    lines.push(`Progress vs Plan (1-5): ${midterm.progressScore}`);
+  }
+
   const typeOrder = ["business", "product", "user", "pain"];
   const groupedGoals = { business: [], product: [], user: [], pain: [] };
   (midterm.goalStatuses || []).forEach((g) => {
     if (g && g.label && groupedGoals[g.type]) {
-      groupedGoals[g.type].push(g.label);
+      const statusLabel = g.status ? ` [status: ${g.status}]` : "";
+      const note = g.notes ? ` — ${g.notes}` : "";
+      groupedGoals[g.type].push(`${g.label}${statusLabel}${note}`);
     }
   });
 
@@ -982,18 +1022,18 @@ function buildMidtermAIInputText(userText = "") {
   if (notedGoals.length) {
     lines.push("Goal notes (midterm updates):");
     notedGoals.forEach((g) => {
-      lines.push(`- ${g.label}: ${g.notes.trim()}`);
+      lines.push(`- ${g.label} (status: ${g.status || "n/a"}): ${g.notes.trim()}`);
     });
   }
 
-  if (midterm.wins && midterm.wins.trim()) {
+  if (Array.isArray(midterm.winsList) && midterm.winsList.length) {
     lines.push("Wins / Signals:");
-    lines.push(midterm.wins.trim());
+    midterm.winsList.filter(Boolean).forEach((w) => lines.push(`- ${w.trim()}`));
   }
 
-  if (midterm.learnings && midterm.learnings.trim()) {
+  if (Array.isArray(midterm.learningsList) && midterm.learningsList.length) {
     lines.push("Key Learnings:");
-    lines.push(midterm.learnings.trim());
+    midterm.learningsList.filter(Boolean).forEach((l) => lines.push(`- ${l.trim()}`));
   }
 
   const risksWithContent = (midterm.risks || []).filter(
@@ -1009,9 +1049,9 @@ function buildMidtermAIInputText(userText = "") {
     });
   }
 
-  if (midterm.nextSteps && midterm.nextSteps.trim()) {
+  if (Array.isArray(midterm.nextStepsList) && midterm.nextStepsList.length) {
     lines.push("Next Steps (raw notes):");
-    lines.push(midterm.nextSteps.trim());
+    midterm.nextStepsList.filter(Boolean).forEach((n) => lines.push(`- ${n.trim()}`));
   }
 
   if (userText && userText.trim()) {
@@ -1519,8 +1559,8 @@ function initMidtermAIButtons() {
         const rewritten = await rewriteMidtermWithAI({ mode, text: sourceText });
         const finalText =
           mode === "midterm_client_email"
-            ? formatMidtermClientEmail(rewritten)
-            : rewritten;
+            ? tightenMidtermText(formatMidtermClientEmail(rewritten))
+            : tightenMidtermText(rewritten);
         ta.value = finalText;
         if (stateKey) midtermSummaryState[stateKey] = finalText;
         updateMidtermCopyButtonsVisibility();
