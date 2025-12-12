@@ -1,67 +1,71 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Metric Mate - Project Kickoff Survey</title>
-
-    <!-- Thinklogic-ish font stack -->
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-
-    <link rel="stylesheet" href="styles.css">
-
-    <link
-  rel="stylesheet"
-<link
-  rel="stylesheet"
-  href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css"
-  integrity="sha512-DTOQO9RWCH3ppGqcWaEA1BIZOC6xxalwEsw9c2QQeAIftl+Vegovlnee1c9QX4TctnWMn13TZye+giMm8e2LwA=="
-  crossorigin="anonymous"
-  referrerpolicy="no-referrer"
-/>
-
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>MetricMate – Welcome</title>
+  <link rel="stylesheet" href="styles.css" />
 </head>
 <body>
-    <main id="app">
-        <header class="app-header">
-  <h1>Metric Mate</h1>
+  <div id="app" class="welcome-container">
+    <header class="welcome-hero">
+      <div class="welcome-title">
+        <p class="welcome-eyebrow">Welcome to</p>
+        <h1>MetricMate</h1>
+        <p class="welcome-subtitle">
+          A lightweight internal tool to track project goals, progress, and outcomes from kickoff to final review.
+        </p>
+      </div>
+    </header>
 
-  <!-- NEW pill under title -->
-  <div class="metric-pill">
-    <i class="fa-solid fa-bolt"></i>
-    <span>Project Kickoff Survey</span>
-  </div>
-      <p class="subtitle">Define What Success Looks Like — From Day One.</p>
-  <div class="progress">
-    <div class="progress-bar" id="progressBar"></div>
-  </div>
-</header>
+    <section class="welcome-section">
+      <h2>What this is</h2>
+      <p class="welcome-body">
+        MetricMate helps PMs and designers capture project goals, track progress at midterm, and summarize outcomes at the end of a project.
+        It keeps everything in one place so you can quickly see:
+      </p>
+      <ul class="welcome-list">
+        <li>What we set out to do</li>
+        <li>What actually happened</li>
+        <li>What we learned and what to do next</li>
+      </ul>
+    </section>
 
-        <form id="surveyForm">
-           <!-- Step 1-5 will be populated by JavaScript -->
-        </form>
-
-        <div class="navigation">
-            <button type="button" id="prevBtn" class="btn btn-secondary" disabled>Previous</button>
-            <button
-              type="button"
-              id="openDashboardBtn"
-              class="btn btn-primary"
-              style="display:none;"
-              onclick="openDashboardFromKickoff()"
-            >
-              <i class="fa-solid fa-chart-line"></i>
-              View Dashboard
-            </button>
-            <button type="button" id="nextBtn" class="btn btn-primary">Next</button>
+    <section class="welcome-section">
+      <h2>How it works</h2>
+      <div class="welcome-steps">
+        <div class="welcome-card">
+          <h3>1) Kickoff – Set goals &amp; context</h3>
+          <p>Capture the project summary, business &amp; product goals, user goals, and key pain points. This becomes the backbone of the dashboard.</p>
         </div>
-    </main>
-    <script src="script.js"></script>
-</body>
-</html>
+        <div class="welcome-card">
+          <h3>2) Midterm – Check health &amp; momentum</h3>
+          <p>Update goal status, add risks, wins, learnings, and next steps. MetricMate updates the dashboard so everyone sees where things really stand.</p>
+        </div>
+        <div class="welcome-card">
+          <h3>3) Final – Summarize outcomes</h3>
+          <p>Log final results, decisions, and what shipped. The final dashboard rolls everything up and can prefill a case-study form for you.</p>
+        </div>
+      </div>
+    </section>
 
-<script src="dashboard-link.js"></script>
+    <section class="welcome-section">
+      <h2>What MetricMate gives you</h2>
+      <ul class="welcome-list">
+        <li>A single project dashboard that merges kickoff, midterm, and final data</li>
+        <li>Clear view of completed goals, addressed pain points, and open challenges</li>
+        <li>A prefilled case-study Google Form to turn real work into portfolio / marketing content faster</li>
+      </ul>
+    </section>
+
+    <div class="welcome-actions">
+      <a class="btn btn-primary" href="kickoff.html">Start a new project</a>
+      <a class="btn btn-secondary" href="dashboard.html">View existing projects</a>
+    </div>
+
+    <p class="welcome-note">
+      MetricMate is an internal tool. Everything is editable and review-first; nothing is sent directly to clients.
+    </p>
+  </div>
 </body>
 </html>

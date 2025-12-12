@@ -1125,6 +1125,99 @@ table th.numeric,
   word-break: break-word;
 }
 
+/* ============================================================================
+   WELCOME PAGE
+   ========================================================================== */
+.welcome-container {
+  max-width: 960px;
+}
+
+.welcome-hero {
+  margin-bottom: 1.5rem;
+}
+
+.welcome-eyebrow {
+  margin: 0;
+  color: var(--tl-text-muted);
+  font-weight: 600;
+  letter-spacing: 0.02em;
+}
+
+.welcome-title h1 {
+  margin: 0.15rem 0 0.35rem;
+  font-size: 34px;
+}
+
+.welcome-subtitle {
+  margin: 0;
+  font-size: 1rem;
+  line-height: 1.55;
+  color: var(--tl-text-muted);
+}
+
+.welcome-section {
+  margin: 1.6rem 0;
+}
+
+.welcome-section h2 {
+  margin: 0 0 0.5rem;
+}
+
+.welcome-body {
+  margin: 0 0 0.5rem;
+  color: var(--tl-text-primary);
+  line-height: 1.5;
+}
+
+.welcome-list {
+  margin: 0.25rem 0 0;
+  padding-left: 1.1rem;
+  color: var(--tl-text-primary);
+}
+
+.welcome-list li {
+  margin-bottom: 0.25rem;
+}
+
+.welcome-steps {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 1rem;
+  margin-top: 0.5rem;
+}
+
+.welcome-card {
+  background: #ffffff;
+  border: 1px solid var(--tl-border-subtle);
+  border-radius: 12px;
+  padding: 1rem;
+  box-shadow: 0 12px 30px rgba(15, 23, 42, 0.05);
+}
+
+.welcome-card h3 {
+  margin: 0 0 0.35rem;
+  font-size: 1rem;
+}
+
+.welcome-card p {
+  margin: 0;
+  color: var(--tl-text-primary);
+  line-height: 1.5;
+}
+
+.welcome-actions {
+  margin: 2rem 0 1rem;
+  display: flex;
+  gap: 0.75rem;
+  align-items: center;
+}
+
+.welcome-note {
+  margin: 0;
+  color: var(--tl-text-muted);
+  font-size: 0.9rem;
+}
+
 .goal-row--discard td,
 .goal-row--discard {
   color: #9ca3af;
