@@ -15,7 +15,11 @@ const finalState = {
   wins: "",
   challenges: "",
   learnings: "",
-  nextSteps: ""
+  nextSteps: "",
+  winsList: [],
+  challengesList: [],
+  learningsList: [],
+  nextStepsList: []
 };
 
 let finalGoals = [];

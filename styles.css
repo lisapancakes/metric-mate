@@ -251,7 +251,7 @@ textarea {
 }
 
 /* Remove native chevron + add room for icon */
-select {
+.select-wrapper select {
   appearance: none;
   -webkit-appearance: none;
   -moz-appearance: none;
@@ -263,19 +263,15 @@ select {
 }
 
 /* Custom Font Awesome chevron */
-.select-wrapper::after {
-  content: "\f078"; /* fa-chevron-down */
-  font-family: "Font Awesome 6 Free";
-  font-weight: 900;          /* solid style */
-  font-size: 16px;           /* bigger icon */
-
-  color: #36474F;
-
+.select-chevron {
   position: absolute;
-  right: 9.6px;              /* exactly 9.6px from the right border */
+  right: 9.6px;
   top: 50%;
   transform: translateY(-50%);
   pointer-events: none;
+  color: #36474f;
+  font-size: 14px;
+  font-weight: 900;
 }
 
 input[type="text"]:focus,
@@ -569,8 +565,8 @@ textarea[readonly] {
   align-items: center;
   gap: 8px;
 
-  padding: 12px 20px;
-  min-height: 48px;
+  padding: 10px 16px;
+  min-height: 44px;
 
   border-radius: 4px;
   border: none;
@@ -587,6 +583,12 @@ textarea[readonly] {
 
   box-shadow: 0 1px 2px rgba(10, 13, 18, 0.05);
   transition: transform 0.15s ease-out, box-shadow 0.15s ease-out, filter 0.15s ease-out;
+}
+
+/* Keep footer nav buttons at original height */
+.navigation .btn {
+  padding: 12px 20px;
+  min-height: 48px;
 }
 
 /* Primary (gradient blue, white label) */
@@ -1017,6 +1019,26 @@ a.btn-primary:hover {
   color: #3a74b6;
 }
 
+.icon-remove-btn {
+  border: 1px solid #e5e7eb;
+  background: #f9fafb;
+  color: #4b5563;
+  border-radius: 6px;
+  width: 36px;
+  height: 36px;
+  justify-content: center;
+  font-size: 0.85rem;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 0;
+}
+
+.icon-remove-btn:hover {
+  background: #f3f4f6;
+  color: #b91c1c;
+}
+
 .dash-card p {
   margin: 0;
   font-size: 0.9rem;
@@ -1216,6 +1238,32 @@ table th.numeric,
   margin: 0;
   color: var(--tl-text-muted);
   font-size: 0.9rem;
+}
+
+/* Risk row tweaks */
+.risk-row,
+.list-row {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-bottom: 4px;
+}
+
+.risk-label-wrapper,
+.list-label-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.risk-label-input,
+.list-label-input {
+  height: 36px;
+  flex: 1;
+}
+
+.risk-row textarea {
+  min-height: 60px;
 }
 
 .goal-row--discard td,

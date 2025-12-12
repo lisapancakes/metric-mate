@@ -29,7 +29,10 @@ const midterm = {
   risks: [],
   wins: "",
   learnings: "",
-  nextSteps: ""
+  nextSteps: "",
+  winsList: [],
+  learningsList: [],
+  nextStepsList: []
 };
 
 const midtermSummaryState = {
@@ -65,7 +68,17 @@ function loadSavedMidterm() {
   try {
     const stored = localStorage.getItem("metricMateMidterm");
     if (!stored) return null;
-    return JSON.parse(stored);
+    const parsed = JSON.parse(stored);
+    parsed.winsList = Array.isArray(parsed.winsList)
+      ? parsed.winsList
+      : (parsed.wins ? parsed.wins.split(/\n+/).map(s => s.trim()).filter(Boolean) : []);
+    parsed.learningsList = Array.isArray(parsed.learningsList)
+      ? parsed.learningsList
+      : (parsed.learnings ? parsed.learnings.split(/\n+/).map(s => s.trim()).filter(Boolean) : []);
+    parsed.nextStepsList = Array.isArray(parsed.nextStepsList)
+      ? parsed.nextStepsList
+      : (parsed.nextSteps ? parsed.nextSteps.split(/\n+/).map(s => s.trim()).filter(Boolean) : []);
+    return parsed;
   } catch (e) {
     console.warn("Failed to load saved midterm", e);
     return null;
@@ -154,6 +167,9 @@ function normalizeGoalStatusesFromKickoff(kickoff, existingStatuses = []) {
 }
 
 function saveMidtermForDashboard() {
+  if (typeof syncNarrativeStrings === "function") {
+    syncNarrativeStrings();
+  }
   try {
     const exportObj = {
       info: { ...midterm.info },
@@ -163,7 +179,10 @@ function saveMidtermForDashboard() {
       risks: midterm.risks,
       wins: midterm.wins,
       learnings: midterm.learnings,
-      nextSteps: midterm.nextSteps
+      nextSteps: midterm.nextSteps,
+      winsList: midterm.winsList,
+      learningsList: midterm.learningsList,
+      nextStepsList: midterm.nextStepsList
     };
     localStorage.setItem("metricMateMidterm", JSON.stringify(exportObj));
   } catch (e) {

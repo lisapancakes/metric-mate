@@ -137,6 +137,14 @@ Purpose:
 - Highlight risks, concerns, or changes
 - Align on what needs attention next
 
+Formatting rules (strict):
+- Output plain text only.
+- Do NOT use markdown, markup, or symbols like ###, **, or hyphen bullets.
+- Use Title Case for section headers.
+- Use short paragraphs and bullet points with the symbol "•".
+- Leave one blank line between sections.
+- Content must be easy to paste into email, Slack, or docs.
+
 Structure the output using ONLY the following section headers, in this order:
 
 Project Health Summary
@@ -147,39 +155,44 @@ Decisions or Open Questions
 Next Steps
 
 Guidelines:
-- Describe project health qualitatively (for example: "on track", "needs attention") instead of using numeric scores or status labels.
-- Focus on changes and movement since kickoff; do NOT just restate kickoff goals.
+- Describe project health qualitatively (for example: "on track", "needs attention").
+- Focus on changes and movement since kickoff; do NOT restate kickoff goals.
 - Do NOT include goal status labels such as "Not Started", "In Progress", or "Done".
 - Do NOT include team member names or roles.
-- Do NOT include numeric scores, ratings, or made-up metrics.
-- If there are no risks in the input, omit the Risks section rather than adding placeholder text.
-
-Tone and format:
-- Clear, neutral, and delivery-focused.
-- Use short paragraphs and bullet points for easy scanning.
-- Total length roughly 150–200 words.
+- Do NOT include numeric scores, ratings, or invented metrics.
+- If there are no risks in the input, omit the Risks & Areas to Watch section entirely.
+- Keep total length roughly 150–200 words.
 `;
     case "midterm_client_email":
       return `Rewrite the following text as the BODY of a client-facing mid-project update.
 
+Formatting rules (strict):
+- Output plain text only.
+- Do NOT use markdown, markup, or symbols like ### or **.
+- Use Title Case for section headers.
+- Use bullet points with the symbol "•" where helpful.
+- Leave one blank line between sections.
+- Content must be easy to paste directly into an email.
+
 Instructions:
 - Do NOT include a subject line.
 - Do NOT include a greeting.
-- Do NOT include a signature.
-- Focus only on the content of the update.
+- Do NOT include a signature or closing line.
 
 The body should:
 - Summarize progress since kickoff in clear, plain language.
-- Highlight what’s going well and what the team is focusing on.
-- Mention challenges constructively, if any.
-- End without a closing or sign-off.
+- Highlight what’s going well.
+- Describe challenges constructively, if any.
+- Clarify what the team is focusing on next.
+- End cleanly without a sign-off.
 
 Tone:
 - Professional, collaborative, and clear.
 - Appropriate for a client email body.
 
-Keep it concise and easy to scan.
-Do not invent metrics, timelines, or commitments.
+Constraints:
+- Do not invent metrics, timelines, or commitments.
+- Keep it concise and easy to scan.
 `;
     case "final_internal_update":
       return `Rewrite the project data and survey responses as a clear **final internal project summary** for the delivery team.

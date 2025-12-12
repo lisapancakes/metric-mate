@@ -57,6 +57,15 @@ function initMidterm() {
       midterm.wins = savedMidterm.wins || "";
       midterm.learnings = savedMidterm.learnings || "";
       midterm.nextSteps = savedMidterm.nextSteps || "";
+      midterm.winsList = Array.isArray(savedMidterm.winsList)
+        ? savedMidterm.winsList
+        : (midterm.wins ? midterm.wins.split(/\n+/).map(s => s.trim()).filter(Boolean) : []);
+      midterm.learningsList = Array.isArray(savedMidterm.learningsList)
+        ? savedMidterm.learningsList
+        : (midterm.learnings ? midterm.learnings.split(/\n+/).map(s => s.trim()).filter(Boolean) : []);
+      midterm.nextStepsList = Array.isArray(savedMidterm.nextStepsList)
+        ? savedMidterm.nextStepsList
+        : (midterm.nextSteps ? midterm.nextSteps.split(/\n+/).map(s => s.trim()).filter(Boolean) : []);
     }
   } else {
     // Fresh session → clear any previously saved midterm snapshot
@@ -138,6 +147,7 @@ function initMidterm() {
     form.addEventListener("change", handleChange);
     form.addEventListener("input", handleInput);
     form.addEventListener("click", handleClick);
+    form.addEventListener("keydown", handleKeydown);
   }
 
   // Start on Step 1
@@ -389,13 +399,16 @@ function renderStatusStep() {
                       <td>${item.label}</td>
                       <td>${titleCaseType(item.type)}</td>
                       <td>
-                        <select data-type="goal-status" data-id="${item.id}">
-                          ${STATUS_OPTIONS.map(
-                            (opt) => `<option value="${opt.value}" ${
-                              item.status === opt.value ? "selected" : ""
-                            }>${opt.label}</option>`
-                          ).join("")}
-                        </select>
+                        <div class="select-wrapper">
+                          <select data-type="goal-status" data-id="${item.id}">
+                            ${STATUS_OPTIONS.map(
+                              (opt) => `<option value="${opt.value}" ${
+                                item.status === opt.value ? "selected" : ""
+                              }>${opt.label}</option>`
+                            ).join("")}
+                          </select>
+                          <i class="fa-regular fa-solid fa-chevron-down select-chevron" aria-hidden="true"></i>
+                        </div>
                       </td>
                       <td>
                         <textarea
@@ -485,24 +498,27 @@ function renderStatusStep() {
 
 // STEP 3 – Narrative fields
 function renderNarrativesStep() {
+  ensureNarrativeListsFromStrings();
+  ensureDefaultNarrativeRows();
+
   const risksSection = renderRisksSection();
-  const winsSection = renderTextAreaSection(
+  const winsSection = renderListSection(
     "Biggest Wins",
     "wins",
-    midterm.wins,
-    "Celebrate Notable Outcomes Since Kickoff."
+    midterm.winsList,
+    "Add a key win or positive outcome"
   );
-  const learningsSection = renderTextAreaSection(
+  const learningsSection = renderListSection(
     "Key Learnings",
     "learnings",
-    midterm.learnings,
-    "Observations, Hypotheses Proven or Disproven."
+    midterm.learningsList,
+    "Add a key learning or insight"
   );
-  const nextStepsSection = renderTextAreaSection(
+  const nextStepsSection = renderListSection(
     "Next Steps",
     "nextSteps",
-    midterm.nextSteps,
-    "What Should Happen Next to Keep the Project Healthy?"
+    midterm.nextStepsList,
+    "Add a next step"
   );
 
   return `
@@ -590,36 +606,31 @@ function renderSummaryStep(internalSummary, clientSummary) {
 
 // HELPERS FOR SECTIONS
 function renderRisksSection() {
-  const rows = (midterm.risks || []).map(
-    (risk) => `
-      <div class="risk-row" data-id="${risk.id}">
-        <label class="checkbox-container">
-          <input type="checkbox" data-type="risk-selected" data-id="${risk.id}" ${
-            risk.selected ? "checked" : ""
-          }>
-          <span>Select</span>
-        </label>
-        <input
-          type="text"
-          class="risk-label-input"
-          data-type="risk-label"
-          data-id="${risk.id}"
-          placeholder="Risk Label"
-          value="${risk.label || ""}"
-        />
-        <textarea
-          rows="2"
-          data-type="risk-notes"
-          data-id="${risk.id}"
-          placeholder="Notes / Owner / Mitigation"
-        >${risk.notes || ""}</textarea>
+  const rows = (midterm.risks || [])
+    .map(
+      (risk) => `
+        <div class="risk-row" data-id="${risk.id}">
+          <div class="risk-label-wrapper">
+            <input
+              type="text"
+              class="risk-label-input"
+              data-type="risk-label"
+              data-id="${risk.id}"
+              placeholder="Add a current risk or issue"
+              value="${risk.label || ""}"
+            />
+            <button type="button" class="icon-remove-btn risk-remove-btn" data-type="remove-risk" data-id="${risk.id}" aria-label="Remove risk">
+              <i class="fa-solid fa-xmark"></i>
+            </button>
       </div>
-    `
-  );
+    </div>
+      `
+    )
+    .join("");
 
   const body = `
     <div class="risk-list">
-      ${rows.join("")}
+      ${rows}
     </div>
     <div class="form-actions" style="margin-top:0.75rem;">
       <button type="button" class="btn btn-secondary btn-sm" id="addRiskRow">
@@ -629,23 +640,109 @@ function renderRisksSection() {
     </div>
   `;
 
-  return addSection(
-    "Risks & Issues",
-    body,
-    "Track Blockers or Watchlist Items; Toggle Select for Active Risks."
-  );
+  return addSection("Risks & Issues", body, "Track blockers or watchlist items.");
 }
 
 function renderTextAreaSection(title, id, value, subtitle) {
-  return addSection(
-    title,
-    `
-      <div class="form-group">
-        <textarea id="${id}" rows="3" placeholder="">${value || ""}</textarea>
+  return "";
+}
+
+function renderListSection(title, key, items = [], placeholder = "") {
+  const addLabel =
+    key === "wins"
+      ? "Add Win"
+      : key === "learnings"
+        ? "Add Learning"
+        : key === "nextSteps"
+          ? "Add Next Step"
+          : "Add Item";
+  const rows = (items || []).map((item, idx) => {
+    const safeVal = item || "";
+    return `
+      <div class="list-row" data-key="${key}" data-index="${idx}">
+        <div class="list-label-wrapper">
+          <input
+            type="text"
+            class="list-label-input"
+            data-type="${key}-item"
+            data-index="${idx}"
+            placeholder="${placeholder}"
+            value="${safeVal}"
+          />
+          <button type="button" class="icon-remove-btn" data-type="remove-${key}" data-index="${idx}" aria-label="Remove ${key}">
+            <i class="fa-solid fa-xmark"></i>
+          </button>
+        </div>
       </div>
-    `,
-    subtitle
-  );
+    `;
+  }).join("");
+
+  const body = `
+    <div class="list-wrapper">
+      ${rows}
+    </div>
+    <div class="form-actions" style="margin-top:0.75rem;">
+      <button type="button" class="btn btn-secondary btn-sm" id="add${capitalize(key)}Row">
+        <i class="fa-solid fa-plus"></i>
+        ${addLabel}
+      </button>
+    </div>
+  `;
+
+  return addSection(title, body);
+}
+
+function capitalize(str = "") {
+  if (!str) return "";
+  return str.charAt(0).toUpperCase() + str.slice(1);
+}
+
+function ensureNarrativeListsFromStrings() {
+  if (!Array.isArray(midterm.winsList)) midterm.winsList = [];
+  if (!midterm.winsList.length && midterm.wins) {
+    midterm.winsList = midterm.wins.split(/\n+/).map(s => s.trim()).filter(Boolean);
+  }
+
+  if (!Array.isArray(midterm.learningsList)) midterm.learningsList = [];
+  if (!midterm.learningsList.length && midterm.learnings) {
+    midterm.learningsList = midterm.learnings.split(/\n+/).map(s => s.trim()).filter(Boolean);
+  }
+
+  if (!Array.isArray(midterm.nextStepsList)) midterm.nextStepsList = [];
+  if (!midterm.nextStepsList.length && midterm.nextSteps) {
+    midterm.nextStepsList = midterm.nextSteps.split(/\n+/).map(s => s.trim()).filter(Boolean);
+  }
+}
+
+function syncNarrativeStrings() {
+  midterm.wins = (midterm.winsList || []).filter(Boolean).join("\n");
+  midterm.learnings = (midterm.learningsList || []).filter(Boolean).join("\n");
+  midterm.nextSteps = (midterm.nextStepsList || []).filter(Boolean).join("\n");
+}
+
+function ensureDefaultNarrativeRows() {
+  if (!Array.isArray(midterm.risks) || midterm.risks.length === 0) {
+    midterm.risks = [{
+      id: generateId(),
+      label: "",
+      selected: true,
+      notes: ""
+    }];
+  }
+
+  if (!Array.isArray(midterm.winsList) || midterm.winsList.length === 0) {
+    midterm.winsList = [""];
+  }
+
+  if (!Array.isArray(midterm.learningsList) || midterm.learningsList.length === 0) {
+    midterm.learningsList = [""];
+  }
+
+  if (!Array.isArray(midterm.nextStepsList) || midterm.nextStepsList.length === 0) {
+    midterm.nextStepsList = [""];
+  }
+
+  syncNarrativeStrings();
 }
 
 // ============================================================================
@@ -653,55 +750,96 @@ function renderTextAreaSection(title, id, value, subtitle) {
 // ============================================================================
 function buildInternalSummary() {
   const i = midterm.info;
+  ensureNarrativeListsFromStrings();
 
-  let lines = [];
-  lines.push("MID-PROJECT REVIEW — INTERNAL");
-  lines.push("--------------------------------");
-  lines.push(`Project: ${i.projectName || "Untitled Project"}`);
-  if (i.client) lines.push(`Client: ${i.client}`);
-  if (i.pm) lines.push(`PM: ${i.pm}`);
-  if (i.designer) lines.push(`Product Designer: ${i.designer}`);
-  if (i.dev) lines.push(`Lead Developer: ${i.dev}`);
-  if (i.date) lines.push(`Review Date: ${i.date}`);
+  const health = midterm.healthScore != null ? `${midterm.healthScore}/5` : "—";
+  const progress =
+    midterm.progressScore != null ? `${midterm.progressScore}/5` : "—";
+
+  const lines = [];
+  lines.push(`Project Update: ${i.projectName || "Untitled Project"}`);
   lines.push("");
-  if (midterm.healthScore != null) {
-    lines.push(`Overall Project Health: ${midterm.healthScore}/5`);
-  }
-  if (midterm.progressScore != null) {
-    lines.push(`Progress vs. Plan: ${midterm.progressScore}/5`);
-  }
+  lines.push(`Overall Health: ${health}`);
+  lines.push(`Progress vs. Plan: ${progress}`);
   lines.push("");
 
-  if (midterm.goalStatuses.length) {
-    lines.push("Goal Statuses:");
-    midterm.goalStatuses.forEach((g) => {
-      lines.push(
-        `• [${titleCaseType(g.type)}] ${g.label} — ${formatStatusLabel(g.status)}${g.notes ? ` (${g.notes})` : ""}`
-      );
-    });
-    lines.push("");
-  }
+  const types = [
+    { key: "business", title: "Business Goals" },
+    { key: "product", title: "Product Goals" },
+    { key: "user", title: "User Goals" },
+    { key: "pain", title: "User Pain Points" }
+  ];
 
-  const activeRisks = (midterm.risks || []).filter(r => r.selected && r.label);
-  if (activeRisks.length) {
-    lines.push("Risks / Issues:");
-    activeRisks.forEach(r => {
-      lines.push(`• ${r.label}${r.notes ? ` — ${r.notes}` : ""}`);
-    });
-    lines.push("");
-  }
+  lines.push("Goal Statuses");
+  lines.push("");
 
-  if (midterm.wins.trim()) {
-    lines.push("Biggest Wins:");
-    lines.push(midterm.wins.trim(), "");
+  types.forEach((t) => {
+    const goals = (midterm.goalStatuses || []).filter(
+      (g) => g.type === t.key && g.status !== "discard"
+    );
+    lines.push(`  ${t.title}`);
+    if (goals.length === 0) {
+      lines.push("    • No entries captured.");
+    } else {
+      goals.forEach((g) => {
+        const status = formatStatusLabel(g.status) || "Not Started";
+        const note = g.notes ? ` ${g.notes}` : "";
+        lines.push(`    • ${g.label} — ${status}.${note ? note : ""}`);
+      });
+    }
+    lines.push("");
+  });
+
+  const risks = (midterm.risks || []).filter((r) => r.label);
+  lines.push("Risks / Issues");
+  if (risks.length) {
+    risks.forEach((r) => {
+      lines.push(`    • ${r.label}`);
+    });
+  } else {
+    lines.push("    • No risks identified.");
   }
-  if (midterm.learnings.trim()) {
-    lines.push("Key Learnings:");
-    lines.push(midterm.learnings.trim(), "");
+  lines.push("");
+
+  lines.push("Biggest Wins");
+  const wins =
+    Array.isArray(midterm.winsList) && midterm.winsList.length
+      ? midterm.winsList.filter(Boolean)
+      : (midterm.wins ? midterm.wins.split(/\n+/).map(s => s.trim()).filter(Boolean) : []);
+  if (wins.length) {
+    wins.forEach((w) => {
+      lines.push(`    • ${w}`);
+    });
+  } else {
+    lines.push("    • No wins captured yet.");
   }
-  if (midterm.nextSteps.trim()) {
-    lines.push("Next Steps:");
-    lines.push(midterm.nextSteps.trim());
+  lines.push("");
+
+  lines.push("Key Learnings");
+  const learnings =
+    Array.isArray(midterm.learningsList) && midterm.learningsList.length
+      ? midterm.learningsList.filter(Boolean)
+      : (midterm.learnings ? midterm.learnings.split(/\n+/).map(s => s.trim()).filter(Boolean) : []);
+  if (learnings.length) {
+    learnings.forEach((l) => {
+      lines.push(`    • ${l}`);
+    });
+  } else {
+    lines.push("    • No learnings captured yet.");
+  }
+  lines.push("");
+
+  lines.push("Next Steps");
+  const steps =
+    Array.isArray(midterm.nextStepsList) && midterm.nextStepsList.length
+      ? midterm.nextStepsList.filter(Boolean)
+      : (midterm.nextSteps ? midterm.nextSteps.split(/\n+/).map(s => s.trim()).filter(Boolean) : []);
+  if (steps.length) {
+    steps.forEach((s) => {
+      lines.push(`    • ${s}`);
+    });
+  } else {
+    lines.push("    • No next steps provided.");
   }
 
   return lines.join("\n");
@@ -773,69 +911,8 @@ function formatMidtermClientEmail(aiText) {
       : "") ||
     "The Team";
 
-  const pmLower = pm.toLowerCase();
-
-  const cleanedLines = (aiText || "")
-    .split("\n")
-    .map((line) => line.trim())
-    .filter((t) => {
-      if (!t) return false;
-      const lower = t.toLowerCase();
-      if (lower.startsWith("subject:")) return false;
-      if (/^(hi|hello|dear)\b/i.test(t)) return false;
-      if (t.includes("[Client") || t.includes("[client")) return false;
-      if (t.includes("[Your") || t.includes("[your")) return false;
-      if (/^(best|best regards|kind regards|regards|sincerely|thanks|thank you|cheers)/i.test(t)) return false;
-      if (pmLower && (lower === pmLower || lower.startsWith(pmLower))) return false;
-      if (lower.includes("thinklogic team")) return false;
-      if (lower.includes("project manager")) return false;
-      return true;
-    })
-    .map((t) => t.replace(/^#+\s*/, "")); // strip markdown headings like ### Heading
-
-  const formatted = [];
-  let isFirst = true;
-  let prevWasBlank = false;
-
-  cleanedLines.forEach((line, idx) => {
-    const isHeading = /^\*\*.+\*\*:/.test(line);
-    const isBullet = /^[-•]/.test(line);
-
-    // Add a blank line before headings (including the first) for readability
-    if (isHeading && !prevWasBlank) {
-      formatted.push("");
-      prevWasBlank = true;
-    }
-
-    if (isHeading && /^\*\*next steps/i.test(line)) {
-      if (!prevWasBlank) formatted.push("");
-    }
-
-    formatted.push(line);
-    isFirst = false;
-    prevWasBlank = line === "";
-
-    const next = cleanedLines[idx + 1];
-    const nextIsHeading = next ? /^\*\*.+\*\*:/.test(next) : false;
-    const nextIsBullet = next ? /^[-•]/.test(next) : false;
-
-    if (isBullet && !nextIsBullet && next) {
-      formatted.push("");
-      prevWasBlank = true;
-    }
-    if (!isBullet && !isHeading && nextIsHeading) {
-      formatted.push("");
-      prevWasBlank = true;
-    }
-  });
-
-  const collapsed = [];
-  formatted.forEach((line) => {
-    if (line === "" && collapsed[collapsed.length - 1] === "") return;
-    collapsed.push(line);
-  });
-
-  const body = collapsed.join("\n").trim();
+  // Reuse standardized internal summary formatting for a client-safe body
+  const body = buildInternalSummary();
 
   const parts = [];
   parts.push(`Hi ${client} Team,`);
@@ -1051,13 +1128,11 @@ function handleChange(e) {
     return;
   }
 
-  if (t.dataset.type === "risk-selected") {
+  if (t.dataset.type === "remove-risk") {
     const id = t.dataset.id;
-    const risk = midterm.risks.find(r => r.id === id);
-    if (risk) {
-      risk.selected = t.checked;
-      saveMidtermForDashboard();
-    }
+    midterm.risks = (midterm.risks || []).filter(r => r.id !== id);
+    renderStep(midterm.currentStep);
+    saveMidtermForDashboard();
     return;
   }
 }
@@ -1128,10 +1203,28 @@ function handleInput(e) {
     if (risk) risk.label = val;
   }
 
-  if (t.dataset.type === "risk-notes") {
-    const id = t.dataset.id;
-    const risk = midterm.risks.find(r => r.id === id);
-    if (risk) risk.notes = val;
+  if (t.dataset.type === "wins-item") {
+    const idx = parseInt(t.dataset.index, 10);
+    if (!Number.isNaN(idx)) {
+      midterm.winsList[idx] = val;
+      syncNarrativeStrings();
+    }
+  }
+
+  if (t.dataset.type === "learnings-item") {
+    const idx = parseInt(t.dataset.index, 10);
+    if (!Number.isNaN(idx)) {
+      midterm.learningsList[idx] = val;
+      syncNarrativeStrings();
+    }
+  }
+
+  if (t.dataset.type === "nextSteps-item") {
+    const idx = parseInt(t.dataset.index, 10);
+    if (!Number.isNaN(idx)) {
+      midterm.nextStepsList[idx] = val;
+      syncNarrativeStrings();
+    }
   }
 
   saveMidtermForDashboard();
@@ -1140,7 +1233,52 @@ function handleInput(e) {
 function handleClick(e) {
   const t = e.target;
   if (t.id === "addRiskRow" || t.closest("#addRiskRow")) {
-    addRiskRow();
+    addRiskRow(false, true);
+    return;
+  }
+
+  const removeBtn = t.closest('[data-type="remove-risk"]');
+  if (removeBtn) {
+    const id = removeBtn.dataset.id;
+    midterm.risks = (midterm.risks || []).filter(r => r.id !== id);
+    renderStep(midterm.currentStep);
+    saveMidtermForDashboard();
+    return;
+  }
+
+  if (t.id === "addWinsRow" || t.closest("#addWinsRow")) {
+    addListRow("wins", true);
+    return;
+  }
+
+  if (t.id === "addLearningsRow" || t.closest("#addLearningsRow")) {
+    addListRow("learnings", true);
+    return;
+  }
+
+  if (t.id === "addNextStepsRow" || t.closest("#addNextStepsRow")) {
+    addListRow("nextSteps", true);
+    return;
+  }
+
+  const removeWins = t.closest('[data-type="remove-wins"]');
+  if (removeWins) {
+    const idx = parseInt(removeWins.dataset.index, 10);
+    removeListItem("wins", idx);
+    return;
+  }
+
+  const removeLearnings = t.closest('[data-type="remove-learnings"]');
+  if (removeLearnings) {
+    const idx = parseInt(removeLearnings.dataset.index, 10);
+    removeListItem("learnings", idx);
+    return;
+  }
+
+  const removeNextSteps = t.closest('[data-type="remove-nextSteps"]');
+  if (removeNextSteps) {
+    const idx = parseInt(removeNextSteps.dataset.index, 10);
+    removeListItem("nextSteps", idx);
     return;
   }
 
@@ -1182,7 +1320,7 @@ function updateMidtermMetaSummary() {
   if (dev) dev.textContent = midterm.info.dev || "—";
 }
 
-function addRiskRow() {
+function addRiskRow(focusNew = false, fromClick = false) {
   midterm.risks.push({
     id: generateId(),
     label: "",
@@ -1191,6 +1329,9 @@ function addRiskRow() {
   });
   renderStep(midterm.currentStep);
   saveMidtermForDashboard();
+  if (focusNew) {
+    focusLastInput(".risk-label-input");
+  }
 }
 
 function addMidtermInlineGoal() {
@@ -1225,6 +1366,68 @@ function addMidtermInlineGoal() {
 
   renderStep(midterm.currentStep);
   saveMidtermForDashboard();
+}
+
+function addListRow(key, focusNew = false) {
+  const listKey = `${key}List`;
+  if (!Array.isArray(midterm[listKey])) midterm[listKey] = [];
+  midterm[listKey].push("");
+  syncNarrativeStrings();
+  renderStep(midterm.currentStep);
+  saveMidtermForDashboard();
+  if (focusNew) {
+    focusLastInput(`[data-type="${key}-item"]`);
+  }
+}
+
+function removeListItem(key, index) {
+  if (index < 0 || Number.isNaN(index)) return;
+  const listKey = `${key}List`;
+  if (!Array.isArray(midterm[listKey])) return;
+  midterm[listKey].splice(index, 1);
+  syncNarrativeStrings();
+  renderStep(midterm.currentStep);
+  saveMidtermForDashboard();
+}
+
+function handleKeydown(e) {
+  if (e.key !== "Enter") return;
+  const t = e.target;
+  if (!t || t.tagName !== "INPUT") return;
+
+  const dt = t.dataset.type;
+  if (dt === "risk-label") {
+    e.preventDefault();
+    addRiskRow(true);
+    return;
+  }
+
+  if (dt === "wins-item") {
+    e.preventDefault();
+    addListRow("wins", true);
+    return;
+  }
+
+  if (dt === "learnings-item") {
+    e.preventDefault();
+    addListRow("learnings", true);
+    return;
+  }
+
+  if (dt === "nextSteps-item") {
+    e.preventDefault();
+    addListRow("nextSteps", true);
+    return;
+  }
+}
+
+function focusLastInput(selector) {
+  setTimeout(() => {
+    const inputs = document.querySelectorAll(selector);
+    if (inputs.length) {
+      inputs[inputs.length - 1].focus();
+    }
+  }, 0);
 }
 // Ensure dashboard opening uses localStorage handoff (avoids long URLs)
 function openDashboardFromMidterm() {

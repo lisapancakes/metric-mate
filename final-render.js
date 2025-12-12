@@ -157,6 +157,28 @@ function hydrateForm() {
     finalState.date = midterm.info.date;
   }
 
+  // Narrative lists hydration
+  if (!Array.isArray(finalState.winsList) || !finalState.winsList.length) {
+    finalState.winsList = finalState.wins
+      ? finalState.wins.split(/\n+/).map(s => s.trim()).filter(Boolean)
+      : [];
+  }
+  if (!Array.isArray(finalState.challengesList) || !finalState.challengesList.length) {
+    finalState.challengesList = finalState.challenges
+      ? finalState.challenges.split(/\n+/).map(s => s.trim()).filter(Boolean)
+      : [];
+  }
+  if (!Array.isArray(finalState.learningsList) || !finalState.learningsList.length) {
+    finalState.learningsList = finalState.learnings
+      ? finalState.learnings.split(/\n+/).map(s => s.trim()).filter(Boolean)
+      : [];
+  }
+  if (!Array.isArray(finalState.nextStepsList) || !finalState.nextStepsList.length) {
+    finalState.nextStepsList = finalState.nextSteps
+      ? finalState.nextSteps.split(/\n+/).map(s => s.trim()).filter(Boolean)
+      : [];
+  }
+
   // Build goals list from kickoff + midterm
   finalGoals = normalizeGoalsFromKickoff(kickoff, midterm).map(g => {
     const existing = finalGoals.find(fg => fg.id === g.id);
@@ -188,6 +210,7 @@ function hydrateForm() {
 
   updateFinalMetaSummary();
   renderGoalsTable();
+  renderFinalNarrativeFields();
 }
 
 // INPUT HANDLER
@@ -238,6 +261,38 @@ function handleInput(e) {
     if (goal) goal.completionNote = val;
     updateSummary();
     return;
+  }
+
+  if (t.dataset.type === "wins-item") {
+    const idx = parseInt(t.dataset.index, 10);
+    if (!Number.isNaN(idx)) {
+      finalState.winsList[idx] = val;
+      syncFinalNarrativeStrings();
+    }
+  }
+
+  if (t.dataset.type === "challenges-item") {
+    const idx = parseInt(t.dataset.index, 10);
+    if (!Number.isNaN(idx)) {
+      finalState.challengesList[idx] = val;
+      syncFinalNarrativeStrings();
+    }
+  }
+
+  if (t.dataset.type === "learnings-item") {
+    const idx = parseInt(t.dataset.index, 10);
+    if (!Number.isNaN(idx)) {
+      finalState.learningsList[idx] = val;
+      syncFinalNarrativeStrings();
+    }
+  }
+
+  if (t.dataset.type === "nextSteps-item") {
+    const idx = parseInt(t.dataset.index, 10);
+    if (!Number.isNaN(idx)) {
+      finalState.nextStepsList[idx] = val;
+      syncFinalNarrativeStrings();
+    }
   }
 
   if (id === "finalSummary") {
@@ -463,6 +518,101 @@ function goToPreviousFinalStep() {
   }
 }
 
+function ensureFinalNarrativeDefaults() {
+  if (!Array.isArray(finalState.winsList) || finalState.winsList.length === 0) {
+    finalState.winsList = [""];
+  }
+  if (!Array.isArray(finalState.challengesList) || finalState.challengesList.length === 0) {
+    finalState.challengesList = [""];
+  }
+  if (!Array.isArray(finalState.learningsList) || finalState.learningsList.length === 0) {
+    finalState.learningsList = [""];
+  }
+  if (!Array.isArray(finalState.nextStepsList) || finalState.nextStepsList.length === 0) {
+    finalState.nextStepsList = [""];
+  }
+  syncFinalNarrativeStrings();
+}
+
+function syncFinalNarrativeStrings() {
+  finalState.wins = (finalState.winsList || []).filter(Boolean).join("\n");
+  finalState.challenges = (finalState.challengesList || []).filter(Boolean).join("\n");
+  finalState.learnings = (finalState.learningsList || []).filter(Boolean).join("\n");
+  finalState.nextSteps = (finalState.nextStepsList || []).filter(Boolean).join("\n");
+}
+
+function renderFinalNarrativeFields() {
+  ensureFinalNarrativeDefaults();
+  const container = document.querySelector('[data-step="2"] .form-grid');
+  if (!container) return;
+
+  container.innerHTML = `
+    <div class="form-group">
+      <label for="outcomes">What Did We Ship?</label>
+      <textarea id="outcomes" rows="3" placeholder="Major Releases, Features, or Milestones...">${finalState.outcomes || ""}</textarea>
+    </div>
+    <div class="form-group">
+      <label for="results">Results / Impact</label>
+      <textarea id="results" rows="3" placeholder="Metrics, Client Feedback, Internal Impact...">${finalState.results || ""}</textarea>
+    </div>
+    ${renderFinalListSection("Biggest Wins", "wins", finalState.winsList, "Add a key win or positive outcome")}
+    ${renderFinalListSection("Challenges", "challenges", finalState.challengesList, "Add a current challenge or constraint")}
+    ${renderFinalListSection("Key Learnings", "learnings", finalState.learningsList, "Add a key learning or insight")}
+    ${renderFinalListSection("Next Steps / Follow-Ups", "nextSteps", finalState.nextStepsList, "Add a next step")}
+  `;
+}
+
+function renderFinalListSection(title, key, items = [], placeholder = "") {
+  const addLabel =
+    key === "wins"
+      ? "Add Win"
+      : key === "challenges"
+        ? "Add Challenge"
+        : key === "learnings"
+          ? "Add Learning"
+          : key === "nextSteps"
+            ? "Add Next Step"
+            : "Add Item";
+
+  const rows = (items || []).map((item, idx) => `
+      <div class="list-row" data-key="${key}" data-index="${idx}">
+        <div class="list-label-wrapper">
+          <input
+            type="text"
+            class="list-label-input"
+            data-type="${key}-item"
+            data-index="${idx}"
+            placeholder="${placeholder}"
+            value="${item || ""}"
+          />
+          <button type="button" class="icon-remove-btn" data-type="remove-${key}" data-index="${idx}" aria-label="Remove ${key}">
+            <i class="fa-solid fa-xmark"></i>
+          </button>
+        </div>
+      </div>
+    `).join("");
+
+  return `
+    <div class="form-group">
+      <label>${title}</label>
+      <div class="list-wrapper">
+        ${rows}
+      </div>
+      <div class="form-actions" style="margin-top:0.5rem;">
+        <button type="button" class="btn btn-secondary btn-sm" id="add${capitalize(key)}Row">
+          <i class="fa-solid fa-plus"></i>
+          ${addLabel}
+        </button>
+      </div>
+    </div>
+  `;
+}
+
+function capitalize(str = "") {
+  if (!str) return "";
+  return str.charAt(0).toUpperCase() + str.slice(1);
+}
+
 // GOALS TABLE RENDER
 function renderGoalsTable() {
   const tbody = document.getElementById("goalsTableBody");
@@ -482,20 +632,23 @@ function renderGoalsTable() {
           <td class="numeric">${g.importance != null ? g.importance : ""}</td>
           <td>${formatFinalStatus(g.midtermStatus || "")}</td>
           <td>
-            <select data-type="final-status" data-id="${g.id}">
-              ${["not-started", "in-progress", "completed", "discard"]
-                .map(
-                  s => {
-                    const label = s.replace(/-/g, " ").replace(/\b\w/g, c => c.toUpperCase());
-                    const isSelected =
-                      g.finalStatus
-                        ? g.finalStatus === s
-                        : (g.midtermStatus === s);
-                    return `<option value="${s}" ${isSelected ? "selected" : ""}>${label}</option>`;
-                  }
-                )
-                .join("")}
-            </select>
+            <div class="select-wrapper">
+              <select data-type="final-status" data-id="${g.id}">
+                ${["not-started", "in-progress", "completed", "discard"]
+                  .map(
+                    s => {
+                      const label = s.replace(/-/g, " ").replace(/\b\w/g, c => c.toUpperCase());
+                      const isSelected =
+                        g.finalStatus
+                          ? g.finalStatus === s
+                          : (g.midtermStatus === s);
+                      return `<option value="${s}" ${isSelected ? "selected" : ""}>${label}</option>`;
+                    }
+                  )
+                  .join("")}
+              </select>
+              <i class="fa-regular fa-solid fa-chevron-down select-chevron" aria-hidden="true"></i>
+            </div>
           </td>
           <td>
             <textarea
@@ -590,6 +743,7 @@ function initFinal() {
     form.addEventListener("input", handleInput);
     form.addEventListener("change", handleInput);
     form.addEventListener("click", handleClick);
+    form.addEventListener("keydown", handleKeydown);
   }
 
   updateSummary();
@@ -614,6 +768,34 @@ function initFinal() {
   }
   initFinalCopyChips();
   initFinalAIButtons();
+}
+
+function handleKeydown(e) {
+  if (e.key !== "Enter") return;
+  const t = e.target;
+  if (!t || t.tagName !== "INPUT") return;
+
+  const dt = t.dataset.type;
+  if (dt === "wins-item") {
+    e.preventDefault();
+    addFinalListRow("wins", true);
+    return;
+  }
+  if (dt === "challenges-item") {
+    e.preventDefault();
+    addFinalListRow("challenges", true);
+    return;
+  }
+  if (dt === "learnings-item") {
+    e.preventDefault();
+    addFinalListRow("learnings", true);
+    return;
+  }
+  if (dt === "nextSteps-item") {
+    e.preventDefault();
+    addFinalListRow("nextSteps", true);
+    return;
+  }
 }
 
 function initFinalAIButtons() {
@@ -725,6 +907,49 @@ function handleClick(e) {
       mode: "final_client_email",
       placeholderFallback: buildFinalSummary()
     });
+    return;
+  }
+
+  if (t.id === "addWinsRow" || t.closest("#addWinsRow")) {
+    addFinalListRow("wins", true);
+    return;
+  }
+  if (t.id === "addChallengesRow" || t.closest("#addChallengesRow")) {
+    addFinalListRow("challenges", true);
+    return;
+  }
+  if (t.id === "addLearningsRow" || t.closest("#addLearningsRow")) {
+    addFinalListRow("learnings", true);
+    return;
+  }
+  if (t.id === "addNextStepsRow" || t.closest("#addNextStepsRow")) {
+    addFinalListRow("nextSteps", true);
+    return;
+  }
+
+  const removeWins = t.closest('[data-type="remove-wins"]');
+  if (removeWins) {
+    const idx = parseInt(removeWins.dataset.index, 10);
+    removeFinalListItem("wins", idx);
+    return;
+  }
+  const removeChallenges = t.closest('[data-type="remove-challenges"]');
+  if (removeChallenges) {
+    const idx = parseInt(removeChallenges.dataset.index, 10);
+    removeFinalListItem("challenges", idx);
+    return;
+  }
+  const removeLearnings = t.closest('[data-type="remove-learnings"]');
+  if (removeLearnings) {
+    const idx = parseInt(removeLearnings.dataset.index, 10);
+    removeFinalListItem("learnings", idx);
+    return;
+  }
+  const removeNextSteps = t.closest('[data-type="remove-nextSteps"]');
+  if (removeNextSteps) {
+    const idx = parseInt(removeNextSteps.dataset.index, 10);
+    removeFinalListItem("nextSteps", idx);
+    return;
   }
 }
 
@@ -772,4 +997,33 @@ function addFinalInlineGoal() {
 
   renderGoalsTable();
   updateSummary();
+}
+
+function addFinalListRow(key, focusNew = false) {
+  const listKey = `${key}List`;
+  if (!Array.isArray(finalState[listKey])) finalState[listKey] = [];
+  finalState[listKey].push("");
+  syncFinalNarrativeStrings();
+  renderFinalNarrativeFields();
+  updateSummary();
+  if (focusNew) focusLastInput(`[data-type="${key}-item"]`);
+}
+
+function removeFinalListItem(key, index) {
+  if (index < 0 || Number.isNaN(index)) return;
+  const listKey = `${key}List`;
+  if (!Array.isArray(finalState[listKey])) return;
+  finalState[listKey].splice(index, 1);
+  syncFinalNarrativeStrings();
+  renderFinalNarrativeFields();
+  updateSummary();
+}
+
+function focusLastInput(selector) {
+  setTimeout(() => {
+    const inputs = document.querySelectorAll(selector);
+    if (inputs.length) {
+      inputs[inputs.length - 1].focus();
+    }
+  }, 0);
 }
