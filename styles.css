@@ -49,7 +49,7 @@ body {
     radial-gradient(circle at bottom right, #0f172a 0, #020617 55%) fixed;
   color: var(--tl-text-primary);
   display: flex;
-  align-items: stretch;
+  align-items: center;
   justify-content: center;
 }
 
@@ -70,6 +70,7 @@ h2 {
   box-shadow: var(--tl-shadow-soft);
   padding: 2.25rem 2.5rem 2.5rem;
   position: relative;
+  align-self: center;
 }
 
 /* Light halo behind card on dark bg */

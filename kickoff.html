@@ -1,31 +1,28 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Metric Mate - Project Kickoff Survey</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Metric Mate - Project Kickoff Survey</title>
 
-    <!-- Thinklogic-ish font stack -->
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <!-- Thinklogic-ish font stack -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 
-    <link rel="stylesheet" href="styles.css">
+  <link rel="stylesheet" href="styles.css">
 
-    <link
-  rel="stylesheet"
-<link
-  rel="stylesheet"
-  href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css"
-  integrity="sha512-DTOQO9RWCH3ppGqcWaEA1BIZOC6xxalwEsw9c2QQeAIftl+Vegovlnee1c9QX4TctnWMn13TZye+giMm8e2LwA=="
-  crossorigin="anonymous"
-  referrerpolicy="no-referrer"
-/>
-
+  <link
+    rel="stylesheet"
+    href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css"
+    integrity="sha512-DTOQO9RWCH3ppGqcWaEA1BIZOC6xxalwEsw9c2QQeAIftl+Vegovlnee1c9QX4TctnWMn13TZye+giMm8e2LwA=="
+    crossorigin="anonymous"
+    referrerpolicy="no-referrer"
+  />
 </head>
 <body>
-    <main id="app">
-        <header class="app-header">
+  <main id="app">
+    <header class="app-header">
   <h1>Metric Mate</h1>
 
   <!-- NEW pill under title -->
@@ -39,29 +36,27 @@
   </div>
 </header>
 
-        <form id="surveyForm">
-           <!-- Step 1-5 will be populated by JavaScript -->
-        </form>
+    <form id="surveyForm">
+      <!-- Step 1-5 will be populated by JavaScript -->
+    </form>
 
-        <div class="navigation">
-            <button type="button" id="prevBtn" class="btn btn-secondary" disabled>Previous</button>
-            <button
-              type="button"
-              id="openDashboardBtn"
-              class="btn btn-primary"
-              style="display:none;"
-              onclick="openDashboardFromKickoff()"
-            >
-              <i class="fa-solid fa-chart-line"></i>
-              View Dashboard
-            </button>
-            <button type="button" id="nextBtn" class="btn btn-primary">Next</button>
-        </div>
-    </main>
-    <script src="script.js"></script>
-</body>
-</html>
+    <div class="navigation">
+      <button type="button" id="prevBtn" class="btn btn-secondary" disabled>Previous</button>
+      <button
+        type="button"
+        id="openDashboardBtn"
+        class="btn btn-primary"
+        style="display:none;"
+        onclick="openDashboardFromKickoff()"
+      >
+        <i class="fa-solid fa-chart-line"></i>
+        View Dashboard
+      </button>
+      <button type="button" id="nextBtn" class="btn btn-primary">Next</button>
+    </div>
+  </main>
 
-<script src="dashboard-link.js"></script>
+  <script src="script.js"></script>
+  <script src="dashboard-link.js"></script>
 </body>
 </html>
