@@ -30,7 +30,8 @@ function cleanFinalOutput(text = "") {
     l = l.replace(/\*\*(.*?)\*\*/g, "$1"); // remove bold markers
     const bulletMatch = l.match(/^([-*•]|\d+\.)\s+(.*)$/);
     if (bulletMatch) {
-      l = `  • ${bulletMatch[2].trim()}`;
+      const maybeLabel = bulletMatch[2].trim();
+      l = /.+:\s*$/.test(maybeLabel) ? maybeLabel : `• ${maybeLabel}`;
     }
     cleaned.push(l);
   });
@@ -70,6 +71,79 @@ function tightenFinalText(text = "") {
     if (l === "" && collapsed[collapsed.length - 1] === "") return;
     collapsed.push(l);
   });
+  return collapsed.join("\n").trim();
+}
+
+function normalizePlainTextDraft(text = "", sectionLabels = []) {
+  const sectionLabelSet = new Set(sectionLabels);
+
+  const cleanedLines = (text || "")
+    .split("\n")
+    .map((line) => line.trim())
+    .filter(Boolean)
+    .map((t) => t.replace(/^#+\s*/, "")) // strip markdown headings like ### Heading
+    .map((t) => t.replace(/\*\*/g, "")) // strip markdown bold like **Heading**
+    .map((t) => t.replace(/^[-*]\s+/, "• ")) // normalize -/* bullets to •
+    .map((t) => t.replace(/^\d+\.\s+/, "• ")); // normalize numbered bullets to •
+
+  const formatted = [];
+  let prevWasBlank = false;
+
+  cleanedLines.forEach((line, idx) => {
+    const isSectionLabel = sectionLabelSet.has(line);
+    const isBullet = /^[-•]/.test(line);
+    const isBulletedSubheading = /^•\s+.+:\s*$/.test(line);
+    const normalizedLine = isBulletedSubheading ? line.replace(/^•\s+/, "") : line;
+    const isSubheading =
+      !isSectionLabel && /.+:\s*$/.test(normalizedLine) && !/^[-•]/.test(normalizedLine);
+
+    if (isSectionLabel && !prevWasBlank && formatted.length > 0) {
+      formatted.push("");
+      prevWasBlank = true;
+    }
+
+    if (isSubheading && !prevWasBlank && formatted.length > 0) {
+      formatted.push("");
+      prevWasBlank = true;
+    }
+
+    formatted.push(normalizedLine);
+    prevWasBlank = normalizedLine === "";
+
+    const next = cleanedLines[idx + 1];
+    const nextIsBullet = next ? /^[-•]/.test(next) : false;
+    const nextIsBulletedSubheading = next ? /^•\s+.+:\s*$/.test(next) : false;
+    const nextNormalizedLine =
+      next && nextIsBulletedSubheading ? next.replace(/^•\s+/, "") : next;
+    const nextIsSectionLabel = nextNormalizedLine ? sectionLabelSet.has(nextNormalizedLine) : false;
+    const nextIsSubheading = nextNormalizedLine
+      ? !nextIsSectionLabel &&
+        /.+:\s*$/.test(nextNormalizedLine) &&
+        !/^[-•]/.test(nextNormalizedLine)
+      : false;
+
+    if (isBullet && !nextIsBullet && next) {
+      formatted.push("");
+      prevWasBlank = true;
+    }
+
+    if (!isBullet && !isSectionLabel && nextIsSectionLabel) {
+      formatted.push("");
+      prevWasBlank = true;
+    }
+
+    if (!isBullet && !isSectionLabel && !isSubheading && nextIsSubheading) {
+      formatted.push("");
+      prevWasBlank = true;
+    }
+  });
+
+  const collapsed = [];
+  formatted.forEach((line) => {
+    if (line === "" && collapsed[collapsed.length - 1] === "") return;
+    collapsed.push(line);
+  });
+
   return collapsed.join("\n").trim();
 }
 
@@ -597,11 +671,22 @@ async function triggerFinalAIRewrite({ btnId, textareaId, mode, placeholderFallb
       return data.text;
     });
 
-    const cleaned =
-      mode === "final_client_email"
-        ? formatFinalClientEmail(rewritten)
-        : rewritten;
-    const finalText = tightenFinalText(cleanFinalOutput(cleaned));
+    const finalSectionLabels = [
+      "Project Information",
+      "Final Outcome",
+      "What We Delivered",
+      "Goals & Results",
+      "User Pain Points & Insights",
+      "Risks / Issues to Watch",
+      "Recommended Next Steps",
+    ];
+
+    const finalText =
+      mode === "final_internal_update"
+        ? normalizePlainTextDraft(rewritten, finalSectionLabels)
+        : mode === "final_client_email"
+          ? cleanFinalOutput(formatFinalClientEmail(rewritten))
+          : tightenFinalText(cleanFinalOutput(rewritten));
     ta.value = finalText;
     ta.dataset.aiFilled = "true";
     if (ta.id === "finalSummary") {

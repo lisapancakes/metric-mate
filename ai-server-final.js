@@ -1,44 +1,43 @@
 export const FINAL_INSTRUCTIONS_BY_MODE = {
-  final_internal_update: `Rewrite the project data and survey responses as a clear **final internal project summary** for the delivery team.
+  final_internal_update: `Rewrite the project data and survey responses as a clear final internal project summary for the delivery team.
 
 ### Goals for the output
 - Audience: internal PMs, designers, engineers, and leadership.
 - Tone: honest, concise, and neutral (not salesy).
 - Style: American English, skimmable, and suitable for internal tools like Asana, Confluence, or team docs.
 
+### Formatting (strict)
+- Plain text only (no Markdown).
+- Do NOT use heading markers or formatting like **bold**, ##, or ###.
+- Use plain section labels on their own line (Title Case), with a blank line BEFORE each label (except the first).
+- Use bullet points with the symbol "•" (do NOT use dashes).
+- If you use sub-sections within a section, write the sub-section label as plain text on its own line ending with ":" (not bold, not a bullet), followed by bullet points underneath.
+
 ### Structure
-1. **Project Information**
-- List on separate lines: Project, Client, PM, Product Designer, and Lead Developer (if available).
+Use ONLY the following section labels, in this order:
 
-2. **Final Outcome**
-- 1–2 short sentences summarizing how the project concluded overall.
-- If an overall health or progress score exists, translate it into plain language (e.g., “Overall health: 4/5 — generally on track with a few follow-up items”).
-- Do not invent scores or outcomes.
+Project Information
+Final Outcome
+What We Delivered
+Goals & Results
+User Pain Points & Insights
+Risks / Issues to Watch
+Recommended Next Steps
 
-3. **What We Delivered**
-- Bullet list of the main features, improvements, or deliverables that were actually shipped.
+Guidelines by section:
+- Project Information: include Project, Client, PM, Product Designer, Lead Developer (only if present).
+- Final Outcome: 1–2 short sentences summarizing how the project concluded overall; translate any scores into words; do not invent outcomes.
+- What We Delivered: bullet list of shipped work (only if supported by the input).
+- Goals & Results: use these sub-section labels in this order (each followed by bullets):
+  Business Goals:
+  Product / UX Goals:
+  User Goals:
+  Clearly communicate which goals were met/partially met/not met only if the input supports it.
+- User Pain Points & Insights: summarize meaningful pain points and what was learned.
+- Risks / Issues to Watch: bullets for remaining risks/technical debt.
+- Recommended Next Steps: bullets for actionable follow-ups.
 
-4. **Goals & Results**
-- Group goals by type and clearly communicate which were met, partially met, or not met.
-- Use the following sub-sections in this order:
-  - **Business Goals**
-  - **Product / UX Goals**
-  - **User Goals**
-- Mention importance or rating values only when they help explain outcomes. Do not invent numbers.
-
-5. **User Pain Points & Insights**
-- Summarize the most meaningful user pain points and what the team learned by the end of the project.
-
-6. **Risks / Issues to Watch**
-- Bullet list of any remaining risks, technical debt, or unresolved concerns.
-
-7. **Recommended Next Steps**
-- Bullet list of clear, actionable follow-ups (e.g., “Plan Phase 2 for X”, “Run usability testing for Y”).
-
-### Formatting rules
-- Use clean Markdown headings (\`\`##\`\`).
-- Headings should be followed immediately by content (no extra blank line before bullets).
-- Do not invent facts, features, or metrics. If data is missing or unclear, omit it.`,
+Do not invent facts, features, or metrics. If data is missing or unclear, omit it.`,
 
   final_client_email: `Write the BODY of a final client-facing project wrap-up email based ONLY on the provided project information and survey data.
 
@@ -63,18 +62,18 @@ STRUCTURE
   - Briefly summarize what this phase focused on.
   - Accurately reflect the outcome (progress, groundwork, or completion), based only on the input.
 
-2. **What We Worked On:**
+2. What We Worked On:
 - A short bullet list describing key focus areas or delivered items.
 - Use activity-based or outcome-based language ONLY if supported by the input (e.g., clarifying goals, identifying user pain points, implementing specific improvements).
 - Do NOT invent features, performance improvements, or success claims.
 
-3. **Where We Landed:**
+3. Where We Landed:
 - One short paragraph that explains the project state at the end:
   - What is now in place or clarified.
   - Which goals were fully met, partially met, or still open (if the input makes that clear).
 - Avoid saying “we met all objectives” unless explicitly supported by the data.
 
-4. **Next Steps / Recommendations:**
+4. Next Steps / Recommendations:
 - Bullet list of realistic, optional next steps or future opportunities.
 - Frame them as recommendations (e.g., “We recommend…”, “A potential next step could be…”).
 
