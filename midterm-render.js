@@ -923,6 +923,76 @@ function tightenMidtermText(text = "") {
   return collapsed.join("\n").trim();
 }
 
+function normalizePlainTextDraft(aiText, sectionLabels = []) {
+  const sectionLabelSet = new Set(sectionLabels);
+  const cleanedLines = (aiText || "")
+    .split("\n")
+    .map((line) => line.trim())
+    .filter(Boolean)
+    .map((t) => t.replace(/^#+\s*/, "")) // strip markdown headings like ### Heading
+    .map((t) => t.replace(/\*\*/g, "")) // strip markdown bold like **Heading**
+    .map((t) => t.replace(/^\-\s+/, "• ")); // normalize dash bullets to •
+
+  const formatted = [];
+  let prevWasBlank = false;
+
+  cleanedLines.forEach((line, idx) => {
+    const isSectionLabel = sectionLabelSet.has(line);
+    const isBullet = /^[-•]/.test(line);
+    const isBulletedSubheading = /^•\s+.+:\s*$/.test(line);
+    const normalizedLine = isBulletedSubheading ? line.replace(/^•\s+/, "") : line;
+    const isSubheading =
+      !isSectionLabel && /.+:\s*$/.test(normalizedLine) && !/^[-•]/.test(normalizedLine);
+
+    if (isSectionLabel && !prevWasBlank && formatted.length > 0) {
+      formatted.push("");
+      prevWasBlank = true;
+    }
+
+    if (isSubheading && !prevWasBlank && formatted.length > 0) {
+      formatted.push("");
+      prevWasBlank = true;
+    }
+
+    formatted.push(normalizedLine);
+    prevWasBlank = normalizedLine === "";
+
+    const next = cleanedLines[idx + 1];
+    const nextIsBullet = next ? /^[-•]/.test(next) : false;
+    const nextIsBulletedSubheading = next ? /^•\s+.+:\s*$/.test(next) : false;
+    const nextNormalizedLine =
+      next && nextIsBulletedSubheading ? next.replace(/^•\s+/, "") : next;
+    const nextIsSectionLabel = nextNormalizedLine ? sectionLabelSet.has(nextNormalizedLine) : false;
+    const nextIsSubheading = nextNormalizedLine
+      ? !nextIsSectionLabel &&
+        /.+:\s*$/.test(nextNormalizedLine) &&
+        !/^[-•]/.test(nextNormalizedLine)
+      : false;
+
+    if (isBullet && !nextIsBullet && next) {
+      formatted.push("");
+      prevWasBlank = true;
+    }
+
+    if (!isBullet && !isSectionLabel && nextIsSectionLabel) {
+      formatted.push("");
+      prevWasBlank = true;
+    }
+
+    if (!isBullet && !isSectionLabel && !isSubheading && nextIsSubheading) {
+      formatted.push("");
+      prevWasBlank = true;
+    }
+  });
+
+  const collapsed = [];
+  formatted.forEach((line) => {
+    if (line === "" && collapsed[collapsed.length - 1] === "") return;
+    collapsed.push(line);
+  });
+  return collapsed.join("\n").trim();
+}
+
 function formatMidtermClientEmail(aiText) {
   const kickoff = getKickoffDataFromUrl() || {};
   const info = kickoff.info || {};
@@ -942,8 +1012,71 @@ function formatMidtermClientEmail(aiText) {
       : "") ||
     "The Team";
 
-  // Reuse standardized internal summary formatting for a client-safe body
-  const body = buildInternalSummary();
+  const pmLower = pm.toLowerCase();
+  const cleanedLines = (aiText || "")
+    .split("\n")
+    .map((line) => line.trim())
+    .filter((t) => {
+      if (!t) return false;
+      const lower = t.toLowerCase();
+      if (lower.startsWith("subject:")) return false;
+      if (/^(hi|hello|dear)\b/i.test(t)) return false;
+      if (t.includes("[Client") || t.includes("[client")) return false;
+      if (t.includes("[Your") || t.includes("[your")) return false;
+      if (/^(best|best regards|kind regards|regards|sincerely|thanks|thank you|cheers)/i.test(t)) return false;
+      if (pmLower && (lower === pmLower || lower.startsWith(pmLower))) return false;
+      if (lower.includes("thinklogic team")) return false;
+      if (lower.includes("project manager")) return false;
+      return true;
+    })
+    .map((t) => t.replace(/^#+\s*/, "")) // strip markdown headings like ### Heading
+    .map((t) => t.replace(/\*\*/g, "")) // strip markdown bold like **Heading**
+    .map((t) => t.replace(/^\-\s+/, "• ")); // normalize dash bullets to •
+
+  // Normalize spacing and subheadings for an email-ready body.
+  const formattedBodyLines = [];
+  let prevWasBlank = false;
+
+  cleanedLines.forEach((line, idx) => {
+    const isBullet = /^[-•]/.test(line);
+    const isBulletedSubheading = /^•\s+.+:\s*$/.test(line);
+    const normalizedLine = isBulletedSubheading ? line.replace(/^•\s+/, "") : line;
+    const isSubheading = /.+:\s*$/.test(normalizedLine) && !/^[-•]/.test(normalizedLine);
+
+    if (isSubheading && !prevWasBlank && formattedBodyLines.length > 0) {
+      formattedBodyLines.push("");
+      prevWasBlank = true;
+    }
+
+    formattedBodyLines.push(normalizedLine);
+    prevWasBlank = normalizedLine === "";
+
+    const next = cleanedLines[idx + 1];
+    const nextIsBullet = next ? /^[-•]/.test(next) : false;
+    const nextIsBulletedSubheading = next ? /^•\s+.+:\s*$/.test(next) : false;
+    const nextNormalizedLine =
+      next && nextIsBulletedSubheading ? next.replace(/^•\s+/, "") : next;
+    const nextIsSubheading = nextNormalizedLine
+      ? /.+:\s*$/.test(nextNormalizedLine) && !/^[-•]/.test(nextNormalizedLine)
+      : false;
+
+    if (isBullet && !nextIsBullet && next) {
+      formattedBodyLines.push("");
+      prevWasBlank = true;
+    }
+    if (!isBullet && !isSubheading && nextIsSubheading) {
+      formattedBodyLines.push("");
+      prevWasBlank = true;
+    }
+  });
+
+  const collapsed = [];
+  formattedBodyLines.forEach((line) => {
+    if (line === "" && collapsed[collapsed.length - 1] === "") return;
+    collapsed.push(line);
+  });
+
+  const body = collapsed.join("\n").trim();
 
   const parts = [];
   parts.push(`Hi ${client} Team,`);
@@ -1533,6 +1666,15 @@ function initMidtermAIButtons() {
     { btnId: "midterm-ai-client-btn", textareaId: "clientSummary", mode: "midterm_client_email", stateKey: "clientSummary" }
   ];
 
+  const internalSectionLabels = [
+    "Project Health Summary",
+    "Progress Since Kickoff",
+    "What’s Going Well",
+    "Risks & Areas to Watch",
+    "Decisions or Open Questions",
+    "Next Steps",
+  ];
+
   mappings.forEach(({ btnId, textareaId, mode, stateKey }) => {
     const btn = document.getElementById(btnId);
     const ta = document.getElementById(textareaId);
@@ -1560,7 +1702,7 @@ function initMidtermAIButtons() {
         const finalText =
           mode === "midterm_client_email"
             ? tightenMidtermText(formatMidtermClientEmail(rewritten))
-            : tightenMidtermText(rewritten);
+            : tightenMidtermText(normalizePlainTextDraft(rewritten, internalSectionLabels));
         ta.value = finalText;
         if (stateKey) midtermSummaryState[stateKey] = finalText;
         updateMidtermCopyButtonsVisibility();

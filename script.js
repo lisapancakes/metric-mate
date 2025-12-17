@@ -764,11 +764,94 @@ function getKickoffNames() {
   return { client, pm };
 }
 
+function normalizePlainTextDraft(bodyText, sectionLabels = []) {
+  const sectionLabelSet = new Set(sectionLabels);
+
+  const cleanedLines = (bodyText || "")
+    .split("\n")
+    .map((line) => line.trim())
+    .filter((t) => {
+      if (!t) return false;
+      const lower = t.toLowerCase();
+      if (lower.startsWith("subject:")) return false;
+      return true;
+    })
+    .map((t) => t.replace(/^#+\s*/, "")) // strip markdown headings like ### Heading
+    .map((t) => t.replace(/\*\*/g, "")) // strip markdown bold like **Heading**
+    .map((t) => t.replace(/^\-\s+/, "• ")); // normalize dash bullets to •
+
+  const formatted = [];
+  let prevWasBlank = false;
+
+  cleanedLines.forEach((line, idx) => {
+    const isSectionLabel = sectionLabelSet.has(line);
+    const isBullet = /^[-•]/.test(line);
+    const isBulletedSubheading = /^•\s+.+:\s*$/.test(line);
+    const normalizedLine = isBulletedSubheading ? line.replace(/^•\s+/, "") : line;
+    const isSubheading =
+      !isSectionLabel && /.+:\s*$/.test(normalizedLine) && !/^[-•]/.test(normalizedLine);
+
+    if (isSectionLabel && !prevWasBlank && formatted.length > 0) {
+      formatted.push("");
+      prevWasBlank = true;
+    }
+
+    if (isSubheading && !prevWasBlank && formatted.length > 0) {
+      formatted.push("");
+      prevWasBlank = true;
+    }
+
+    formatted.push(normalizedLine);
+    prevWasBlank = normalizedLine === "";
+
+    const next = cleanedLines[idx + 1];
+    const nextIsBullet = next ? /^[-•]/.test(next) : false;
+    const nextIsBulletedSubheading = next ? /^•\s+.+:\s*$/.test(next) : false;
+    const nextNormalizedLine =
+      next && nextIsBulletedSubheading ? next.replace(/^•\s+/, "") : next;
+    const nextIsSectionLabel = nextNormalizedLine ? sectionLabelSet.has(nextNormalizedLine) : false;
+    const nextIsSubheading = nextNormalizedLine
+      ? !nextIsSectionLabel &&
+        /.+:\s*$/.test(nextNormalizedLine) &&
+        !/^[-•]/.test(nextNormalizedLine)
+      : false;
+
+    if (isBullet && !nextIsBullet && next) {
+      formatted.push("");
+      prevWasBlank = true;
+    }
+
+    if (!isBullet && !isSectionLabel && nextIsSectionLabel) {
+      formatted.push("");
+      prevWasBlank = true;
+    }
+
+    if (!isBullet && !isSectionLabel && !isSubheading && nextIsSubheading) {
+      formatted.push("");
+      prevWasBlank = true;
+    }
+  });
+
+  const collapsed = [];
+  formatted.forEach((line) => {
+    if (line === "" && collapsed[collapsed.length - 1] === "") return;
+    collapsed.push(line);
+  });
+
+  return collapsed.join("\n").trim();
+}
+
 function buildKickoffClientEmailWithWrapper(bodyText) {
   const { client, pm } = getKickoffNames();
   const pmLower = pm.toLowerCase();
   const greeting = `Hi ${client} Team,`;
   const signature = `Best,\n${pm} & the Thinklogic Team`;
+  const sectionLabels = new Set([
+    "Project Overview",
+    "Goals & Focus Areas",
+    "User Challenges & Pain Points",
+    "Next Steps",
+  ]);
 
   const cleanedLines = [];
   (bodyText || "")
@@ -779,54 +862,75 @@ function buildKickoffClientEmailWithWrapper(bodyText) {
         cleanedLines.push("");
         return;
       }
-      const lower = t.toLowerCase();
+
+      // Strip markdown headings/bold and normalize dash bullets early.
+      let cleaned = t.replace(/^#+\s*/, "").replace(/\*\*/g, "").replace(/^\-\s+/, "• ");
+      const lower = cleaned.toLowerCase();
+
       if (lower.startsWith("subject:")) return;
       if (lower.startsWith("hi ")) return;
       if (lower.startsWith("hello")) return;
       if (lower.startsWith("dear")) return;
-      if (t.includes("[Client") || t.includes("[client")) return;
-      if (t.includes("[Your") || t.includes("[your")) return;
+      if (cleaned.includes("[Client") || cleaned.includes("[client")) return;
+      if (cleaned.includes("[Your") || cleaned.includes("[your")) return;
       if (lower.startsWith("best")) return;
       if (lower.startsWith("best regards")) return;
       if (lower.startsWith("kind regards")) return;
       if (lower.includes("project manager")) return;
       if (pmLower && (lower === pmLower || lower.startsWith(pmLower))) return;
       if (lower.includes("thinklogic team")) return;
-      cleanedLines.push(t.replace(/^#+\s*/, "")); // strip markdown headings like ### Heading
+
+      cleanedLines.push(cleaned);
     });
 
   // Normalize spacing for an email-ready body
   const formatted = [];
-  let isFirst = true;
   let prevWasBlank = false;
 
   cleanedLines.forEach((line, idx) => {
-    const isHeading = /^\*\*.+\*\*:/.test(line);
+    const isSectionLabel = sectionLabels.has(line);
     const isBullet = /^[-•]/.test(line);
+    const isBulletedSubheading = /^•\s+.+:\s*$/.test(line);
+    const normalizedLine = isBulletedSubheading ? line.replace(/^•\s+/, "") : line;
+    const isSubheading =
+      !isSectionLabel && /.+:\s*$/.test(normalizedLine) && !/^[-•]/.test(normalizedLine);
 
-    // Add a blank line before headings (including the first) for readability
-    if (isHeading && !prevWasBlank) {
+    // Add a blank line before new section labels for readability (except if already blank)
+    if (isSectionLabel && !prevWasBlank && formatted.length > 0) {
       formatted.push("");
       prevWasBlank = true;
     }
 
-    if (isHeading && /^\*\*next steps/i.test(line)) {
-      if (!prevWasBlank) formatted.push("");
+    // Add a blank line before subheadings like "Business Goals:" within a section
+    if (isSubheading && !prevWasBlank && formatted.length > 0) {
+      formatted.push("");
+      prevWasBlank = true;
     }
 
-    formatted.push(line);
-    isFirst = false;
-    prevWasBlank = line === "";
+    formatted.push(normalizedLine);
+    prevWasBlank = normalizedLine === "";
 
     const next = cleanedLines[idx + 1];
-    const nextIsHeading = next ? /^\*\*.+\*\*:/.test(next) : false;
+    const nextIsSectionLabel = next ? sectionLabels.has(next) : false;
     const nextIsBullet = next ? /^[-•]/.test(next) : false;
+    const nextIsBulletedSubheading = next ? /^•\s+.+:\s*$/.test(next) : false;
+    const nextNormalizedLine =
+      next && nextIsBulletedSubheading ? next.replace(/^•\s+/, "") : next;
+    const nextIsSubheading = nextNormalizedLine
+      ? !nextIsSectionLabel &&
+        /.+:\s*$/.test(nextNormalizedLine) &&
+        !/^[-•]/.test(nextNormalizedLine)
+      : false;
 
     if (isBullet && !nextIsBullet && next) {
       formatted.push("");
       prevWasBlank = true;
     }
-    if (!isBullet && !isHeading && nextIsHeading) {
+    if (!isBullet && !isSectionLabel && nextIsSectionLabel) {
+      formatted.push("");
+      prevWasBlank = true;
+    }
+    if (!isBullet && !isSectionLabel && !isSubheading && nextIsSubheading) {
       formatted.push("");
       prevWasBlank = true;
     }
@@ -846,7 +950,7 @@ function cleanKickoffClientEmailOutput(text) {
   const lines = (text || "").split("\n");
   const cleaned = [];
   const subheaderPattern = /^(goals & focus areas|business goals|product\/?\s*\/?\s*ux goals|product & experience goals|user goals(?: & pain points)?|user challenges & pain points)\s*:?\s*$/i;
-  const bulletify = (l) => `  • ${l.trim()}`;
+  const bulletify = (l) => `• ${l.trim()}`;
   const needsBlankBefore = /^(goals & focus areas)$/i;
 
   lines.forEach((line) => {
@@ -919,10 +1023,11 @@ function cleanKickoffGoalNarratives(text) {
     l = l.replace(/^#+\s*/, "");
     l = l.replace(/\*\*(.*?)\*\*/g, "$1");
 
-    // Normalize bullets
+    // Normalize bullets (and de-bullet subheadings like "• Business Goals:")
     const bulletMatch = l.match(/^([-*•]|\d+\.)\s+(.*)$/);
     if (bulletMatch) {
-      l = `  • ${bulletMatch[2].trim()}`;
+      const maybeHeading = bulletMatch[2].trim();
+      l = /.+:\s*$/.test(maybeHeading) ? maybeHeading : `• ${maybeHeading}`;
     }
 
     cleaned.push(l);
@@ -949,10 +1054,11 @@ function cleanKickoffInternalSummary(text) {
     l = l.replace(/^#+\s*/, "");
     l = l.replace(/\*\*(.*?)\*\*/g, "$1");
 
-    // Normalize bullets
+    // Normalize bullets (and de-bullet subheadings like "• Business Goals:")
     const bulletMatch = l.match(/^([-*•]|\d+\.)\s+(.*)$/);
     if (bulletMatch) {
-      l = `  • ${bulletMatch[2].trim()}`;
+      const maybeHeading = bulletMatch[2].trim();
+      l = /.+:\s*$/.test(maybeHeading) ? maybeHeading : `• ${maybeHeading}`;
     }
 
     cleaned.push(l);

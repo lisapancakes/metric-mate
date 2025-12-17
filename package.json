@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "type": "module",
   "scripts": {
-    "start": "node ai-server.js"
+    "start": "node ai-server-dashboard.js"
   },
   "dependencies": {
     "cors": "^2.8.5",

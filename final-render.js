@@ -74,6 +74,11 @@ function formatFinalClientEmail(aiText) {
     finalState.client && finalState.client.trim() ? finalState.client.trim() : "there";
   const pmName = finalState.pm && finalState.pm.trim() ? finalState.pm.trim() : "";
   const pmLower = pmName.toLowerCase();
+  const sectionLabels = new Set([
+    "What We Worked On:",
+    "Where We Landed:",
+    "Next Steps / Recommendations:",
+  ]);
 
   const cleanedLines = (aiText || "")
     .split("\n")
@@ -91,43 +96,59 @@ function formatFinalClientEmail(aiText) {
       if (lower.includes("project manager")) return false;
       return true;
     })
-    .map((t) => t.replace(/^#+\s*/, "")); // strip markdown headings like ### Heading
+    .map((t) => t.replace(/^#+\s*/, "")) // strip markdown headings like ### Heading
+    .map((t) => t.replace(/\*\*/g, "")) // strip markdown bold like **Heading**
+    .map((t) => t.replace(/^\-\s+/, "• ")); // normalize dash bullets to •
 
   // Normalize spacing for an email-ready body:
   const formattedBodyLines = [];
-  let isFirst = true;
   let prevWasBlank = false;
 
   cleanedLines.forEach((line, idx) => {
-    const isHeading = /^\*\*.+\*\*:/.test(line);
+    const isSectionLabel = sectionLabels.has(line);
     const isBullet = /^[-•]/.test(line);
+    const isBulletedSubheading = /^•\s+.+:\s*$/.test(line);
+    const normalizedLine = isBulletedSubheading ? line.replace(/^•\s+/, "") : line;
+    const isSubheading =
+      !isSectionLabel && /.+:\s*$/.test(normalizedLine) && !/^[-•]/.test(normalizedLine);
 
-    // Ensure blank line before headings (including the first) for readability
-    if (isHeading && !prevWasBlank) {
+    // Ensure blank line before known section labels for readability
+    if (isSectionLabel && !prevWasBlank && formattedBodyLines.length > 0) {
       formattedBodyLines.push("");
       prevWasBlank = true;
     }
 
-    // Extra spacing before "Next Steps" heading
-    // Extra spacing before "Next Steps" heading: force a blank line before it
-    if (isHeading && /^\*\*next steps/i.test(line)) {
-      if (!prevWasBlank) formattedBodyLines.push("");
+    // Ensure blank line before subheadings like "Business Goals:" within a section
+    if (isSubheading && !prevWasBlank && formattedBodyLines.length > 0) {
+      formattedBodyLines.push("");
+      prevWasBlank = true;
     }
 
-    formattedBodyLines.push(line);
-    isFirst = false;
-    prevWasBlank = line === "";
+    formattedBodyLines.push(normalizedLine);
+    prevWasBlank = normalizedLine === "";
 
     const next = cleanedLines[idx + 1];
-    const nextIsHeading = next ? /^\*\*.+\*\*:/.test(next) : false;
     const nextIsBullet = next ? /^[-•]/.test(next) : false;
+    const nextIsBulletedSubheading = next ? /^•\s+.+:\s*$/.test(next) : false;
+    const nextNormalizedLine =
+      next && nextIsBulletedSubheading ? next.replace(/^•\s+/, "") : next;
+    const nextIsSectionLabel = next ? sectionLabels.has(next) : false;
+    const nextIsSubheading = nextNormalizedLine
+      ? !nextIsSectionLabel &&
+        /.+:\s*$/.test(nextNormalizedLine) &&
+        !/^[-•]/.test(nextNormalizedLine)
+      : false;
 
     // If current block ends (heading + bullets) and next is heading or paragraph, insert blank line
     if (isBullet && !nextIsBullet && next) {
       formattedBodyLines.push("");
       prevWasBlank = true;
     }
-    if (!isBullet && !isHeading && nextIsHeading) {
+    if (!isBullet && !isSectionLabel && nextIsSectionLabel) {
+      formattedBodyLines.push("");
+      prevWasBlank = true;
+    }
+    if (!isBullet && !isSectionLabel && !isSubheading && nextIsSubheading) {
       formattedBodyLines.push("");
       prevWasBlank = true;
     }
