@@ -10,7 +10,11 @@ const finalPrevBtn = $("prevBtn");
 const finalNextBtn = $("nextBtn");
 const finalProgressBar = $("progressBar");
 const FINAL_AI_BASE =
-  window.location.protocol === "file:" ? "http://localhost:3001" : "";
+  window.location.protocol === "file:" ||
+  window.location.hostname === "localhost" ||
+  window.location.hostname === "127.0.0.1"
+    ? "http://localhost:3001"
+    : "";
 const finalAIModel = "gpt-4o-mini";
 
 function cleanFinalOutput(text = "") {
