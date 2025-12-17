@@ -1015,6 +1015,7 @@ function formatMidtermClientEmail(aiText) {
     "The Team";
 
   const sectionLabels = [
+    "Progress Summary",
     "Project Health Summary",
     "Progress Since Kickoff",
     "What’s Going Well",
@@ -1634,6 +1635,7 @@ function initMidtermAIButtons() {
   ];
 
   const internalSectionLabels = [
+    "Progress Summary",
     "Project Health Summary",
     "Progress Since Kickoff",
     "What’s Going Well",
@@ -1668,8 +1670,8 @@ function initMidtermAIButtons() {
         const rewritten = await rewriteMidtermWithAI({ mode, text: sourceText });
         const finalText =
           mode === "midterm_client_email"
-            ? tightenMidtermText(formatMidtermClientEmail(rewritten))
-            : tightenMidtermText(normalizePlainTextDraft(rewritten, internalSectionLabels));
+            ? formatMidtermClientEmail(rewritten)
+            : normalizePlainTextDraft(rewritten, internalSectionLabels);
         ta.value = finalText;
         if (stateKey) midtermSummaryState[stateKey] = finalText;
         updateMidtermCopyButtonsVisibility();
