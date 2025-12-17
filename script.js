@@ -1892,7 +1892,10 @@ function openDashboardFromKickoff() {
 
   // Dashboard expects an object like { kickoff: {...}, project?: {...}, ... }
   const data = {
-    kickoff: kickoffPayload
+    forcePhase: "kickoff",
+    kickoff: kickoffPayload,
+    midterm: null,
+    final: null
     // project meta derived from kickoff
   };
 
