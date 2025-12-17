@@ -27,21 +27,20 @@ function loadDashboardData() {
   if (data) {
     try {
       const forcePhase = data.forcePhase || data.phase || null;
-      const allowMergingOtherSurveys = forcePhase !== "kickoff";
+      const allowMergingMidterm = forcePhase !== "kickoff";
+      const allowMergingFinal = forcePhase !== "kickoff" && forcePhase !== "midterm";
 
       const kickoffStored = JSON.parse(localStorage.getItem("metricMateKickoff") || "null");
       const midtermStored = JSON.parse(localStorage.getItem("metricMateMidterm") || "null");
       const finalStored = JSON.parse(localStorage.getItem("metricMateFinal") || "null");
 
       if (!data.kickoff && kickoffStored) data.kickoff = kickoffStored;
-      if (allowMergingOtherSurveys) {
-        if (!data.midterm && midtermStored) data.midterm = midtermStored;
-        if (!data.final && finalStored) data.final = finalStored;
-      }
+      if (allowMergingMidterm && !data.midterm && midtermStored) data.midterm = midtermStored;
+      if (allowMergingFinal && !data.final && finalStored) data.final = finalStored;
 
       // Prefer final goals when available so the dashboard can render the final view correctly.
       if (
-        allowMergingOtherSurveys &&
+        allowMergingFinal &&
         (!Array.isArray(data.goals) || data.goals.length === 0) &&
         finalStored &&
         Array.isArray(finalStored.goals) &&

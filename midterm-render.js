@@ -1611,6 +1611,7 @@ function openDashboardFromMidterm() {
   };
 
   const payload = {
+    forcePhase: "midterm",
     kickoff,
     midterm: midtermSnapshot || midterm,
     final: null,

@@ -50,6 +50,8 @@ if (!window.openDashboardFromKickoff) {
 if (!window.openDashboardFromMidterm) {
   window.openDashboardFromMidterm = function openDashboardFromMidterm() {
     const payload = buildDashboardPayload();
+    payload.forcePhase = "midterm";
+    payload.final = null;
 
     if (!payload.kickoff && !payload.midterm) {
       alert("No mid-project data found yet. Please complete the mid-project review first.");

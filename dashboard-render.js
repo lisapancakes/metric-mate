@@ -23,6 +23,10 @@ function renderDashboard(rawData) {
   const caseStudyBtn = document.getElementById("openCaseStudyBtn");
   const caseStudyCard = document.getElementById("caseStudyCard");
 
+  // Default: hide the case study button/card until we confirm we're in final view.
+  if (caseStudyBtn) caseStudyBtn.style.display = "none";
+  if (caseStudyCard) caseStudyCard.style.display = "none";
+
   const dashOutcomes = document.getElementById("dashOutcomes");
   const dashResults = document.getElementById("dashResults");
   const dashPain = document.getElementById("dashPain");
@@ -104,7 +108,7 @@ function renderDashboard(rawData) {
   const midterm =
     forcePhase === "kickoff" ? null : (data.midterm || null);
   const final =
-    forcePhase === "kickoff" ? null : (data.final || null);
+    forcePhase === "kickoff" || forcePhase === "midterm" ? null : (data.final || null);
   const finalSummary = data.finalSummary || "";
   const project = data.project || {};
   const goals = Array.isArray(data.goals) ? data.goals : [];
@@ -147,7 +151,13 @@ function renderDashboard(rawData) {
       (final.wins && final.wins.trim()) ||
       (final.challenges && final.challenges.trim()) ||
       (final.learnings && final.learnings.trim()) ||
-      (final.nextSteps && final.nextSteps.trim())
+      (final.nextSteps && final.nextSteps.trim()) ||
+      (Array.isArray(final.outcomesList) && final.outcomesList.some(t => String(t || "").trim())) ||
+      (Array.isArray(final.resultsList) && final.resultsList.some(t => String(t || "").trim())) ||
+      (Array.isArray(final.winsList) && final.winsList.some(t => String(t || "").trim())) ||
+      (Array.isArray(final.challengesList) && final.challengesList.some(t => String(t || "").trim())) ||
+      (Array.isArray(final.learningsList) && final.learningsList.some(t => String(t || "").trim())) ||
+      (Array.isArray(final.nextStepsList) && final.nextStepsList.some(t => String(t || "").trim()))
     )
   );
 

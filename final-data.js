@@ -194,6 +194,15 @@ function saveDashboardPayload(summaryText) {
   const midterm = loadMidtermData();
   const project = buildProjectMeta(kickoff);
 
+  // Ensure string fields stay in sync with list fields before saving
+  try {
+    if (typeof syncFinalNarrativeStrings === "function") {
+      syncFinalNarrativeStrings();
+    }
+  } catch (e) {
+    console.warn("Failed to sync final narrative strings before saving dashboard payload", e);
+  }
+
   project.name = finalState.projectName || project.name || "";
   project.summary = finalState.projectSummary || project.summary || "";
   project.client = finalState.client || project.client || "";
@@ -203,6 +212,7 @@ function saveDashboardPayload(summaryText) {
   project.finalReviewDate = finalState.date || "";
 
   const payload = {
+    forcePhase: "final",
     kickoff,
     midterm,
     final: { ...finalState },
