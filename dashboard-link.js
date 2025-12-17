@@ -24,7 +24,13 @@ function buildDashboardPayload() {
 // Only register helpers if the page hasn't already defined its own versions.
 if (!window.openDashboardFromKickoff) {
   window.openDashboardFromKickoff = function openDashboardFromKickoff() {
-    const payload = buildDashboardPayload();
+    const kickoff = safeParse(localStorage.getItem("metricMateKickoff"));
+    const payload = {
+      forcePhase: "kickoff",
+      kickoff,
+      midterm: null,
+      final: null
+    };
 
     if (!payload.kickoff) {
       alert("No kickoff data found yet. Please complete the kickoff survey first.");

@@ -26,16 +26,22 @@ function loadDashboardData() {
   // from their canonical localStorage keys (midterm flow can save `final: null`).
   if (data) {
     try {
+      const forcePhase = data.forcePhase || data.phase || null;
+      const allowMergingOtherSurveys = forcePhase !== "kickoff";
+
       const kickoffStored = JSON.parse(localStorage.getItem("metricMateKickoff") || "null");
       const midtermStored = JSON.parse(localStorage.getItem("metricMateMidterm") || "null");
       const finalStored = JSON.parse(localStorage.getItem("metricMateFinal") || "null");
 
       if (!data.kickoff && kickoffStored) data.kickoff = kickoffStored;
-      if (!data.midterm && midtermStored) data.midterm = midtermStored;
-      if (!data.final && finalStored) data.final = finalStored;
+      if (allowMergingOtherSurveys) {
+        if (!data.midterm && midtermStored) data.midterm = midtermStored;
+        if (!data.final && finalStored) data.final = finalStored;
+      }
 
       // Prefer final goals when available so the dashboard can render the final view correctly.
       if (
+        allowMergingOtherSurveys &&
         (!Array.isArray(data.goals) || data.goals.length === 0) &&
         finalStored &&
         Array.isArray(finalStored.goals) &&
@@ -128,6 +134,7 @@ function normalizeDashboardData(raw) {
   if (!raw) return null;
 
   const data = {
+    forcePhase: raw.forcePhase || raw.phase || null,
     kickoff: raw.kickoff || null,
     midterm: raw.midterm || null,
     final: raw.final || null,

@@ -100,8 +100,11 @@ function renderDashboard(rawData) {
 
   // Prefer normalised kickoff, but also keep a direct reference to the raw one
   const kickoff = data.kickoff || (rawData && rawData.kickoff) || null;
-  const midterm = data.midterm || {};
-  const final = data.final || {};
+  const forcePhase = data.forcePhase || null;
+  const midterm =
+    forcePhase === "kickoff" ? null : (data.midterm || null);
+  const final =
+    forcePhase === "kickoff" ? null : (data.final || null);
   const finalSummary = data.finalSummary || "";
   const project = data.project || {};
   const goals = Array.isArray(data.goals) ? data.goals : [];
