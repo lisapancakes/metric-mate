@@ -22,6 +22,32 @@ function loadDashboardData() {
     console.warn("Failed to load dashboard data from localStorage snapshot", e);
   }
 
+  // If we loaded a snapshot, opportunistically fill in any missing survey payloads
+  // from their canonical localStorage keys (midterm flow can save `final: null`).
+  if (data) {
+    try {
+      const kickoffStored = JSON.parse(localStorage.getItem("metricMateKickoff") || "null");
+      const midtermStored = JSON.parse(localStorage.getItem("metricMateMidterm") || "null");
+      const finalStored = JSON.parse(localStorage.getItem("metricMateFinal") || "null");
+
+      if (!data.kickoff && kickoffStored) data.kickoff = kickoffStored;
+      if (!data.midterm && midtermStored) data.midterm = midtermStored;
+      if (!data.final && finalStored) data.final = finalStored;
+
+      // Prefer final goals when available so the dashboard can render the final view correctly.
+      if (
+        (!Array.isArray(data.goals) || data.goals.length === 0) &&
+        finalStored &&
+        Array.isArray(finalStored.goals) &&
+        finalStored.goals.length
+      ) {
+        data.goals = finalStored.goals;
+      }
+    } catch (e) {
+      console.warn("Failed to merge survey localStorage into dashboard snapshot", e);
+    }
+  }
+
   // Last-resort fallback: stitch together whatever survey data exists
   if (!data) {
     try {
