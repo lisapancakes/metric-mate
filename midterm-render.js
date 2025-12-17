@@ -932,7 +932,8 @@ function normalizePlainTextDraft(aiText, sectionLabels = []) {
     .filter(Boolean)
     .map((t) => t.replace(/^#+\s*/, "")) // strip markdown headings like ### Heading
     .map((t) => t.replace(/\*\*/g, "")) // strip markdown bold like **Heading**
-    .map((t) => t.replace(/^\-\s+/, "• ")); // normalize dash bullets to •
+    .map((t) => t.replace(/^[-*]\s+/, "• ")) // normalize -/* bullets to •
+    .map((t) => t.replace(/^\d+\.\s+/, "• ")); // normalize numbered bullets to •
 
   const formatted = [];
   let prevWasBlank = false;
@@ -1013,6 +1014,15 @@ function formatMidtermClientEmail(aiText) {
       : "") ||
     "The Team";
 
+  const sectionLabels = [
+    "Project Health Summary",
+    "Progress Since Kickoff",
+    "What’s Going Well",
+    "Risks & Areas to Watch",
+    "Decisions or Open Questions",
+    "Next Steps",
+  ];
+
   const pmLower = pm.toLowerCase();
   const cleanedLines = (aiText || "")
     .split("\n")
@@ -1031,53 +1041,9 @@ function formatMidtermClientEmail(aiText) {
       return true;
     })
     .map((t) => t.replace(/^#+\s*/, "")) // strip markdown headings like ### Heading
-    .map((t) => t.replace(/\*\*/g, "")) // strip markdown bold like **Heading**
-    .map((t) => t.replace(/^\-\s+/, "• ")); // normalize dash bullets to •
+    .map((t) => t.replace(/\*\*/g, "")); // strip markdown bold like **Heading**
 
-  // Normalize spacing and subheadings for an email-ready body.
-  const formattedBodyLines = [];
-  let prevWasBlank = false;
-
-  cleanedLines.forEach((line, idx) => {
-    const isBullet = /^[-•]/.test(line);
-    const isBulletedSubheading = /^•\s+.+:\s*$/.test(line);
-    const normalizedLine = isBulletedSubheading ? line.replace(/^•\s+/, "") : line;
-    const isSubheading = /.+:\s*$/.test(normalizedLine) && !/^[-•]/.test(normalizedLine);
-
-    if (isSubheading && !prevWasBlank && formattedBodyLines.length > 0) {
-      formattedBodyLines.push("");
-      prevWasBlank = true;
-    }
-
-    formattedBodyLines.push(normalizedLine);
-    prevWasBlank = normalizedLine === "";
-
-    const next = cleanedLines[idx + 1];
-    const nextIsBullet = next ? /^[-•]/.test(next) : false;
-    const nextIsBulletedSubheading = next ? /^•\s+.+:\s*$/.test(next) : false;
-    const nextNormalizedLine =
-      next && nextIsBulletedSubheading ? next.replace(/^•\s+/, "") : next;
-    const nextIsSubheading = nextNormalizedLine
-      ? /.+:\s*$/.test(nextNormalizedLine) && !/^[-•]/.test(nextNormalizedLine)
-      : false;
-
-    if (isBullet && !nextIsBullet && next) {
-      formattedBodyLines.push("");
-      prevWasBlank = true;
-    }
-    if (!isBullet && !isSubheading && nextIsSubheading) {
-      formattedBodyLines.push("");
-      prevWasBlank = true;
-    }
-  });
-
-  const collapsed = [];
-  formattedBodyLines.forEach((line) => {
-    if (line === "" && collapsed[collapsed.length - 1] === "") return;
-    collapsed.push(line);
-  });
-
-  const body = collapsed.join("\n").trim();
+  const body = normalizePlainTextDraft(cleanedLines.join("\n"), sectionLabels);
 
   const parts = [];
   parts.push(`Hi ${client} Team,`);
