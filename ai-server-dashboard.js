@@ -125,6 +125,36 @@ Length:
 - 12–18 words per sentence
 
 {SURVEY_DATA}`,
+
+  dashboard_midterm_summary: `Rewrite the provided project dashboard content into a cohesive midterm project summary.
+
+Formatting (strict):
+- Plain text only (no Markdown).
+- No headings, no bullets, no labels.
+- Write 3–4 short sentences.
+
+Content:
+- Summarize overall health/progress in plain language.
+- Mention key risks or blockers if present.
+- Mention notable wins if present.
+- Mention immediate next steps if present.
+- Translate any ratings into words; avoid raw numbers, percentages, or score labels.
+- Do not add new data, assumptions, or promises.`,
+
+  dashboard_final_summary: `Rewrite the provided project dashboard content into a concise final project wrap-up.
+
+Formatting (strict):
+- Plain text only (no Markdown).
+- No headings, no bullets, no labels.
+- Write 3–5 short sentences.
+
+Content:
+- Summarize what was delivered (high-level) if present.
+- Summarize observed impact or confidence signals if present.
+- Mention major wins and key challenges if present.
+- Mention immediate next steps if present.
+- Translate any ratings into words; avoid raw numbers, percentages, or score labels.
+- Do not add new data, assumptions, or promises.`,
 };
 
 function getDashboardInstructions(mode) {
@@ -197,4 +227,3 @@ const PORT = process.env.PORT || 3001;
 app.listen(PORT, () => {
   console.log(`AI server listening on port ${PORT}`);
 });
-

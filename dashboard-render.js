@@ -945,7 +945,9 @@ function renderDashboard(rawData) {
 
     try {
       const base =
-        window.location.protocol === "file:" || window.location.hostname === "localhost"
+        window.location.protocol === "file:" ||
+        window.location.hostname === "localhost" ||
+        window.location.hostname === "127.0.0.1"
           ? "http://localhost:3001"
           : "";
       const res = await fetch(`${base}/api/rewrite`, {
